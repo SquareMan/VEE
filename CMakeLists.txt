@@ -33,6 +33,8 @@ set(SOURCES
         VEE/Source/Platform/Window.cpp
         VEE/Source/Platform/Window.hpp
         VEE/Source/Platform/Win32/WindowHandle.hpp
+        VEE/Source/Platform/Filesystem.cpp
+        VEE/Source/Platform/Filesystem.hpp
 )
 
 add_executable(VEE ${SOURCES})

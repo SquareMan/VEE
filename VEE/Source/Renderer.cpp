@@ -20,6 +20,8 @@
 #include <vector>
 #include <chrono>
 
+#include "Platform/Filesystem.hpp"
+
 #define VK_CHECK(func) \
     { \
         const VkResult result = func; \
@@ -32,18 +34,6 @@
             VEE_DEBUGBREAK(); \
         } \
     }
-
-static VEE_NODISCARD std::vector<char> read_file(const char *filename) {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-
-    size_t file_size = file.tellg();
-    std::vector<char> result(file_size);
-    file.seekg(0);
-    file.read(result.data(), file_size);
-    file.close();
-
-    return result;
-}
 
 static VEE_NODISCARD std::vector<const char *> filter_extensions(std::vector<const char *> &available_extensions,
                                                                  std::vector<const char *> &requested_extensions) {
@@ -74,7 +64,9 @@ namespace Vee {
         VK_CHECK(vkEnumerateInstanceLayerProperties(&num_layers, available_layers.data()))
 
         std::vector<const char *> requested_layer_names = {
+#if _DEBUG
             "VK_LAYER_KHRONOS_validation",
+#endif
         };
         std::vector<const char *> available_layer_names;
         std::ranges::transform(
@@ -390,8 +382,8 @@ namespace Vee {
         VkShaderModule vertex_shader;
         VkShaderModule fragment_shader;
 
-        std::vector<char> vert_shader = read_file("Resources/triangle.vert.spv");
-        std::vector<char> frag_shader = read_file("Resources/triangle.frag.spv");
+        std::vector<char> vert_shader = Platform::Filesystem::read_binary_file("Resources/triangle.vert.spv");
+        std::vector<char> frag_shader = Platform::Filesystem::read_binary_file("Resources/triangle.frag.spv");
         VkShaderModuleCreateInfo vertex_shader_info = {
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             .codeSize = vert_shader.size(),
