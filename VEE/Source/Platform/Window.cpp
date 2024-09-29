@@ -18,6 +18,7 @@ Window::Window(int32_t width, int32_t height) {
         return;
     }
 
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfw_window = glfwCreateWindow(width, height, "Hello World", nullptr, nullptr);
     if (!glfw_window) {
