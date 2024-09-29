@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include <vector>
 #include "VeeCore.hpp"
+#include <vector>
 
 namespace Vee::Platform::Filesystem {
-    VEE_NODISCARD std::vector<char> read_binary_file(const char *filename);
+VEE_NODISCARD std::vector<char> read_binary_file(const char* filename);
 }
-

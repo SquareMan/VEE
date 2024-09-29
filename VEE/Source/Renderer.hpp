@@ -11,29 +11,29 @@
 #include "Platform/Window.hpp"
 
 namespace Vee {
-    class Renderer final {
-    public:
-        explicit Renderer(const Platform::Window &Window);
+class Renderer final {
+public:
+    explicit Renderer(const Platform::Window& Window);
 
-        ~Renderer();
+    ~Renderer();
 
-        void Render();
+    void Render();
 
-    private:
-        VkPhysicalDevice gpu = VK_NULL_HANDLE;
-        VkDevice device = VK_NULL_HANDLE;
-        VkQueue queue = VK_NULL_HANDLE;
-        VkCommandPool command_pool = VK_NULL_HANDLE;
-        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-        std::vector<VkImage> swapchain_images;
-        std::vector<VkImageView> swapchain_image_views;
-        VkRenderPass render_pass = VK_NULL_HANDLE;
-        std::vector<VkFramebuffer> framebuffers;
-        VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        VkPipeline pipeline = VK_NULL_HANDLE;
+private:
+    VkPhysicalDevice gpu = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkQueue queue = VK_NULL_HANDLE;
+    VkCommandPool command_pool = VK_NULL_HANDLE;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    std::vector<VkImage> swapchain_images;
+    std::vector<VkImageView> swapchain_image_views;
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    std::vector<VkFramebuffer> framebuffers;
+    VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
 
-        VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
-        VkSemaphore submit_semaphore = VK_NULL_HANDLE;
-    };
-} // Vee
+    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
+    VkSemaphore submit_semaphore = VK_NULL_HANDLE;
+};
+} // namespace Vee

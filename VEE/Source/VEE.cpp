@@ -3,7 +3,7 @@
 #include "Renderer.hpp"
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     const Vee::Platform::Window window(640, 480);
     Vee::Renderer renderer(window);
 

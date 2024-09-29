@@ -12,16 +12,19 @@
 #include "GLFW/glfw3.h"
 
 namespace Vee::Platform {
-    class Window {
-    public:
-        Window(int32_t width, int32_t height);
-        ~Window();
+class Window {
+public:
+    Window(int32_t width, int32_t height);
 
-        void poll_events() const;
-        bool should_close() const;
+    ~Window();
 
-        VEE_NODISCARD WindowHandle get_handle() const;
-    private:
-        GLFWwindow* glfw_window = nullptr;
-    };
-}
+    void poll_events() const;
+
+    bool should_close() const;
+
+    VEE_NODISCARD WindowHandle get_handle() const;
+
+private:
+    GLFWwindow* glfw_window = nullptr;
+};
+} // namespace Vee::Platform
