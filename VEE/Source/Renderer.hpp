@@ -31,7 +31,8 @@ private:
     std::vector<VkFramebuffer> framebuffers;
     VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipeline triangle_pipeline = VK_NULL_HANDLE;
+    VkPipeline square_pipeline = VK_NULL_HANDLE;
 
     VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
     VkSemaphore submit_semaphore = VK_NULL_HANDLE;

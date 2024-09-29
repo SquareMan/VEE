@@ -83,15 +83,15 @@ Renderer::Renderer(const Platform::Window& window) {
         nullptr, &num_extensions, available_extensions.data()
     ))
 
-    std::vector<const char*> requested_extension_names = {
-#if defined(VK_KHR_win32_surface)
-        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#if !defined(VK_KHR_win32_surface) || !defined(VK_KHR_surface)
+#error Renderer requires win32 platform and vulkan surface extensions
 #endif
+
+    std::vector<const char*> requested_extension_names = {
+        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+        VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(VK_EXT_debug_utils)
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-#endif
-#if defined(VK_KHR_surface)
-        VK_KHR_SURFACE_EXTENSION_NAME,
 #endif
     };
     std::vector<const char*> available_extension_names;
@@ -105,6 +105,13 @@ Renderer::Renderer(const Platform::Window& window) {
         filter_extensions(available_layer_names, requested_layer_names);
     std::vector<const char*> enabled_instance_extensions =
         filter_extensions(available_extension_names, requested_extension_names);
+
+    if (std::ranges::find(enabled_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) !=
+        enabled_instance_extensions.end()) {
+        // TODO log error
+        assert(false);
+        return;
+    }
 
     constexpr VkApplicationInfo app_info = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -128,9 +135,6 @@ Renderer::Renderer(const Platform::Window& window) {
     volkLoadInstance(instance);
 
 
-    // TODO
-    // #if defined(VK_USE_PLATFORM_WIN32_KHR) && defined(VK_KHR_win32_surface)
-    // if(enabled_instance_extensions.contains(VK_KHR_SURFACE_EXTENSION_NAME))
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     const VkWin32SurfaceCreateInfoKHR ci = {
         .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
@@ -369,17 +373,26 @@ Renderer::Renderer(const Platform::Window& window) {
     };
     vkCreatePipelineCache(device, &pipeline_cache_info, nullptr, &pipeline_cache);
 
-    VkShaderModule vertex_shader;
+    VkShaderModule triangle_vertex_shader;
+    VkShaderModule square_vertex_shader;
     VkShaderModule fragment_shader;
 
-    std::vector<char> vert_shader =
+    std::vector<char> triangle_vert_shader =
         Platform::Filesystem::read_binary_file("Resources/triangle.vert.spv");
+    std::vector<char> square_vert_shader =
+        Platform::Filesystem::read_binary_file("Resources/square.vert.spv");
     std::vector<char> frag_shader =
-        Platform::Filesystem::read_binary_file("Resources/triangle.frag.spv");
-    VkShaderModuleCreateInfo vertex_shader_info = {
+        Platform::Filesystem::read_binary_file("Resources/color.frag.spv");
+    VkShaderModuleCreateInfo triangle_vertex_shader_info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = vert_shader.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(vert_shader.data()),
+        .codeSize = triangle_vert_shader.size(),
+        .pCode = reinterpret_cast<const uint32_t*>(triangle_vert_shader.data()),
+    };
+
+    VkShaderModuleCreateInfo square_vertex_shader_info = {
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .codeSize = square_vert_shader.size(),
+        .pCode = reinterpret_cast<const uint32_t*>(square_vert_shader.data()),
     };
 
     VkShaderModuleCreateInfo fragment_shader_info = {
@@ -388,14 +401,19 @@ Renderer::Renderer(const Platform::Window& window) {
         .pCode = reinterpret_cast<const uint32_t*>(frag_shader.data()),
     };
 
-    VK_CHECK(vkCreateShaderModule(device, &vertex_shader_info, nullptr, &vertex_shader));
+    VK_CHECK(
+        vkCreateShaderModule(device, &triangle_vertex_shader_info, nullptr, &triangle_vertex_shader)
+    );
+    VK_CHECK(
+        vkCreateShaderModule(device, &square_vertex_shader_info, nullptr, &square_vertex_shader)
+    );
     VK_CHECK(vkCreateShaderModule(device, &fragment_shader_info, nullptr, &fragment_shader));
 
     VkPipelineShaderStageCreateInfo pipeline_shader_stage_infos[]{
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = vertex_shader,
+            .module = triangle_vertex_shader,
             .pName = "main",
         },
         {
@@ -454,7 +472,7 @@ Renderer::Renderer(const Platform::Window& window) {
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_state_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
     };
 
     VkPipelineMultisampleStateCreateInfo multisample_state_info{
@@ -476,9 +494,20 @@ Renderer::Renderer(const Platform::Window& window) {
         .layout = pipeline_layout,
         .renderPass = render_pass,
     };
-    VK_CHECK(
-        vkCreateGraphicsPipelines(device, pipeline_cache, 1, &pipeline_info, nullptr, &pipeline)
-    )
+    VK_CHECK(vkCreateGraphicsPipelines(
+        device, pipeline_cache, 1, &pipeline_info, nullptr, &triangle_pipeline
+    ))
+
+    // Kinda messy, replace the triangle vertex shader with the square vertex shader and make another pipeline
+    pipeline_shader_stage_infos[0] = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .stage = VK_SHADER_STAGE_VERTEX_BIT,
+        .module = square_vertex_shader,
+        .pName = "main",
+    };
+    VK_CHECK(vkCreateGraphicsPipelines(
+        device, pipeline_cache, 1, &pipeline_info, nullptr, &square_pipeline
+    ))
 }
 
 Renderer::~Renderer() {
@@ -508,6 +537,13 @@ void Renderer::Render() {
 
     VK_CHECK(vkBeginCommandBuffer(command_buffer, &cbbi))
 
+    auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
+    auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
+    float data = time_ms.count() / 1000.0f;
+    vkCmdPushConstants(
+        command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &data
+    );
+
     VkClearColorValue color = {0.3f, 0.77f, 0.5f, 1.0f};
     VkClearValue clear_value = {
         .color = color,
@@ -534,14 +570,11 @@ void Renderer::Render() {
 
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-    auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
-    auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
-    float data = time_ms.count() / 1000.0f;
-    vkCmdPushConstants(
-        command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &data
-    );
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, square_pipeline);
+    vkCmdDraw(command_buffer, 4, 1, 0, 0);
+
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline);
     vkCmdDraw(command_buffer, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(command_buffer);
