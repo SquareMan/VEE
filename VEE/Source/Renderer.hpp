@@ -36,5 +36,8 @@ private:
 
     VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
     VkSemaphore submit_semaphore = VK_NULL_HANDLE;
+
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    VkFence submit_fence = VK_NULL_HANDLE;
 };
 } // namespace Vee

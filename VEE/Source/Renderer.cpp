@@ -503,7 +503,8 @@ Renderer::Renderer(const Platform::Window& window) {
         device, pipeline_cache, 1, &pipeline_info, nullptr, &triangle_pipeline
     ))
 
-    // Kinda messy, replace the triangle vertex shader with the square vertex shader and make another pipeline
+    // Kinda messy, replace the triangle vertex shader with the square vertex shader and make
+    // another pipeline
     pipeline_shader_stage_infos[0] = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -513,33 +514,43 @@ Renderer::Renderer(const Platform::Window& window) {
     VK_CHECK(vkCreateGraphicsPipelines(
         device, pipeline_cache, 1, &pipeline_info, nullptr, &square_pipeline
     ))
-}
 
-Renderer::~Renderer() {
-    // TODO
-}
 
-void Renderer::Render() {
-    uint32_t image_index = 0;
-    VK_CHECK(
-        vkAcquireNextImageKHR(device, swapchain, 0, acquire_semaphore, VK_NULL_HANDLE, &image_index)
-    );
+    // command buffer+fence
+    VkFenceCreateInfo fence_info = {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+    };
+    VK_CHECK(vkCreateFence(device, &fence_info, nullptr, &submit_fence));
 
-    const VkCommandBufferAllocateInfo cbai = {
+    const VkCommandBufferAllocateInfo command_buffer_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = command_pool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = 1,
     };
+    VK_CHECK(vkAllocateCommandBuffers(device, &command_buffer_info, &command_buffer));
+}
 
-    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    VK_CHECK(vkAllocateCommandBuffers(device, &cbai, &command_buffer));
+Renderer::~Renderer() {
+    // TODO
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+}
+
+void Renderer::Render() {
+    VK_CHECK(vkWaitForFences(device, 1, &submit_fence, VK_TRUE, UINT64_MAX))
+    VK_CHECK(vkResetFences(device, 1, &submit_fence))
+    uint32_t image_index = 0;
+    VK_CHECK(
+        vkAcquireNextImageKHR(device, swapchain, 0, acquire_semaphore, VK_NULL_HANDLE, &image_index)
+    );
+
 
     VkCommandBufferBeginInfo cbbi = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
     };
-
+    VK_CHECK(vkResetCommandBuffer(command_buffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT))
     VK_CHECK(vkBeginCommandBuffer(command_buffer, &cbbi))
 
     auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
@@ -597,7 +608,7 @@ void Renderer::Render() {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = &submit_semaphore,
     };
-    VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE))
+    VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, submit_fence))
 
 
     VkPresentInfoKHR pi = {
@@ -610,7 +621,6 @@ void Renderer::Render() {
     };
     VK_CHECK(vkQueuePresentKHR(queue, &pi))
 
-    VK_CHECK(vkDeviceWaitIdle(device));
-    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+    // VK_CHECK(vkDeviceWaitIdle(device));
 }
 } // namespace Vee
