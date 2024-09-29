@@ -13,15 +13,17 @@
 namespace Vee::Platform {
 Window::Window(int32_t width, int32_t height) {
     if (!glfwInit()) {
-        // return -1;
+        // TODO log here
+        assert(false);
         return;
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfw_window = glfwCreateWindow(width, height, "Hello World", nullptr, nullptr);
     if (!glfw_window) {
-        glfwTerminate();
-        // return -1;
+        // TODO: log here
+        assert(false);
+        return;
     }
 }
 
