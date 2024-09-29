@@ -106,12 +106,16 @@ Renderer::Renderer(const Platform::Window& window) {
     std::vector<const char*> enabled_instance_extensions =
         filter_extensions(available_extension_names, requested_extension_names);
 
+#if _DEBUG
     if (std::ranges::find(enabled_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) !=
         enabled_instance_extensions.end()) {
         // TODO log error
-        assert(false);
-        return;
+        VEE_DEBUGBREAK();
+    } else {
+        // TODO: vkCreateDebugUtilsMessengerEXT
     }
+#endif
+
 
     constexpr VkApplicationInfo app_info = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
