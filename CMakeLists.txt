@@ -37,3 +37,25 @@ set(SOURCES
 
 add_executable(VEE ${SOURCES})
 target_include_directories(VEE PRIVATE VEE/Source/)
+
+# Compile Shaders to spv
+set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VEE/Resources)
+set(SHADER_BINARY_PATH ${CMAKE_CURRENT_BINARY_DIR}/Resources)
+
+file(MAKE_DIRECTORY ${SHADER_BINARY_PATH})
+file(GLOB shaders CONFIGURE_DEPENDS
+        ${SHADER_SOURCE_PATH}/*.frag
+        ${SHADER_SOURCE_PATH}/*.vert
+)
+foreach (shader IN LISTS shaders)
+    get_filename_component(FILENAME ${shader} NAME)
+    add_custom_command(
+            COMMAND glslc ${CMAKE_SOURCE_DIR}/VEE/Resources/${FILENAME} -o ${CMAKE_CURRENT_BINARY_DIR}/Resources/${FILENAME}.spv
+            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Resources/${FILENAME}.spv
+            DEPENDS ${shader}
+            COMMENT "Compiling ${FILENAME}"
+    )
+    list(APPEND SPV_SHADERS ${CMAKE_CURRENT_BINARY_DIR}/Resources/${FILENAME}.spv)
+endforeach ()
+add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
+add_dependencies(VEE shaders)
