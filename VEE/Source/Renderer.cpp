@@ -65,7 +65,7 @@ static VEE_NODISCARD std::vector<const char *> filter_extensions(std::vector<con
 
 
 namespace Vee {
-    Renderer::Renderer(const Window &window) {
+    Renderer::Renderer(const Platform::Window &window) {
         VK_CHECK(volkInitialize())
 
         uint32_t num_layers = 0;
@@ -145,7 +145,7 @@ namespace Vee {
         const VkWin32SurfaceCreateInfoKHR ci = {
             .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
             .hinstance = GetModuleHandle(nullptr),
-            .hwnd = window
+            .hwnd = window.get_handle(),
         };
         VK_CHECK(vkCreateWin32SurfaceKHR(instance, &ci, nullptr, &surface))
 

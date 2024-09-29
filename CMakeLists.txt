@@ -10,24 +10,30 @@ include_directories(${Vulkan_INCLUDE_DIR})
 include(FetchContent)
 
 FetchContent_Declare(
-  glfw
-  GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG 3.3.8
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.3.8
 )
-if(NOT glfw_POPULATED)
-  set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-  set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-  FetchContent_Populate(glfw)
-endif()
+if (NOT glfw_POPULATED)
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_Populate(glfw)
+endif ()
 
 add_subdirectory(${glfw_SOURCE_DIR})
 include_directories(${glfw_SOURCE_DIR}/include)
 
 link_libraries(glfw)
 
-add_executable(VEE
+set(SOURCES
         VEE/Source/VEE.cpp
         VEE/Source/Renderer.cpp
+        VEE/Source/Renderer.hpp
+        VEE/Source/Platform/Window.cpp
+        VEE/Source/Platform/Window.hpp
+        VEE/Source/Platform/Win32/WindowHandle.hpp
 )
 
+add_executable(VEE ${SOURCES})
+target_include_directories(VEE PRIVATE VEE/Source/)

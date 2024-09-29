@@ -2,25 +2,18 @@
 // Created by Square on 9/28/2024.
 //
 
-#ifndef RENDERER_H
-#define RENDERER_H
-
-#ifdef WIN32
-#include "Windows.h"
-#endif
+#pragma once
 
 #define VK_NO_PROTOTYPES
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-namespace Vee {
-#ifdef WIN32
-    using Window = HWND;
-#endif
+#include "Platform/Window.hpp"
 
+namespace Vee {
     class Renderer final {
     public:
-        explicit Renderer(const Window &Window);
+        explicit Renderer(const Platform::Window &Window);
 
         ~Renderer();
 
@@ -44,5 +37,3 @@ namespace Vee {
         VkSemaphore submit_semaphore = VK_NULL_HANDLE;
     };
 } // Vee
-
-#endif //RENDERER_H
