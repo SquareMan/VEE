@@ -55,7 +55,7 @@ static VEE_NODISCARD std::vector<const char*> filter_extensions(
 
 
 namespace Vee {
-Renderer::Renderer(const Platform::Window& window) {
+Renderer::Renderer(const Platform::Window& window) : window(&window) {
     VK_CHECK(volkInitialize())
 
     uint32_t num_layers = 0;
@@ -344,12 +344,13 @@ Renderer::Renderer(const Platform::Window& window) {
 
 
     // framebuffer
+    auto [width, height] = window.get_size();
     VkFramebufferCreateInfo framebuffer_info = {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .renderPass = render_pass,
         .attachmentCount = 1,
-        .width = 640,
-        .height = 480,
+        .width = width,
+        .height = height,
         .layers = 1,
     };
 
@@ -565,22 +566,23 @@ void Renderer::Render() {
         .color = color,
     };
 
+    auto [width, height] = window->get_size();
     VkRenderPassBeginInfo render_pass_begin_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = render_pass,
         .framebuffer = framebuffers[image_index],
         // TODO: Get this from platform layer
-        .renderArea = {.extent = {640, 480}},
+        .renderArea = {.extent = {width, height}},
         .clearValueCount = 1,
         .pClearValues = &clear_value,
     };
 
     vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    const VkRect2D scissor = {.extent = {640, 480}};
+    const VkRect2D scissor = {.extent = {width, height}};
     const VkViewport viewport = {
-        .width = 640,
-        .height = 480,
+        .width = static_cast<float>(width),
+        .height = static_cast<float>(height),
         .maxDepth = 1.0f,
     };
 

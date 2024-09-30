@@ -11,6 +11,8 @@
 
 #include "GLFW/glfw3.h"
 
+#include <tuple>
+
 namespace Vee::Platform {
 class Window {
 public:
@@ -19,8 +21,9 @@ public:
     ~Window();
 
     void poll_events() const;
-
     bool should_close() const;
+
+    VEE_NODISCARD std::tuple<uint32_t, uint32_t> get_size() const;
 
     VEE_NODISCARD WindowHandle get_handle() const;
 

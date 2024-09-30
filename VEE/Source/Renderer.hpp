@@ -20,6 +20,8 @@ public:
     void Render();
 
 private:
+    const Platform::Window* window;
+
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
     VkQueue queue = VK_NULL_HANDLE;
