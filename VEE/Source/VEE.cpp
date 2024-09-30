@@ -4,7 +4,7 @@
 
 
 int main(int argc, char* argv[]) {
-    const Vee::Platform::Window window(640, 480);
+    const Vee::Platform::Window window(640, 640);
     Vee::Renderer renderer(window);
 
     while (!window.should_close()) {

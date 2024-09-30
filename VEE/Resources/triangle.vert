@@ -5,9 +5,12 @@ layout (push_constant) uniform Time
 {
     float time;
 };
+
+const float PI = 3.1415926535897932384626433832795;
+const float third = 2*PI/3;
 float positions[3] = float[](
-3.14159,
-3.14159 / 2.0,
+2*third,
+third,
 0
 );
 
