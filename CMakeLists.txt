@@ -52,12 +52,12 @@ file(GLOB shaders CONFIGURE_DEPENDS
 foreach (shader IN LISTS shaders)
     get_filename_component(FILENAME ${shader} NAME)
     add_custom_command(
-            COMMAND glslc ${CMAKE_SOURCE_DIR}/VEE/Resources/${FILENAME} -o ${CMAKE_CURRENT_BINARY_DIR}/Resources/${FILENAME}.spv
-            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Resources/${FILENAME}.spv
+            COMMAND glslc ${SHADER_SOURCE_PATH}/${FILENAME} -o ${SHADER_BINARY_PATH}/${FILENAME}.spv
+            OUTPUT ${SHADER_BINARY_PATH}/${FILENAME}.spv
             DEPENDS ${shader}
             COMMENT "Compiling ${FILENAME}"
     )
-    list(APPEND SPV_SHADERS ${CMAKE_CURRENT_BINARY_DIR}/Resources/${FILENAME}.spv)
+    list(APPEND SPV_SHADERS ${SHADER_BINARY_PATH}/${FILENAME}.spv)
 endforeach ()
 add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
 add_dependencies(VEE shaders)
