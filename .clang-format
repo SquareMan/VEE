@@ -7,9 +7,10 @@ AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: WithoutElse
 BinPackArguments: false
 BinPackParameters: false
-BreakBeforeBinaryOperators: None
+BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: false
 ColumnLimit: 100
 ContinuationIndentWidth: 4

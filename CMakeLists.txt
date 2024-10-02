@@ -35,6 +35,10 @@ set(SOURCES
         VEE/Source/Platform/Win32/WindowHandle.hpp
         VEE/Source/Platform/Filesystem.cpp
         VEE/Source/Platform/Filesystem.hpp
+        VEE/Source/Renderer/VkUtil.cpp
+        VEE/Source/Renderer/VkUtil.hpp
+        VEE/Source/Renderer/Instance.cpp
+        VEE/Source/Renderer/Instance.hpp
 )
 
 add_executable(VEE ${SOURCES})

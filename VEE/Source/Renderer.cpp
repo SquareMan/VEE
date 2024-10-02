@@ -6,10 +6,9 @@
 
 #include "VeeCore.hpp"
 
-#define VK_USE_PLATFORM_WIN32_KHR
 #define VOLK_IMPLEMENTATION
 #include <Volk/volk.h>
-
+#include <vulkan/vulkan_win32.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include <algorithm>
@@ -22,121 +21,45 @@
 
 #include "Platform/Filesystem.hpp"
 
-#define VK_CHECK(func)                                                                             \
-    {                                                                                              \
-        const VkResult result = func;                                                              \
-        if (result != VK_SUCCESS) {                                                                \
-            std::cerr << "Error calling function " << #func << " at " << __FILE__ << ":"           \
-                      << __LINE__ << ". Result is " << string_VkResult(result) << "\n";            \
-            VEE_DEBUGBREAK();                                                                      \
-        }                                                                                          \
-    }
-
-static VEE_NODISCARD std::vector<const char*> filter_extensions(
-    std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions
-) {
-    std::ranges::sort(available_extensions, [](const char* a, const char* b) {
-        return std::strcmp(a, b) < 0;
-    });
-    std::ranges::sort(requested_extensions, [](const char* a, const char* b) {
-        return std::strcmp(a, b) < 0;
-    });
-
-    std::vector<const char*> result;
-    std::ranges::set_intersection(
-        requested_extensions,
-        available_extensions,
-        std::back_inserter(result),
-        [](const char* a, const char* b) { return std::strcmp(a, b) == 0; }
-    );
-
-    return result;
-}
-
+#include <Renderer/VkUtil.hpp>
 
 namespace Vee {
-Renderer::Renderer(const Platform::Window& window) : window(&window) {
-    VK_CHECK(volkInitialize())
-
-    uint32_t num_layers = 0;
-    VK_CHECK(vkEnumerateInstanceLayerProperties(&num_layers, nullptr))
-    std::vector<VkLayerProperties> available_layers(num_layers);
-    VK_CHECK(vkEnumerateInstanceLayerProperties(&num_layers, available_layers.data()))
-
-    std::vector<const char*> requested_layer_names = {
-#if _DEBUG
-        "VK_LAYER_KHRONOS_validation",
-#endif
-    };
-    std::vector<const char*> available_layer_names;
-    std::ranges::transform(
-        available_layers,
-        std::back_inserter(available_layer_names),
-        [](const VkLayerProperties& layer) { return layer.layerName; }
-    );
-
-
-    uint32_t num_extensions = 0;
-    VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &num_extensions, nullptr))
-    std::vector<VkExtensionProperties> available_extensions(num_extensions);
-    VK_CHECK(vkEnumerateInstanceExtensionProperties(
-        nullptr, &num_extensions, available_extensions.data()
-    ))
-
+Renderer::Renderer(const Platform::Window& window)
+    : window(&window) {
 #if !defined(VK_KHR_win32_surface) || !defined(VK_KHR_surface)
 #error Renderer requires win32 platform and vulkan surface extensions
 #endif
 
-    std::vector<const char*> requested_extension_names = {
-        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-        VK_KHR_SURFACE_EXTENSION_NAME,
-#if defined(VK_EXT_debug_utils)
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-#endif
-    };
-    std::vector<const char*> available_extension_names;
-    std::ranges::transform(
-        available_extensions,
-        std::back_inserter(available_extension_names),
-        [](const VkExtensionProperties& extension) { return extension.extensionName; }
-    );
+    VK_CHECK(volkInitialize());
 
-    std::vector<const char*> enabled_instance_layers =
-        filter_extensions(available_layer_names, requested_layer_names);
-    std::vector<const char*> enabled_instance_extensions =
-        filter_extensions(available_extension_names, requested_extension_names);
-
+    // clang-format off
+    instance = Vulkan::InstanceBuilder()
+        .with_application_name("VEE POC")
+        .with_application_version(VK_MAKE_API_VERSION(0, 0, 1, 0))
+        .with_layers({
 #if _DEBUG
-    if (std::ranges::find(enabled_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) !=
-        enabled_instance_extensions.end()) {
-        // TODO log error
-        VEE_DEBUGBREAK();
-    } else {
-        // TODO: vkCreateDebugUtilsMessengerEXT
-    }
+            "VK_LAYER_KHRONOS_validation",
 #endif
+        })
+        .with_extensions({
+            VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+            VK_KHR_SURFACE_EXTENSION_NAME,
+#if defined(VK_EXT_debug_utils)
+            VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#endif
+        })
+        .build();
+    // clang-format on
 
-
-    constexpr VkApplicationInfo app_info = {
-        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-        .pApplicationName = "VEE POC",
-        .applicationVersion = VK_MAKE_API_VERSION(0, 0, 1, 0),
-        .pEngineName = "VEE",
-        .apiVersion = VK_API_VERSION_1_3,
-    };
-
-    const VkInstanceCreateInfo create_info = {
-        .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pApplicationInfo = &app_info,
-        .enabledLayerCount = static_cast<uint32_t>(enabled_instance_layers.size()),
-        .ppEnabledLayerNames = enabled_instance_layers.data(),
-        .enabledExtensionCount = static_cast<uint32_t>(enabled_instance_extensions.size()),
-        .ppEnabledExtensionNames = enabled_instance_extensions.data(),
-    };
-
-    VkInstance instance = VK_NULL_HANDLE;
-    VK_CHECK(vkCreateInstance(&create_info, nullptr, &instance))
-    volkLoadInstance(instance);
+    // #if _DEBUG
+    //     if (std::ranges::find(enabled_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) !=
+    //     enabled_instance_extensions.end()) {
+    //         // TODO log error
+    //         VEE_DEBUGBREAK();
+    //     } else {
+    //         // TODO: vkCreateDebugUtilsMessengerEXT
+    //     }
+    // #endif
 
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -145,12 +68,14 @@ Renderer::Renderer(const Platform::Window& window) : window(&window) {
         .hinstance = GetModuleHandle(nullptr),
         .hwnd = window.get_handle(),
     };
-    VK_CHECK(vkCreateWin32SurfaceKHR(instance, &ci, nullptr, &surface))
+    VK_CHECK(vkCreateWin32SurfaceKHR(instance->vk_instance, &ci, nullptr, &surface))
 
     uint32_t num_physical_devices = 0;
-    VK_CHECK(vkEnumeratePhysicalDevices(instance, &num_physical_devices, nullptr))
+    VK_CHECK(vkEnumeratePhysicalDevices(instance->vk_instance, &num_physical_devices, nullptr))
     std::vector<VkPhysicalDevice> physical_devices(num_physical_devices);
-    VK_CHECK(vkEnumeratePhysicalDevices(instance, &num_physical_devices, physical_devices.data()))
+    VK_CHECK(vkEnumeratePhysicalDevices(
+        instance->vk_instance, &num_physical_devices, physical_devices.data()
+    ))
 
     assert(!physical_devices.empty());
     gpu = physical_devices[0];
@@ -171,8 +96,8 @@ Renderer::Renderer(const Platform::Window& window) : window(&window) {
     uint32_t presentation_family_index = UINT32_MAX;
 
     for (uint32_t idx = 0; idx < queue_families.size(); ++idx) {
-        if (graphics_family_index == UINT32_MAX &&
-            queue_families[idx].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if (graphics_family_index == UINT32_MAX
+            && queue_families[idx].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             graphics_family_index = idx;
         }
 
@@ -201,7 +126,7 @@ Renderer::Renderer(const Platform::Window& window) : window(&window) {
 
     std::vector<const char*> requested_property_names = {"VK_KHR_swapchain"};
     std::vector<const char*> enabled_property_names =
-        filter_extensions(available_property_names, requested_property_names);
+        Vulkan::filter_extensions(available_property_names, requested_property_names);
 
     const float priority = 1.0f;
     std::vector<VkDeviceQueueCreateInfo> qcis = {
@@ -432,8 +357,8 @@ Renderer::Renderer(const Platform::Window& window) : window(&window) {
 
     VkPipelineColorBlendAttachmentState color_blend_attachment{
         .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+                          | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
     };
 
     VkPipelineColorBlendStateCreateInfo color_blend_state_info{
