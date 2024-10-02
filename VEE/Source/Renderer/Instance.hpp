@@ -16,6 +16,8 @@ public:
         std::vector<std::string>&& enabled_extensions
     );
 
+    bool is_extension_enabled(const char* test_extension);
+
     VkInstance vk_instance;
 private:
     std::vector<std::string> enabled_layers;

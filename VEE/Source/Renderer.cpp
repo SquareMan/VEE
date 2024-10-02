@@ -8,8 +8,8 @@
 
 #define VOLK_IMPLEMENTATION
 #include <Volk/volk.h>
-#include <vulkan/vulkan_win32.h>
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_win32.h>
 
 #include <algorithm>
 #include <cassert>
@@ -51,15 +51,14 @@ Renderer::Renderer(const Platform::Window& window)
         .build();
     // clang-format on
 
-    // #if _DEBUG
-    //     if (std::ranges::find(enabled_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) !=
-    //     enabled_instance_extensions.end()) {
-    //         // TODO log error
-    //         VEE_DEBUGBREAK();
-    //     } else {
-    //         // TODO: vkCreateDebugUtilsMessengerEXT
-    //     }
-    // #endif
+#if _DEBUG
+    if (!instance->is_extension_enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+        // TODO log error
+        VEE_DEBUGBREAK();
+    } else {
+        // TODO: vkCreateDebugUtilsMessengerEXT
+    }
+#endif
 
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;

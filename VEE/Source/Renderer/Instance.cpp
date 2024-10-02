@@ -20,6 +20,16 @@ Instance::Instance(
     , enabled_layers(enabled_layers)
     , enabled_extensions(enabled_extensions) {}
 
+bool Instance::is_extension_enabled(const char* test_extension) {
+    return std::ranges::find_if(
+               enabled_extensions,
+               [test_extension](const std::string& extension) {
+                   return strcmp(test_extension, extension.c_str()) == 0;
+               }
+           )
+           != enabled_extensions.end();
+}
+
 Instance InstanceBuilder::build() {
     uint32_t num_layers = 0;
     VK_CHECK(vkEnumerateInstanceLayerProperties(&num_layers, nullptr))
