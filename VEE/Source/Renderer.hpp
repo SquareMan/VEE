@@ -14,6 +14,7 @@
 
 #include "Platform/Window.hpp"
 #include "Renderer/Instance.hpp"
+#include "Renderer/Pipeline.hpp"
 
 #include <optional>
 
@@ -37,6 +38,8 @@ private:
 
     // Fixme: this is ugly, but we have to defer intialization of this to the constructor body
     std::optional<Vulkan::Instance> instance;
+    Vulkan::Pipeline triangle_pipeline;
+    Vulkan::Pipeline square_pipeline;
 
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
@@ -48,10 +51,6 @@ private:
     std::vector<VkImageView> swapchain_image_views;
     VkRenderPass render_pass = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> framebuffers;
-    VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline triangle_pipeline = VK_NULL_HANDLE;
-    VkPipeline square_pipeline = VK_NULL_HANDLE;
 
     RingBuffer<CmdBuffer, 3> command_buffers;
 };

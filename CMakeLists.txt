@@ -41,6 +41,10 @@ set(SOURCES
         VEE/Source/Renderer/Instance.hpp
         VEE/Source/RingBuffer.cpp
         VEE/Source/RingBuffer.hpp
+        VEE/Source/Renderer/Pipeline.cpp
+        VEE/Source/Renderer/Pipeline.hpp
+        VEE/Source/Renderer/Shader.cpp
+        VEE/Source/Renderer/Shader.hpp
 )
 
 add_executable(VEE ${SOURCES})

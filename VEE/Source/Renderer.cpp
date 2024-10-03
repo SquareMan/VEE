@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "Platform/Filesystem.hpp"
+#include "Renderer/Shader.hpp"
 
 #include <Renderer/VkUtil.hpp>
 #include <set>
@@ -256,7 +257,6 @@ Renderer::Renderer(const Platform::Window& window)
     };
     VK_CHECK(vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass));
 
-
     // framebuffer
     auto [width, height] = window.get_size();
     VkFramebufferCreateInfo framebuffer_info = {
@@ -274,161 +274,43 @@ Renderer::Renderer(const Platform::Window& window)
         VK_CHECK(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffers[i]));
     }
 
-    // pipeline layout
-    const VkPushConstantRange push_constants[]{{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-        .offset = 0,
-        .size = 4,
-    }};
-    VkPipelineLayoutCreateInfo pipeline_layout_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges = push_constants,
-    };
-    VK_CHECK(vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout))
-
-    // pipeline
+    // pipelines
     VkPipelineCacheCreateInfo pipeline_cache_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
     };
+    VkPipelineCache pipeline_cache;
     vkCreatePipelineCache(device, &pipeline_cache_info, nullptr, &pipeline_cache);
 
-    VkShaderModule triangle_vertex_shader;
-    VkShaderModule square_vertex_shader;
-    VkShaderModule fragment_shader;
-
-    std::vector<char> triangle_vert_shader =
+    std::vector<char> triangle_vertex_shader_code =
         Platform::Filesystem::read_binary_file("Resources/triangle.vert.spv");
-    std::vector<char> square_vert_shader =
+    std::vector<char> square_vertex_shader_code =
         Platform::Filesystem::read_binary_file("Resources/square.vert.spv");
-    std::vector<char> frag_shader =
+    std::vector<char> frag_shader_code =
         Platform::Filesystem::read_binary_file("Resources/color.frag.spv");
-    VkShaderModuleCreateInfo triangle_vertex_shader_info = {
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = triangle_vert_shader.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(triangle_vert_shader.data()),
+
+    Vulkan::Shader fragment_shader = {device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader_code};
+    Vulkan::Shader triangle_vertex_shader = {
+        device, VK_SHADER_STAGE_VERTEX_BIT, triangle_vertex_shader_code
+    };
+    Vulkan::Shader square_vertex_shader = {
+        device, VK_SHADER_STAGE_VERTEX_BIT, square_vertex_shader_code
     };
 
-    VkShaderModuleCreateInfo square_vertex_shader_info = {
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = square_vert_shader.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(square_vert_shader.data()),
-    };
+    // clang-format off
+    triangle_pipeline = Vulkan::PipelineBuilder()
+        .with_cache(pipeline_cache)
+        .with_renderpass(render_pass)
+        .with_shader(fragment_shader)
+        .with_shader(triangle_vertex_shader)
+        .build(device);
 
-    VkShaderModuleCreateInfo fragment_shader_info = {
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = frag_shader.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(frag_shader.data()),
-    };
-
-    VK_CHECK(
-        vkCreateShaderModule(device, &triangle_vertex_shader_info, nullptr, &triangle_vertex_shader)
-    );
-    VK_CHECK(
-        vkCreateShaderModule(device, &square_vertex_shader_info, nullptr, &square_vertex_shader)
-    );
-    VK_CHECK(vkCreateShaderModule(device, &fragment_shader_info, nullptr, &fragment_shader));
-
-    VkPipelineShaderStageCreateInfo pipeline_shader_stage_infos[]{
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = triangle_vertex_shader,
-            .pName = "main",
-        },
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = fragment_shader,
-            .pName = "main",
-        },
-    };
-
-    VkPipelineColorBlendAttachmentState color_blend_attachment{
-        .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
-                          | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
-
-    VkPipelineColorBlendStateCreateInfo color_blend_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .attachmentCount = 1,
-        .pAttachments = &color_blend_attachment,
-    };
-
-    VkPipelineVertexInputStateCreateInfo vertex_input_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-    };
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .polygonMode = VK_POLYGON_MODE_FILL,
-        .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
-        .lineWidth = 1.0f,
-    };
-
-    VkRect2D scissor{};
-    VkViewport viewport{};
-
-    VkPipelineViewportStateCreateInfo viewport_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .viewportCount = 1,
-        .pViewports = &viewport,
-        .scissorCount = 1,
-        .pScissors = &scissor,
-    };
-
-    VkDynamicState dynamic_states[] = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamic_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount = static_cast<uint32_t>(std::size(dynamic_states)),
-        .pDynamicStates = dynamic_states,
-    };
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
-    };
-
-    VkPipelineMultisampleStateCreateInfo multisample_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-    };
-
-    VkGraphicsPipelineCreateInfo pipeline_info = {
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .stageCount = static_cast<uint32_t>(std::size(pipeline_shader_stage_infos)),
-        .pStages = pipeline_shader_stage_infos,
-        .pVertexInputState = &vertex_input_state_info,
-        .pInputAssemblyState = &input_assembly_state_info,
-        .pViewportState = &viewport_state_info,
-        .pRasterizationState = &rasterization_state_info,
-        .pMultisampleState = &multisample_state_info,
-        .pColorBlendState = &color_blend_state_info,
-        .pDynamicState = &dynamic_state_info,
-        .layout = pipeline_layout,
-        .renderPass = render_pass,
-    };
-    VK_CHECK(vkCreateGraphicsPipelines(
-        device, pipeline_cache, 1, &pipeline_info, nullptr, &triangle_pipeline
-    ))
-
-    // Kinda messy, replace the triangle vertex shader with the square vertex shader and make
-    // another pipeline
-    pipeline_shader_stage_infos[0] = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_VERTEX_BIT,
-        .module = square_vertex_shader,
-        .pName = "main",
-    };
-    VK_CHECK(vkCreateGraphicsPipelines(
-        device, pipeline_cache, 1, &pipeline_info, nullptr, &square_pipeline
-    ))
+    square_pipeline = Vulkan::PipelineBuilder()
+        .with_cache(pipeline_cache)
+        .with_renderpass(render_pass)
+        .with_shader(fragment_shader)
+        .with_shader(square_vertex_shader)
+        .build(device);
+    // clang-format on
 
 
     // command buffers
@@ -488,8 +370,16 @@ void Renderer::Render() {
     auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
     auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
     float data = time_ms.count() / 1000.0f;
+
+    // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter which
+    // we use here.
     vkCmdPushConstants(
-        command_buffer.cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &data
+        command_buffer.cmd,
+        triangle_pipeline.layout,
+        VK_SHADER_STAGE_VERTEX_BIT,
+        0,
+        sizeof(float),
+        &data
     );
 
     VkClearColorValue color = {0.3f, 0.77f, 0.5f, 1.0f};
@@ -520,10 +410,12 @@ void Renderer::Render() {
     vkCmdSetScissor(command_buffer.cmd, 0, 1, &scissor);
     vkCmdSetViewport(command_buffer.cmd, 0, 1, &viewport);
 
-    vkCmdBindPipeline(command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, square_pipeline);
+    vkCmdBindPipeline(command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, square_pipeline.pipeline);
     vkCmdDraw(command_buffer.cmd, 4, 1, 0, 0);
 
-    vkCmdBindPipeline(command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline);
+    vkCmdBindPipeline(
+        command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline.pipeline
+    );
     vkCmdDraw(command_buffer.cmd, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(command_buffer.cmd);
