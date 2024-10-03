@@ -6,6 +6,9 @@
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define VK_NO_PROTOTYPES
+#include "RingBuffer.hpp"
+
+
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -13,6 +16,13 @@
 #include "Renderer/Instance.hpp"
 
 #include <optional>
+
+struct CmdBuffer {
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    VkFence fence = VK_NULL_HANDLE;
+    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
+    VkSemaphore submit_semaphore = VK_NULL_HANDLE;
+};
 
 namespace Vee {
 class Renderer final {
@@ -42,10 +52,6 @@ private:
     VkPipeline triangle_pipeline = VK_NULL_HANDLE;
     VkPipeline square_pipeline = VK_NULL_HANDLE;
 
-    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
-    VkSemaphore submit_semaphore = VK_NULL_HANDLE;
-
-    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    VkFence submit_fence = VK_NULL_HANDLE;
+    RingBuffer<CmdBuffer, 3> command_buffers;
 };
 } // namespace Vee

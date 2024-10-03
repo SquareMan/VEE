@@ -39,6 +39,8 @@ set(SOURCES
         VEE/Source/Renderer/VkUtil.hpp
         VEE/Source/Renderer/Instance.cpp
         VEE/Source/Renderer/Instance.hpp
+        VEE/Source/RingBuffer.cpp
+        VEE/Source/RingBuffer.hpp
 )
 
 add_executable(VEE ${SOURCES})

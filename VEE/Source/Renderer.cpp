@@ -227,15 +227,6 @@ Renderer::Renderer(const Platform::Window& window)
     }
 
 
-    acquire_semaphore = VK_NULL_HANDLE;
-    submit_semaphore = VK_NULL_HANDLE;
-    VkSemaphoreCreateInfo semaphore_info = {
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-    };
-    VK_CHECK(vkCreateSemaphore(device, &semaphore_info, nullptr, &acquire_semaphore))
-    VK_CHECK(vkCreateSemaphore(device, &semaphore_info, nullptr, &submit_semaphore))
-
-
     // Renderpass
     const VkAttachmentDescription attachments[] = {{
         .format = format,
@@ -441,48 +432,65 @@ Renderer::Renderer(const Platform::Window& window)
     ))
 
 
-    // command buffer+fence
+    // command buffers
     VkFenceCreateInfo fence_info = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT,
     };
-    VK_CHECK(vkCreateFence(device, &fence_info, nullptr, &submit_fence));
-
+    VkSemaphoreCreateInfo semaphore_info = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+    };
     const VkCommandBufferAllocateInfo command_buffer_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = command_pool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = 1,
     };
-    VK_CHECK(vkAllocateCommandBuffers(device, &command_buffer_info, &command_buffer));
+
+    for (CmdBuffer& command_buffer : command_buffers.buffer) {
+        VK_CHECK(vkCreateFence(device, &fence_info, nullptr, &command_buffer.fence));
+        VK_CHECK(
+            vkCreateSemaphore(device, &semaphore_info, nullptr, &command_buffer.acquire_semaphore)
+        )
+        VK_CHECK(
+            vkCreateSemaphore(device, &semaphore_info, nullptr, &command_buffer.submit_semaphore)
+        )
+        VK_CHECK(vkAllocateCommandBuffers(device, &command_buffer_info, &command_buffer.cmd));
+    }
 }
 
 Renderer::~Renderer() {
-    // TODO
-    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+    // TODO: Cleanup everything
+    VK_CHECK(vkDeviceWaitIdle(device))
+    for (CmdBuffer& command_buffer : command_buffers.buffer) {
+        vkFreeCommandBuffers(device, command_pool, 1, &command_buffer.cmd);
+        vkDestroyFence(device, command_buffer.fence, nullptr);
+    }
 }
 
 void Renderer::Render() {
-    VK_CHECK(vkWaitForFences(device, 1, &submit_fence, VK_TRUE, UINT64_MAX))
-    VK_CHECK(vkResetFences(device, 1, &submit_fence))
+    CmdBuffer& command_buffer = command_buffers.get_next();
     uint32_t image_index = 0;
-    VK_CHECK(
-        vkAcquireNextImageKHR(device, swapchain, 0, acquire_semaphore, VK_NULL_HANDLE, &image_index)
-    );
 
+    VK_CHECK(vkWaitForFences(device, 1, &command_buffer.fence, VK_TRUE, UINT64_MAX))
+    VK_CHECK(vkResetFences(device, 1, &command_buffer.fence))
+    VK_CHECK(vkAcquireNextImageKHR(
+        device, swapchain, 0, command_buffer.acquire_semaphore, VK_NULL_HANDLE, &image_index
+    ));
 
     VkCommandBufferBeginInfo cbbi = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
     };
-    VK_CHECK(vkResetCommandBuffer(command_buffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT))
-    VK_CHECK(vkBeginCommandBuffer(command_buffer, &cbbi))
+    VK_CHECK(vkResetCommandBuffer(command_buffer.cmd, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT)
+    )
+    VK_CHECK(vkBeginCommandBuffer(command_buffer.cmd, &cbbi))
 
     auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
     auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
     float data = time_ms.count() / 1000.0f;
     vkCmdPushConstants(
-        command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &data
+        command_buffer.cmd, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &data
     );
 
     VkClearColorValue color = {0.3f, 0.77f, 0.5f, 1.0f};
@@ -501,7 +509,7 @@ void Renderer::Render() {
         .pClearValues = &clear_value,
     };
 
-    vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(command_buffer.cmd, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     const VkRect2D scissor = {.extent = {width, height}};
     const VkViewport viewport = {
@@ -510,43 +518,41 @@ void Renderer::Render() {
         .maxDepth = 1.0f,
     };
 
-    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(command_buffer.cmd, 0, 1, &scissor);
+    vkCmdSetViewport(command_buffer.cmd, 0, 1, &viewport);
 
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, square_pipeline);
-    vkCmdDraw(command_buffer, 4, 1, 0, 0);
+    vkCmdBindPipeline(command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, square_pipeline);
+    vkCmdDraw(command_buffer.cmd, 4, 1, 0, 0);
 
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline);
-    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+    vkCmdBindPipeline(command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline);
+    vkCmdDraw(command_buffer.cmd, 3, 1, 0, 0);
 
-    vkCmdEndRenderPass(command_buffer);
+    vkCmdEndRenderPass(command_buffer.cmd);
 
-    VK_CHECK(vkEndCommandBuffer(command_buffer))
+    VK_CHECK(vkEndCommandBuffer(command_buffer.cmd))
 
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     const VkSubmitInfo submit_info = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &acquire_semaphore,
+        .pWaitSemaphores = &command_buffer.acquire_semaphore,
         .pWaitDstStageMask = &wait_stage,
         .commandBufferCount = 1,
-        .pCommandBuffers = &command_buffer,
+        .pCommandBuffers = &command_buffer.cmd,
         .signalSemaphoreCount = 1,
-        .pSignalSemaphores = &submit_semaphore,
+        .pSignalSemaphores = &command_buffer.submit_semaphore,
     };
-    VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, submit_fence))
+    VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, command_buffer.fence))
 
 
     VkPresentInfoKHR pi = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &submit_semaphore,
+        .pWaitSemaphores = &command_buffer.submit_semaphore,
         .swapchainCount = 1,
         .pSwapchains = &swapchain,
         .pImageIndices = &image_index,
     };
     VK_CHECK(vkQueuePresentKHR(queue, &pi))
-
-    // VK_CHECK(vkDeviceWaitIdle(device));
 }
 } // namespace Vee
