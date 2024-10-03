@@ -343,10 +343,14 @@ Renderer::Renderer(const Platform::Window& window)
 Renderer::~Renderer() {
     // TODO: Cleanup everything
     VK_CHECK(vkDeviceWaitIdle(device))
+
+
     for (CmdBuffer& command_buffer : command_buffers.buffer) {
-        vkFreeCommandBuffers(device, command_pool, 1, &command_buffer.cmd);
         vkDestroyFence(device, command_buffer.fence, nullptr);
+        vkDestroySemaphore(device, command_buffer.acquire_semaphore, nullptr);
+        vkDestroySemaphore(device, command_buffer.submit_semaphore, nullptr);
     }
+    vkDestroyCommandPool(device, command_pool, nullptr);
 }
 
 void Renderer::Render() {
