@@ -22,6 +22,7 @@
 #include "Platform/Filesystem.hpp"
 
 #include <Renderer/VkUtil.hpp>
+#include <set>
 
 namespace Vee {
 Renderer::Renderer(const Platform::Window& window)
@@ -91,24 +92,22 @@ Renderer::Renderer(const Platform::Window& window)
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queue_family_count, queue_families.data());
 
-    uint32_t graphics_family_index = UINT32_MAX;
-    uint32_t presentation_family_index = UINT32_MAX;
+    std::optional<uint32_t> graphics_family_index;
+    std::optional<uint32_t> presentation_family_index;
 
     for (uint32_t idx = 0; idx < queue_families.size(); ++idx) {
-        if (graphics_family_index == UINT32_MAX
+        if (!graphics_family_index.has_value()
             && queue_families[idx].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             graphics_family_index = idx;
         }
 
-#if defined(VK_KHR_surface)
-        if (presentation_family_index == UINT32_MAX && surface != VK_NULL_HANDLE) {
+        if (!presentation_family_index.has_value()) {
             VkBool32 supports_present = VK_FALSE;
             VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(gpu, idx, surface, &supports_present))
             if (supports_present == VK_TRUE) {
                 presentation_family_index = idx;
             }
         }
-#endif
     }
 
     uint32_t property_count = 0;
@@ -127,21 +126,21 @@ Renderer::Renderer(const Platform::Window& window)
     std::vector<const char*> enabled_property_names =
         Vulkan::filter_extensions(available_property_names, requested_property_names);
 
+    assert(graphics_family_index.has_value());
+    assert(presentation_family_index.has_value());
+
+    std::set<uint32_t> queue_family_indices({*graphics_family_index, *presentation_family_index});
     const float priority = 1.0f;
-    std::vector<VkDeviceQueueCreateInfo> qcis = {
-        {
+    std::vector<VkDeviceQueueCreateInfo> qcis;
+    qcis.reserve(queue_family_indices.size());
+    for (uint32_t unique_index : queue_family_indices) {
+        qcis.push_back({
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = graphics_family_index,
+            .queueFamilyIndex = unique_index,
             .queueCount = 1,
             .pQueuePriorities = &priority,
-        },
-        // {
-        //     .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        //     .queueFamilyIndex = presentation_family_index,
-        //     .queueCount = 1,
-        //     .pQueuePriorities = &priority,
-        // },
-    };
+        });
+    }
 
     const VkDeviceCreateInfo dci = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -155,14 +154,14 @@ Renderer::Renderer(const Platform::Window& window)
     vkCreateDevice(gpu, &dci, nullptr, &device);
     volkLoadDevice(device);
 
-    queue = VK_NULL_HANDLE;
-    vkGetDeviceQueue(device, graphics_family_index, 0, &queue);
+    vkGetDeviceQueue(device, *graphics_family_index, 0, &graphics_queue);
+    vkGetDeviceQueue(device, *presentation_family_index, 0, &presentation_queue);
 
 
     const VkCommandPoolCreateInfo cpci = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = graphics_family_index,
+        .queueFamilyIndex = *graphics_family_index,
     };
 
     command_pool = VK_NULL_HANDLE;
@@ -542,7 +541,7 @@ void Renderer::Render() {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = &command_buffer.submit_semaphore,
     };
-    VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, command_buffer.fence))
+    VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, command_buffer.fence))
 
 
     VkPresentInfoKHR pi = {
@@ -553,6 +552,6 @@ void Renderer::Render() {
         .pSwapchains = &swapchain,
         .pImageIndices = &image_index,
     };
-    VK_CHECK(vkQueuePresentKHR(queue, &pi))
+    VK_CHECK(vkQueuePresentKHR(presentation_queue, &pi))
 }
 } // namespace Vee
