@@ -26,6 +26,7 @@ struct CmdBuffer {
 };
 
 namespace Vee {
+struct Vertex;
 class Renderer final {
 public:
     explicit Renderer(const Platform::Window& Window);
@@ -53,5 +54,10 @@ private:
     std::vector<VkFramebuffer> framebuffers;
 
     RingBuffer<CmdBuffer, 3> command_buffers;
+
+    VkBuffer staging_buffer = VK_NULL_HANDLE;
+    VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
+    VkBuffer vertex_buffer = VK_NULL_HANDLE;
+    VkDeviceMemory vertex_buffer_memory = VK_NULL_HANDLE;
 };
 } // namespace Vee

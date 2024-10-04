@@ -1,26 +1,15 @@
 #version 460
 
-layout (location = 0) out vec4 outColor;
 layout (push_constant) uniform Time
 {
     float time;
 };
+layout (location = 0) in vec2 inPosition;
+layout (location = 1) in vec3 inColor;
 
-const float PI = 3.1415926535897932384626433832795;
-const float third = 2*PI/3;
-float positions[3] = float[](
-2*third,
-third,
-0
-);
-
-vec3 colors[3] = vec3[](
-vec3(1.0, 0.0, 0.0),
-vec3(0.0, 1.0, 0.0),
-vec3(0.0, 0.0, 1.0)
-);
+layout (location = 0) out vec4 outColor;
 
 void main() {
-    gl_Position = vec4(sin(positions[gl_VertexIndex] + time) * .5, cos(positions[gl_VertexIndex] + time) * .5, 0.0, 1.0);
-    outColor = vec4(colors[gl_VertexIndex], 1.0);
+    gl_Position = vec4(sin(inPosition.x + time) * .5, cos(inPosition.x + time) * .5, 0.0, 1.0);
+    outColor = vec4(inColor, 1.0);
 }

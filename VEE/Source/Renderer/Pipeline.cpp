@@ -5,6 +5,7 @@
 #include "Pipeline.hpp"
 
 #include "Shader.hpp"
+#include "Vertex.hpp"
 #include "VkUtil.hpp"
 
 #include <iostream>
@@ -40,8 +41,14 @@ Vulkan::Pipeline Vulkan::PipelineBuilder::build(VkDevice device) {
         .pAttachments = &color_blend_attachment,
     };
 
+    auto binding_description = Vertex::binding_description();
+    auto attribute_descriptions = Vertex::attribute_descriptions();
     VkPipelineVertexInputStateCreateInfo vertex_input_state_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &binding_description,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
+        .pVertexAttributeDescriptions = attribute_descriptions.data(),
     };
 
     VkPipelineRasterizationStateCreateInfo rasterization_state_info{

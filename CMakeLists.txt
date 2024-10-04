@@ -24,7 +24,13 @@ endif ()
 add_subdirectory(${glfw_SOURCE_DIR})
 include_directories(${glfw_SOURCE_DIR}/include)
 
-link_libraries(glfw)
+FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 1.0.1
+)
+FetchContent_MakeAvailable(glm)
+
 
 set(SOURCES
         VEE/Source/VEE.cpp
@@ -45,10 +51,12 @@ set(SOURCES
         VEE/Source/Renderer/Pipeline.hpp
         VEE/Source/Renderer/Shader.cpp
         VEE/Source/Renderer/Shader.hpp
+        VEE/Source/Vertex.hpp
 )
 
 add_executable(VEE ${SOURCES})
 target_include_directories(VEE PRIVATE VEE/Source/)
+target_link_libraries(VEE PRIVATE glfw glm::glm)
 
 # Compile Shaders to spv
 set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VEE/Resources)

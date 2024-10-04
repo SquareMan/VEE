@@ -7,6 +7,9 @@
 #include "VeeCore.hpp"
 
 #define VOLK_IMPLEMENTATION
+#include "Vertex.hpp"
+
+
 #include <Volk/volk.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_win32.h>
@@ -17,11 +20,13 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <numbers>
 #include <vector>
 
 #include "Platform/Filesystem.hpp"
 #include "Renderer/Shader.hpp"
 
+#include <glm/common.hpp>
 #include <Renderer/VkUtil.hpp>
 #include <set>
 
@@ -338,12 +343,104 @@ Renderer::Renderer(const Platform::Window& window)
         )
         VK_CHECK(vkAllocateCommandBuffers(device, &command_buffer_info, &command_buffer.cmd));
     }
+
+
+    // vertex and staging buffers
+    const Vertex vertices[] = {
+        {{4.0f * std::numbers::pi_v<float> / 3.0f, 4.0f * std::numbers::pi_v<float> / 3.0f},
+         {1.0f, 0.0f, 0.0f}},
+        {{2.0f * std::numbers::pi_v<float> / 3.0f, 2.0f * std::numbers::pi_v<float> / 3.0f},
+         {0.0f, 1.0f, 1.0f}},
+        {{0, 0}, {0.0f, 0.0f, 1.0f}},
+    };
+    VkBufferCreateInfo buffer_info = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = sizeof(Vertex) * std::size(vertices),
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+    };
+    VK_CHECK(vkCreateBuffer(device, &buffer_info, nullptr, &staging_buffer));
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device, staging_buffer, &memory_requirements);
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(gpu, &memory_properties);
+
+    constexpr uint32_t required_properties =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    std::optional<uint32_t> memory_type_index;
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+        if (memory_requirements.memoryTypeBits & (1 << i)
+            && (memory_properties.memoryTypes[i].propertyFlags & required_properties)
+                   == required_properties) {
+            memory_type_index = i;
+        }
+    }
+    assert(memory_type_index != std::nullopt);
+
+    VkMemoryAllocateInfo allocate_info = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = memory_requirements.size,
+        .memoryTypeIndex = *memory_type_index,
+    };
+    VK_CHECK(vkAllocateMemory(device, &allocate_info, nullptr, &staging_buffer_memory));
+    VK_CHECK(vkBindBufferMemory(device, staging_buffer, staging_buffer_memory, 0));
+    Vertex* mapped_staging_buffer;
+    VK_CHECK(vkMapMemory(
+        device,
+        staging_buffer_memory,
+        0,
+        VK_WHOLE_SIZE,
+        0,
+        reinterpret_cast<void**>(&mapped_staging_buffer)
+    ));
+    std::memcpy(mapped_staging_buffer, vertices, buffer_info.size);
+
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    VK_CHECK(vkCreateBuffer(device, &buffer_info, nullptr, &vertex_buffer));
+
+    vkGetBufferMemoryRequirements(device, vertex_buffer, &memory_requirements);
+    memory_type_index.reset();
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+        if (memory_requirements.memoryTypeBits & (1 << i)
+            && (memory_properties.memoryTypes[i].propertyFlags & required_properties)
+                   == required_properties) {
+            memory_type_index = i;
+        }
+    }
+    assert(memory_type_index != std::nullopt);
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = *memory_type_index;
+
+    VK_CHECK(vkAllocateMemory(device, &allocate_info, nullptr, &vertex_buffer_memory));
+    VK_CHECK(vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0));
+    {
+        CmdBuffer& cmd_buffer = command_buffers.buffer[0];
+
+        VK_CHECK(vkResetFences(device, 1, &cmd_buffer.fence));
+        VkCommandBufferBeginInfo begin_info = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        };
+        VK_CHECK(vkBeginCommandBuffer(cmd_buffer.cmd, &begin_info));
+        VkBufferCopy region = {
+            .size = buffer_info.size,
+        };
+        vkCmdCopyBuffer(cmd_buffer.cmd, staging_buffer, vertex_buffer, 1, &region);
+        VK_CHECK(vkEndCommandBuffer(cmd_buffer.cmd));
+
+        VkSubmitInfo submit_info = {
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &cmd_buffer.cmd,
+        };
+        VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, cmd_buffer.fence));
+    }
 }
 
 Renderer::~Renderer() {
     // TODO: Cleanup everything
     VK_CHECK(vkDeviceWaitIdle(device))
-
 
     for (CmdBuffer& command_buffer : command_buffers.buffer) {
         vkDestroyFence(device, command_buffer.fence, nullptr);
@@ -351,6 +448,11 @@ Renderer::~Renderer() {
         vkDestroySemaphore(device, command_buffer.submit_semaphore, nullptr);
     }
     vkDestroyCommandPool(device, command_pool, nullptr);
+
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr);
+    vkDestroyBuffer(device, vertex_buffer, nullptr);
+    vkFreeMemory(device, vertex_buffer_memory, nullptr);
 }
 
 void Renderer::Render() {
@@ -396,7 +498,6 @@ void Renderer::Render() {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = render_pass,
         .framebuffer = framebuffers[image_index],
-        // TODO: Get this from platform layer
         .renderArea = {.extent = {width, height}},
         .clearValueCount = 1,
         .pClearValues = &clear_value,
@@ -415,11 +516,14 @@ void Renderer::Render() {
     vkCmdSetViewport(command_buffer.cmd, 0, 1, &viewport);
 
     vkCmdBindPipeline(command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, square_pipeline.pipeline);
+    constexpr VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(command_buffer.cmd, 0, 1, &vertex_buffer, offsets);
     vkCmdDraw(command_buffer.cmd, 4, 1, 0, 0);
 
     vkCmdBindPipeline(
         command_buffer.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline.pipeline
     );
+    vkCmdBindVertexBuffers(command_buffer.cmd, 0, 1, &vertex_buffer, offsets);
     vkCmdDraw(command_buffer.cmd, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(command_buffer.cmd);
