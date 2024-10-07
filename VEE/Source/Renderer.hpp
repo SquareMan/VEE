@@ -53,6 +53,7 @@ private:
     vk::Buffer staging_buffer;
     vk::DeviceMemory staging_buffer_memory;
     vk::Buffer vertex_buffer;
+    vk::Buffer index_buffer;
     vk::DeviceMemory vertex_buffer_memory;
 };
 } // namespace Vee

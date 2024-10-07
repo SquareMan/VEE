@@ -261,59 +261,98 @@ Renderer::Renderer(const Platform::Window& window)
          {0.0f, 1.0f, 1.0f}},
         {{0, 0}, {0.0f, 0.0f, 1.0f}},
     };
-    vk::BufferCreateInfo buffer_info(
-        {}, sizeof(vertices), vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive
-    );
-    staging_buffer = device.createBuffer(buffer_info).value;
-
-    vk::MemoryRequirements memory_requirements = device.getBufferMemoryRequirements(staging_buffer);
+    const uint16_t indices[] = {0, 1, 2};
     vk::PhysicalDeviceMemoryProperties memory_properties = gpu.getMemoryProperties();
+    {
+        vk::BufferCreateInfo buffer_info(
+            {},
+            sizeof(vertices) + sizeof(indices),
+            vk::BufferUsageFlagBits::eTransferSrc,
+            vk::SharingMode::eExclusive
+        );
+        staging_buffer = device.createBuffer(buffer_info).value;
 
-    constexpr vk::MemoryPropertyFlags required_properties =
-        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-    std::optional<uint32_t> memory_type_index;
-    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-        if (memory_requirements.memoryTypeBits & (1 << i)
-            && (memory_properties.memoryTypes[i].propertyFlags & required_properties)
-                   == required_properties) {
-            memory_type_index = i;
+        vk::MemoryRequirements memory_requirements =
+            device.getBufferMemoryRequirements(staging_buffer);
+
+        constexpr vk::MemoryPropertyFlags required_properties =
+            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        std::optional<uint32_t> memory_type_index;
+        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+            if (memory_requirements.memoryTypeBits & (1 << i)
+                && (memory_properties.memoryTypes[i].propertyFlags & required_properties)
+                       == required_properties) {
+                memory_type_index = i;
+                break;
+            }
         }
+        assert(memory_type_index != std::nullopt);
+
+        vk::MemoryAllocateInfo allocate_info(memory_requirements.size, *memory_type_index);
+        staging_buffer_memory = device.allocateMemory(allocate_info).value;
+        std::ignore = device.bindBufferMemory(staging_buffer, staging_buffer_memory, 0);
+        void* mapped_staging_buffer = static_cast<uint16_t*>(
+            device.mapMemory(staging_buffer_memory, 0, VK_WHOLE_SIZE, {}).value
+        );
+        Vertex* mapped_vertex_buffer = static_cast<Vertex*>(mapped_staging_buffer);
+        uint16_t* mapped_index_buffer = reinterpret_cast<uint16_t*>(
+            reinterpret_cast<size_t>(mapped_staging_buffer) + sizeof(vertices)
+        );
+        std::memcpy(mapped_vertex_buffer, vertices, sizeof(vertices));
+        std::memcpy(mapped_index_buffer, indices, sizeof(indices));
     }
-    assert(memory_type_index != std::nullopt);
 
-    vk::MemoryAllocateInfo allocate_info(memory_requirements.size, *memory_type_index);
-    staging_buffer_memory = device.allocateMemory(allocate_info).value;
-    std::ignore = device.bindBufferMemory(staging_buffer, staging_buffer_memory, 0);
-    auto mapped_staging_buffer =
-        static_cast<Vertex*>(device.mapMemory(staging_buffer_memory, 0, vk::WholeSize, {}).value);
-    std::memcpy(mapped_staging_buffer, vertices, buffer_info.size);
+    {
+        vk::BufferCreateInfo buffer_info = {
+            {},
+            sizeof(vertices) + sizeof(indices),
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+            vk::SharingMode::eExclusive
+        };
+        vertex_buffer = device.createBuffer(buffer_info).value;
 
-    buffer_info.usage =
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
-    vertex_buffer = device.createBuffer(buffer_info).value;
+        buffer_info.setUsage(
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
+        );
+        index_buffer = device.createBuffer(buffer_info).value;
 
-    memory_requirements = device.getBufferMemoryRequirements(vertex_buffer);
-    memory_type_index.reset();
-    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-        if (memory_requirements.memoryTypeBits & (1 << i)
-            && (memory_properties.memoryTypes[i].propertyFlags & required_properties)
-                   == required_properties) {
-            memory_type_index = i;
+        vk::MemoryRequirements vertex_requirements =
+            device.getBufferMemoryRequirements(vertex_buffer);
+        vk::MemoryRequirements index_requirements =
+            device.getBufferMemoryRequirements(index_buffer);
+        constexpr vk::MemoryPropertyFlags required_properties =
+            vk::MemoryPropertyFlagBits::eDeviceLocal;
+        std::optional<uint32_t> memory_type_index;
+        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+            if (vertex_requirements.memoryTypeBits & (1 << i)
+                && index_requirements.memoryTypeBits & (1 << i)
+                && (memory_properties.memoryTypes[i].propertyFlags & required_properties)
+                       == required_properties) {
+                memory_type_index = i;
+                break;
+            }
         }
-    }
-    assert(memory_type_index != std::nullopt);
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = *memory_type_index;
+        assert(memory_type_index != std::nullopt);
+        vk::MemoryAllocateInfo allocation_info = {
+            index_requirements.size + vertex_requirements.size,
+            *memory_type_index,
+        };
 
-    vertex_buffer_memory = device.allocateMemory(allocate_info).value;
-    std::ignore = device.bindBufferMemory(vertex_buffer, vertex_buffer_memory, 0);
+        vertex_buffer_memory = device.allocateMemory(allocation_info).value;
+        std::ignore = device.bindBufferMemory(vertex_buffer, vertex_buffer_memory, 0);
+        std::ignore = device.bindBufferMemory(index_buffer, vertex_buffer_memory, sizeof(vertices));
+    }
+
+    // Copy from staging to final buffers
     {
         CmdBuffer& cmd_buffer = command_buffers.buffer[0];
 
         std::ignore = device.resetFences(cmd_buffer.fence);
         std::ignore = cmd_buffer.cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-        vk::BufferCopy region(0, 0, buffer_info.size);
-        cmd_buffer.cmd.copyBuffer(staging_buffer, vertex_buffer, region);
+        cmd_buffer.cmd.copyBuffer(staging_buffer, vertex_buffer, {{0, 0, sizeof(vertices)}});
+        cmd_buffer.cmd.copyBuffer(
+            staging_buffer, index_buffer, {{sizeof(vertices), 0, sizeof(indices)}}
+        );
         std::ignore = cmd_buffer.cmd.end();
 
         vk::SubmitInfo submit_info({}, {}, cmd_buffer.cmd);
@@ -378,13 +417,15 @@ void Renderer::Render() {
 
         command_buffer.cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
         command_buffer.cmd.bindVertexBuffers(0, vertex_buffer, {{0}});
+        command_buffer.cmd.bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint16);
         command_buffer.cmd.draw(4, 1, 0, 0);
 
         command_buffer.cmd.bindPipeline(
             vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline
         );
         command_buffer.cmd.bindVertexBuffers(0, vertex_buffer, {{0}});
-        command_buffer.cmd.draw(3, 1, 0, 0);
+        command_buffer.cmd.bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint16);
+        command_buffer.cmd.drawIndexed(3, 1, 0, 0, 0);
     }
     command_buffer.cmd.endRenderPass();
     std::ignore = command_buffer.cmd.end();
