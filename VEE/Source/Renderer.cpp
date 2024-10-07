@@ -260,8 +260,13 @@ Renderer::Renderer(const Platform::Window& window)
         {{2.0f * std::numbers::pi_v<float> / 3.0f, 2.0f * std::numbers::pi_v<float> / 3.0f},
          {0.0f, 1.0f, 1.0f}},
         {{0, 0}, {0.0f, 0.0f, 1.0f}},
+        {{-0.25f, -0.25f}, {1.0f, 0.0f, 0.0f}},
+        {{0.25f, -0.25f}, {0.0f, 1.0f, 0.0f}},
+        {{0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}},
+        {{-0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}},
+
     };
-    const uint16_t indices[] = {0, 1, 2};
+    const uint16_t indices[] = {0, 1, 2, 3, 4, 5, 6};
     vk::PhysicalDeviceMemoryProperties memory_properties = gpu.getMemoryProperties();
     {
         vk::BufferCreateInfo buffer_info(
@@ -418,7 +423,7 @@ void Renderer::Render() {
         command_buffer.cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
         command_buffer.cmd.bindVertexBuffers(0, vertex_buffer, {{0}});
         command_buffer.cmd.bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint16);
-        command_buffer.cmd.draw(4, 1, 0, 0);
+        command_buffer.cmd.drawIndexed(4, 1, 3, 0, 0);
 
         command_buffer.cmd.bindPipeline(
             vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline
