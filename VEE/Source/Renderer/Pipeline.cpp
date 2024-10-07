@@ -8,125 +8,92 @@
 #include "Vertex.hpp"
 #include "VkUtil.hpp"
 
-#include <iostream>
-#include <volk/volk.h>
-#include <vulkan/vk_enum_string_helper.h>
-
 namespace Vee {
-Vulkan::Pipeline Vulkan::PipelineBuilder::build(VkDevice device) {
+Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
     // build layout
     // TODO: Configurable layouts
-    const VkPushConstantRange push_constants[]{{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-        .offset = 0,
-        .size = 4,
+    const vk::PushConstantRange push_constants[]{{
+        vk::ShaderStageFlagBits::eVertex,
+        0,
+        4,
     }};
-    VkPipelineLayoutCreateInfo layout_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges = push_constants,
-    };
-    VkPipelineLayout layout = VK_NULL_HANDLE;
-    VK_CHECK(vkCreatePipelineLayout(device, &layout_info, nullptr, &layout));
+    vk::PipelineLayoutCreateInfo layout_info({}, {}, push_constants);
+    VkPipelineLayout layout = device.createPipelineLayout(layout_info);
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment{
-        .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
-                          | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
+    vk::PipelineColorBlendAttachmentState color_blend_attachment;
+    color_blend_attachment.setColorWriteMask(
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+        | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+    );
 
-    VkPipelineColorBlendStateCreateInfo color_blend_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .attachmentCount = 1,
-        .pAttachments = &color_blend_attachment,
-    };
+    vk::PipelineColorBlendStateCreateInfo color_blend_state_info;
+    color_blend_state_info.setAttachments(color_blend_attachment);
 
     auto binding_description = Vertex::binding_description();
     auto attribute_descriptions = Vertex::attribute_descriptions();
-    VkPipelineVertexInputStateCreateInfo vertex_input_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 1,
-        .pVertexBindingDescriptions = &binding_description,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
-        .pVertexAttributeDescriptions = attribute_descriptions.data(),
+    vk::PipelineVertexInputStateCreateInfo vertex_input_state_info(
+        {}, binding_description, attribute_descriptions
+    );
+
+    vk::PipelineRasterizationStateCreateInfo rasterization_state_info(
+        {},
+        {},
+        {},
+        vk::PolygonMode::eFill,
+        vk::CullModeFlagBits::eBack,
+        vk::FrontFace::eClockwise,
+        {},
+        {},
+        {},
+        {},
+        1.0f
+    );
+
+    vk::Viewport viewport;
+    vk::Rect2D scissor;
+    vk::PipelineViewportStateCreateInfo viewport_state_info({}, viewport, scissor);
+
+    vk::DynamicState dynamic_states[] = {
+        vk::DynamicState::eViewport,
+        vk::DynamicState::eScissor,
     };
+    vk::PipelineDynamicStateCreateInfo dynamic_state_info({}, dynamic_states);
 
-    VkPipelineRasterizationStateCreateInfo rasterization_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .polygonMode = VK_POLYGON_MODE_FILL,
-        .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
-        .lineWidth = 1.0f,
-    };
+    vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_info(
+        {}, vk::PrimitiveTopology::eTriangleFan
+    );
+    vk::PipelineMultisampleStateCreateInfo multisample_state_info({}, vk::SampleCountFlagBits::e1);
 
-    VkRect2D scissor{};
-    VkViewport viewport{};
+    vk::GraphicsPipelineCreateInfo pipeline_info(
+        {},
+        pipeline_shader_stage_infos,
+        &vertex_input_state_info,
+        &input_assembly_state_info,
+        {},
+        &viewport_state_info,
+        &rasterization_state_info,
+        &multisample_state_info,
+        {},
+        &color_blend_state_info,
+        &dynamic_state_info,
+        layout,
+        m_renderpass
+    );
 
-    VkPipelineViewportStateCreateInfo viewport_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .viewportCount = 1,
-        .pViewports = &viewport,
-        .scissorCount = 1,
-        .pScissors = &scissor,
-    };
-
-    VkDynamicState dynamic_states[] = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamic_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount = static_cast<uint32_t>(std::size(dynamic_states)),
-        .pDynamicStates = dynamic_states,
-    };
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
-    };
-
-    VkPipelineMultisampleStateCreateInfo multisample_state_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-    };
-
-
-    VkGraphicsPipelineCreateInfo pipeline_info = {
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .stageCount = static_cast<uint32_t>(pipeline_shader_stage_infos.size()),
-        .pStages = pipeline_shader_stage_infos.data(),
-        .pVertexInputState = &vertex_input_state_info,
-        .pInputAssemblyState = &input_assembly_state_info,
-        .pViewportState = &viewport_state_info,
-        .pRasterizationState = &rasterization_state_info,
-        .pMultisampleState = &multisample_state_info,
-        .pColorBlendState = &color_blend_state_info,
-        .pDynamicState = &dynamic_state_info,
-        .layout = layout,
-        .renderPass = m_renderpass,
-    };
-
-    VkPipeline pipeline;
-    VK_CHECK(vkCreateGraphicsPipelines(device, m_cache, 1, &pipeline_info, nullptr, &pipeline));
+    vk::Pipeline pipeline = device.createGraphicsPipeline(m_cache, pipeline_info).value;
     return Pipeline{layout, pipeline};
 }
 
-Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_cache(VkPipelineCache cache) {
+Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_cache(vk::PipelineCache cache) {
     m_cache = cache;
     return *this;
 }
-Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_renderpass(VkRenderPass renderpass) {
+Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_renderpass(vk::RenderPass renderpass) {
     m_renderpass = renderpass;
     return *this;
 }
 Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_shader(const Shader& shader) {
-    const VkPipelineShaderStageCreateInfo info = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = static_cast<VkShaderStageFlagBits>(shader.m_stage),
-        .module = shader.m_module,
-        .pName = shader.entrypoint()
-    };
+    vk::PipelineShaderStageCreateInfo info({}, shader.m_stage, shader.m_module, shader.entrypoint());
     pipeline_shader_stage_infos.push_back(info);
 
     return *this;

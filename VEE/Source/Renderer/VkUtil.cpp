@@ -7,6 +7,11 @@
 #include <algorithm>
 #include <iterator>
 
+#include <vulkan/vulkan.hpp>
+
+// Implement storage for Vulkan-hpp's dynamic loader
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace Vee::Vulkan {
 std::vector<const char*> filter_extensions(
     std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions

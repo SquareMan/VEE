@@ -3,7 +3,8 @@
 //
 #pragma once
 
-#include <volk/volk.h>
+#include "VkUtil.hpp"
+
 #include <string>
 #include <vector>
 
@@ -11,14 +12,15 @@ namespace Vee::Vulkan {
 class Instance final {
 public:
     Instance(
-        VkInstance vk_instance,
+        vk::Instance vk_instance,
         std::vector<std::string>&& enabled_layers,
         std::vector<std::string>&& enabled_extensions
     );
 
     bool is_extension_enabled(const char* test_extension);
 
-    VkInstance vk_instance;
+    vk::Instance vk_instance;
+
 private:
     std::vector<std::string> enabled_layers;
     std::vector<std::string> enabled_extensions;

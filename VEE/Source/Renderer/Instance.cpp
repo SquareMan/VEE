@@ -7,12 +7,10 @@
 #include "VkUtil.hpp"
 
 #include <algorithm>
-#include <iostream>
-#include <vulkan/vk_enum_string_helper.h>
 
 namespace Vee::Vulkan {
 Instance::Instance(
-    VkInstance vk_instance,
+    vk::Instance vk_instance,
     std::vector<std::string>&& enabled_layers,
     std::vector<std::string>&& enabled_extensions
 )
@@ -31,10 +29,8 @@ bool Instance::is_extension_enabled(const char* test_extension) {
 }
 
 Instance InstanceBuilder::build() {
-    uint32_t num_layers = 0;
-    VK_CHECK(vkEnumerateInstanceLayerProperties(&num_layers, nullptr))
-    std::vector<VkLayerProperties> available_layers(num_layers);
-    VK_CHECK(vkEnumerateInstanceLayerProperties(&num_layers, available_layers.data()))
+    std::vector<vk::LayerProperties> available_layers =
+        vk::enumerateInstanceLayerProperties().value;
 
     std::vector<const char*> available_layer_names;
     std::ranges::transform(
@@ -43,12 +39,8 @@ Instance InstanceBuilder::build() {
         [](const VkLayerProperties& layer) { return layer.layerName; }
     );
 
-    uint32_t num_extensions = 0;
-    VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &num_extensions, nullptr))
-    std::vector<VkExtensionProperties> available_extensions(num_extensions);
-    VK_CHECK(vkEnumerateInstanceExtensionProperties(
-        nullptr, &num_extensions, available_extensions.data()
-    ))
+    std::vector<vk::ExtensionProperties> available_extensions =
+        vk::enumerateInstanceExtensionProperties().value;
 
     std::vector<const char*> available_extension_names;
     std::ranges::transform(
@@ -57,31 +49,26 @@ Instance InstanceBuilder::build() {
         [](const VkExtensionProperties& extension) { return extension.extensionName; }
     );
 
-    const VkApplicationInfo app_info = {
-        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-        .pApplicationName = m_application_name,
-        .applicationVersion = m_application_version,
-        .pEngineName = "VEE",
-        .apiVersion = VK_API_VERSION_1_3,
+    const vk::ApplicationInfo app_info = {
+        m_application_name, m_application_version, "VEE", VK_API_VERSION_1_3
     };
 
     std::vector<const char*> enabled_instance_layers =
         filter_extensions(available_layer_names, m_requested_layer_names);
     std::vector<const char*> enabled_instance_extensions =
         filter_extensions(available_extension_names, m_requested_extension_names);
-    const VkInstanceCreateInfo create_info = {
-        .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pApplicationInfo = &app_info,
-        .enabledLayerCount = static_cast<uint32_t>(enabled_instance_layers.size()),
-        .ppEnabledLayerNames = enabled_instance_layers.data(),
-        .enabledExtensionCount = static_cast<uint32_t>(enabled_instance_extensions.size()),
-        .ppEnabledExtensionNames = enabled_instance_extensions.data(),
-    };
 
-    VkInstance instance = VK_NULL_HANDLE;
-    VK_CHECK(vkCreateInstance(&create_info, nullptr, &instance))
-    volkLoadInstance(instance);
-
+    vk::Instance instance = vk::createInstance(
+                                {
+                                    {},
+                                    &app_info,
+                                    enabled_instance_layers,
+                                    enabled_instance_extensions,
+                                },
+                                nullptr
+    )
+                                .value;
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
     std::vector<std::string> enabled_layers;
     std::vector<std::string> enabled_extensions;

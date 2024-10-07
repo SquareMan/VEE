@@ -4,18 +4,13 @@
 
 #pragma once
 
+#define VK_USE_PLATFORM_WIN32_KHR
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <vulkan/vulkan.hpp>
+
 #include "VeeCore.hpp"
 #include <vector>
-
-#define VK_CHECK(func)                                                                             \
-    {                                                                                              \
-        const VkResult result = func;                                                              \
-        if (result != VK_SUCCESS) {                                                                \
-            std::cerr << "Error calling function " << #func << " at " << __FILE__ << ":"           \
-                      << __LINE__ << ". Result is " << string_VkResult(result) << "\n";            \
-            VEE_DEBUGBREAK();                                                                      \
-        }                                                                                          \
-    }
 
 namespace Vee::Vulkan {
 VEE_NODISCARD std::vector<const char*> filter_extensions(

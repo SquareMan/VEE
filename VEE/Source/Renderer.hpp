@@ -4,25 +4,20 @@
 
 #pragma once
 
-#define VK_USE_PLATFORM_WIN32_KHR
-#define VK_NO_PROTOTYPES
-#include "RingBuffer.hpp"
-
-
-#include <vector>
-#include <vulkan/vulkan_core.h>
-
 #include "Platform/Window.hpp"
 #include "Renderer/Instance.hpp"
 #include "Renderer/Pipeline.hpp"
+#include "Renderer/VkUtil.hpp"
+#include "RingBuffer.hpp"
 
 #include <optional>
+#include <vector>
 
 struct CmdBuffer {
-    VkCommandBuffer cmd = VK_NULL_HANDLE;
-    VkFence fence = VK_NULL_HANDLE;
-    VkSemaphore acquire_semaphore = VK_NULL_HANDLE;
-    VkSemaphore submit_semaphore = VK_NULL_HANDLE;
+    vk::CommandBuffer cmd;
+    vk::Fence fence;
+    vk::Semaphore acquire_semaphore;
+    vk::Semaphore submit_semaphore;
 };
 
 namespace Vee {
@@ -42,22 +37,22 @@ private:
     Vulkan::Pipeline triangle_pipeline;
     Vulkan::Pipeline square_pipeline;
 
-    VkPhysicalDevice gpu = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
-    VkQueue graphics_queue = VK_NULL_HANDLE;
-    VkQueue presentation_queue = VK_NULL_HANDLE;
-    VkCommandPool command_pool = VK_NULL_HANDLE;
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    std::vector<VkImage> swapchain_images;
-    std::vector<VkImageView> swapchain_image_views;
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    std::vector<VkFramebuffer> framebuffers;
+    vk::PhysicalDevice gpu;
+    vk::Device device;
+    vk::Queue graphics_queue;
+    vk::Queue presentation_queue;
+    vk::CommandPool command_pool;
+    vk::SwapchainKHR swapchain;
+    std::vector<vk::Image> swapchain_images;
+    std::vector<vk::ImageView> swapchain_image_views;
+    vk::RenderPass render_pass;
+    std::vector<vk::Framebuffer> framebuffers;
 
     RingBuffer<CmdBuffer, 3> command_buffers;
 
-    VkBuffer staging_buffer = VK_NULL_HANDLE;
-    VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
-    VkBuffer vertex_buffer = VK_NULL_HANDLE;
-    VkDeviceMemory vertex_buffer_memory = VK_NULL_HANDLE;
+    vk::Buffer staging_buffer;
+    vk::DeviceMemory staging_buffer_memory;
+    vk::Buffer vertex_buffer;
+    vk::DeviceMemory vertex_buffer_memory;
 };
 } // namespace Vee

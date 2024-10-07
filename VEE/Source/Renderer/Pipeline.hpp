@@ -2,9 +2,11 @@
 // Created by Square on 10/3/2024.
 //
 
+#pragma once
+
 #define VK_NO_PROTOTYPES
 #include <vector>
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 
 #pragma once
 
@@ -15,22 +17,22 @@ namespace Vee::Vulkan {
 
 class Pipeline final {
 public:
-    VkPipelineLayout layout;
-    VkPipeline pipeline;
+    vk::PipelineLayout layout;
+    vk::Pipeline pipeline;
 };
 
 class PipelineBuilder final {
 public:
-    Pipeline build(VkDevice device);
-    PipelineBuilder& with_cache(VkPipelineCache cache);
-    PipelineBuilder& with_renderpass(VkRenderPass renderpass);
+    Pipeline build(vk::Device device);
+    PipelineBuilder& with_cache(vk::PipelineCache cache);
+    PipelineBuilder& with_renderpass(vk::RenderPass renderpass);
     PipelineBuilder& with_shader(const Shader& shader);
 
 private:
-    VkPipelineCache m_cache = VK_NULL_HANDLE;
-    VkRenderPass m_renderpass = VK_NULL_HANDLE;
+    vk::PipelineCache m_cache;
+    vk::RenderPass m_renderpass;
 
-    std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_infos;
+    std::vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stage_infos;
 };
 
 } // namespace Vee::Vulkan

@@ -6,26 +6,21 @@
 
 #include "VkUtil.hpp"
 
-#include <iostream>
 #include <vector>
-#include <volk/volk.h>
-#include <vulkan/vk_enum_string_helper.h>
 
 namespace Vee::Vulkan {
-Shader::Shader(VkDevice device, VkShaderStageFlagBits stage, const std::vector<char>& code) {
+Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vector<char>& code) {
     m_device = device;
     m_stage = stage;
 
-    VkShaderModuleCreateInfo shader_info = {
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = code.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(code.data())
-    };
-    VK_CHECK(vkCreateShaderModule(device, &shader_info, nullptr, &m_module));
+    const vk::ShaderModuleCreateInfo shader_info(
+        {}, code.size(), reinterpret_cast<const uint32_t*>(code.data())
+    );
+    m_module = device.createShaderModule(shader_info).value;
 }
 
 Shader::~Shader() {
-    vkDestroyShaderModule(m_device, m_module, nullptr);
+    m_device.destroyShaderModule(m_module);
 }
 const char* Shader::entrypoint() const {
     return m_entrypoint.c_str();
