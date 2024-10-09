@@ -52,6 +52,8 @@ set(SOURCES
         VEE/Source/Renderer/Shader.cpp
         VEE/Source/Renderer/Shader.hpp
         VEE/Source/Vertex.hpp
+        VEE/Source/Renderer/Swapchain.cpp
+        VEE/Source/Renderer/Swapchain.hpp
 )
 
 add_executable(VEE ${SOURCES})

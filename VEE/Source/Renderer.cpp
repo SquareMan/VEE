@@ -57,7 +57,7 @@ Renderer::Renderer(const Platform::Window& window)
 
 
     const vk::Win32SurfaceCreateInfoKHR ci = {{}, GetModuleHandle(nullptr), window.get_handle()};
-    vk::SurfaceKHR surface = instance->vk_instance.createWin32SurfaceKHR(ci).value;
+    surface = instance->vk_instance.createWin32SurfaceKHR(ci).value;
     std::vector<vk::PhysicalDevice> physical_devices =
         instance->vk_instance.enumeratePhysicalDevices().value;
 
@@ -126,8 +126,8 @@ Renderer::Renderer(const Platform::Window& window)
     command_pool = device.createCommandPool(cpci).value;
 
 
+    // Renderpass
     std::vector<vk::SurfaceFormatKHR> surface_formats = gpu.getSurfaceFormatsKHR(surface).value;
-
     vk::Format format = {};
     for (const vk::SurfaceFormatKHR& surface_format : surface_formats) {
         if (surface_format.format == vk::Format::eB8G8R8A8Srgb) {
@@ -137,43 +137,7 @@ Renderer::Renderer(const Platform::Window& window)
     }
     assert(format == vk::Format::eB8G8R8A8Srgb);
 
-    vk::SurfaceCapabilitiesKHR surface_capabilities = gpu.getSurfaceCapabilitiesKHR(surface).value;
 
-
-    // swapchain
-    uint32_t img_count = surface_capabilities.minImageCount + 1;
-    img_count = img_count > surface_capabilities.maxImageCount ? img_count - 1 : img_count;
-
-    swapchain = VK_NULL_HANDLE;
-    const vk::SwapchainCreateInfoKHR sci(
-        {},
-        surface,
-        img_count,
-        format,
-        {},
-        surface_capabilities.currentExtent,
-        1,
-        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
-        {},
-        {},
-        surface_capabilities.currentTransform,
-        vk::CompositeAlphaFlagBitsKHR::eOpaque
-    );
-    swapchain = device.createSwapchainKHR(sci).value;
-
-    swapchain_images = device.getSwapchainImagesKHR(swapchain).value;
-
-    swapchain_image_views.reserve(swapchain_images.size());
-    vk::ImageViewCreateInfo image_view_info(
-        {}, {}, vk::ImageViewType::e2D, format, {}, {vk::ImageAspectFlagBits::eColor, {}, 1, {}, 1}
-    );
-    for (vk::Image swapchain_image : swapchain_images) {
-        image_view_info.image = swapchain_image,
-        swapchain_image_views.push_back(device.createImageView(image_view_info).value);
-    }
-
-
-    // Renderpass
     const vk::AttachmentDescription attachments[] = {{
         {},
         format,
@@ -191,16 +155,8 @@ Renderer::Renderer(const Platform::Window& window)
     const vk::SubpassDescription subpass_description({}, {}, {}, color_attachment_ref);
     const vk::RenderPassCreateInfo render_pass_info({}, attachments, subpass_description);
     render_pass = device.createRenderPass(render_pass_info).value;
-
-    // framebuffer
     auto [width, height] = window.get_size();
-    vk::FramebufferCreateInfo framebuffer_info({}, render_pass, {}, width, height, 1);
-
-    framebuffers.reserve(swapchain_images.size());
-    for (uint32_t i = 0; i < swapchain_images.size(); i++) {
-        framebuffer_info.setAttachments(swapchain_image_views[i]);
-        framebuffers.push_back(device.createFramebuffer(framebuffer_info).value);
-    }
+    swapchain.emplace(gpu, device, surface, format, render_pass, width, height);
 
     // pipelines
     vk::PipelineCache pipeline_cache = device.createPipelineCache({}).value;
@@ -363,6 +319,8 @@ Renderer::Renderer(const Platform::Window& window)
         vk::SubmitInfo submit_info({}, {}, cmd_buffer.cmd);
         std::ignore = graphics_queue.submit(submit_info, cmd_buffer.fence);
     }
+
+    assert(swapchain != std::nullopt);
 }
 
 Renderer::~Renderer() {
@@ -386,9 +344,32 @@ void Renderer::Render() {
     CmdBuffer& command_buffer = command_buffers.get_next();
 
     std::ignore = device.waitForFences(command_buffer.fence, true, UINT64_MAX);
+    uint32_t image_index = UINT32_MAX;
+    {
+        // Opt out of return value transformation to avoid asserting on
+        // vk::Result::eErrorOutOfDateKHR
+        const vk::Result result = device.acquireNextImageKHR(
+            swapchain->handle, 0, command_buffer.acquire_semaphore, nullptr, &image_index
+        );
+        switch (result) {
+        case vk::Result::eSuccess:
+            break;
+        case vk::Result::eTimeout:
+            assert(false);
+            return;
+        case vk::Result::eNotReady:
+            assert(false);
+            return;
+        case vk::Result::eSuboptimalKHR:
+        case vk::Result::eErrorOutOfDateKHR:
+            recreate_swapchain();
+        default:
+            assert(false);
+            return;
+        }
+    }
+    assert(image_index != UINT32_MAX);
     std::ignore = device.resetFences(command_buffer.fence);
-    uint32_t image_index =
-        device.acquireNextImageKHR(swapchain, 0, command_buffer.acquire_semaphore, nullptr).value;
 
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     std::ignore = command_buffer.cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
@@ -405,16 +386,18 @@ void Renderer::Render() {
 
     vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
 
-    auto [width, height] = window->get_size();
     const vk::RenderPassBeginInfo render_pass_begin_info(
-        render_pass, framebuffers[image_index], {{}, {width, height}}, clear_value
+        render_pass,
+        swapchain->framebuffers[image_index],
+        {{}, {swapchain->width, swapchain->height}},
+        clear_value
     );
 
     command_buffer.cmd.beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);
     {
-        const vk::Rect2D scissor({{}, {width, height}});
+        const vk::Rect2D scissor({{}, {swapchain->width, swapchain->height}});
         const vk::Viewport viewport(
-            0, 0, static_cast<float>(width), static_cast<float>(height), 1.0f
+            0, 0, static_cast<float>(swapchain->width), static_cast<float>(swapchain->height), 1.0f
         );
 
         command_buffer.cmd.setScissor(0, scissor);
@@ -445,7 +428,27 @@ void Renderer::Render() {
     std::ignore = graphics_queue.submit(submit_info, command_buffer.fence);
 
 
-    const vk::PresentInfoKHR pi(command_buffer.submit_semaphore, swapchain, image_index);
-    std::ignore = presentation_queue.presentKHR(pi);
+    const vk::PresentInfoKHR pi(command_buffer.submit_semaphore, swapchain->handle, image_index);
+    {
+        // Opt out of return value transformation to avoid asserting on
+        // vk::Result::eErrorOutOfDateKHR
+        switch (presentation_queue.presentKHR(&pi)) {
+        case vk::Result::eSuccess:
+            break;
+        case vk::Result::eSuboptimalKHR:
+        case vk::Result::eErrorOutOfDateKHR:
+            recreate_swapchain();
+            break;
+        default:
+            assert(false);
+        }
+    }
+}
+
+void Renderer::recreate_swapchain() {
+    std::ignore = device.waitIdle();
+    auto [width, height] = window->get_size();
+    vk::Format old_format = swapchain->format;
+    swapchain.emplace(gpu, device, surface, old_format, render_pass, width, height);
 }
 } // namespace Vee

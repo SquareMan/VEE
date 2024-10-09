@@ -7,6 +7,7 @@
 #include "Platform/Window.hpp"
 #include "Renderer/Instance.hpp"
 #include "Renderer/Pipeline.hpp"
+#include "Renderer/Swapchain.hpp"
 #include "Renderer/VkUtil.hpp"
 #include "RingBuffer.hpp"
 
@@ -30,6 +31,8 @@ public:
     void Render();
 
 private:
+    void recreate_swapchain();
+
     const Platform::Window* window;
 
     // Fixme: this is ugly, but we have to defer intialization of this to the constructor body
@@ -39,14 +42,12 @@ private:
 
     vk::PhysicalDevice gpu;
     vk::Device device;
+    vk::SurfaceKHR surface;
+    std::optional<Swapchain> swapchain;
     vk::Queue graphics_queue;
     vk::Queue presentation_queue;
     vk::CommandPool command_pool;
-    vk::SwapchainKHR swapchain;
-    std::vector<vk::Image> swapchain_images;
-    std::vector<vk::ImageView> swapchain_image_views;
     vk::RenderPass render_pass;
-    std::vector<vk::Framebuffer> framebuffers;
 
     RingBuffer<CmdBuffer, 3> command_buffers;
 
