@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Platform/Window.hpp"
+#include "Renderer/Buffer.hpp"
 #include "Renderer/Instance.hpp"
 #include "Renderer/Pipeline.hpp"
 #include "Renderer/Swapchain.hpp"
@@ -51,10 +52,8 @@ private:
 
     RingBuffer<CmdBuffer, 3> command_buffers;
 
-    vk::Buffer staging_buffer;
-    vk::DeviceMemory staging_buffer_memory;
-    vk::Buffer vertex_buffer;
-    vk::Buffer index_buffer;
-    vk::DeviceMemory vertex_buffer_memory;
+    Vee::Buffer staging_buffer;
+    Vee::Buffer vertex_buffer;
+    Vee::Buffer index_buffer;
 };
 } // namespace Vee

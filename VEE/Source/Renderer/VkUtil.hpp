@@ -7,7 +7,15 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 #include <vulkan/vulkan.hpp>
+
+// include vk_mem_alloc.h ourselves to avoid search path issues
+// clang-format off
+#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.hpp>
+// clang-format on
 
 #include "VeeCore.hpp"
 #include <vector>

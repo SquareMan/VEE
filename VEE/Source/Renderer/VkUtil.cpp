@@ -2,6 +2,7 @@
 // Created by Square on 10/1/2024.
 //
 
+#define VMA_IMPLEMENTATION
 #include "VkUtil.hpp"
 
 #include <algorithm>

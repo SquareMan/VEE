@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.13.0)
 project(VEE VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -8,6 +8,14 @@ find_package(Vulkan REQUIRED SPIRV-Tools)
 include_directories(${Vulkan_INCLUDE_DIR})
 
 include(FetchContent)
+
+FetchContent_Declare(
+        VulkanMemoryAllocator-Hpp
+        GIT_REPOSITORY https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
+        GIT_TAG v3.1.0
+)
+FetchContent_MakeAvailable(VulkanMemoryAllocator-Hpp)
+include_directories(${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
 
 FetchContent_Declare(
         glfw
@@ -54,6 +62,8 @@ set(SOURCES
         VEE/Source/Vertex.hpp
         VEE/Source/Renderer/Swapchain.cpp
         VEE/Source/Renderer/Swapchain.hpp
+        VEE/Source/Renderer/Buffer.cpp
+        VEE/Source/Renderer/Buffer.hpp
 )
 
 add_executable(VEE ${SOURCES})
