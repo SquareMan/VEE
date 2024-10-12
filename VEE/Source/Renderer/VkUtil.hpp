@@ -24,4 +24,11 @@ namespace Vee::Vulkan {
 VEE_NODISCARD std::vector<const char*> filter_extensions(
     std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions
 );
+
+VkBool32 vk_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData
+);
 } // namespace Vee::Vulkan

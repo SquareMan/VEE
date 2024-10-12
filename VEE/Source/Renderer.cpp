@@ -46,11 +46,22 @@ Renderer::Renderer(const Platform::Window& window)
     // clang-format on
 
 #if _DEBUG
-    if (!instance->is_extension_enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+    if (instance->is_extension_enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+        vk::DebugUtilsMessengerCreateInfoEXT debug_messenger_info = {
+            {},
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
+                | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning,
+            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+                | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+                | vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding
+                | vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral,
+            &Vee::Vulkan::vk_debug_callback
+        };
+        debug_messenger_ =
+            instance->vk_instance.createDebugUtilsMessengerEXT(debug_messenger_info).value;
+    } else {
         // TODO log error
         VEE_DEBUGBREAK();
-    } else {
-        // TODO: vkCreateDebugUtilsMessengerEXT
     }
 #endif
 

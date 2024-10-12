@@ -6,6 +6,7 @@
 #include "VkUtil.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 
 #include <vulkan/vulkan.hpp>
@@ -33,5 +34,15 @@ std::vector<const char*> filter_extensions(
     );
 
     return result;
+}
+VkBool32 vk_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData
+) {
+    std::cout << pCallbackData->pMessage << std::endl;
+    VEE_DEBUGBREAK();
+    return VK_FALSE;
 }
 } // namespace Vee::Vulkan
