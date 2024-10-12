@@ -64,6 +64,8 @@ set(SOURCES
         VEE/Source/Renderer/Swapchain.hpp
         VEE/Source/Renderer/Buffer.cpp
         VEE/Source/Renderer/Buffer.hpp
+        VEE/Source/Renderer/Image.cpp
+        VEE/Source/Renderer/Image.hpp
 )
 
 add_executable(VEE ${SOURCES})
