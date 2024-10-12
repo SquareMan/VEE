@@ -52,7 +52,6 @@ private:
     vk::Queue graphics_queue;
     vk::Queue presentation_queue;
     vk::CommandPool command_pool;
-    vk::RenderPass render_pass;
 
     RingBuffer<CmdBuffer, 3> command_buffers;
 

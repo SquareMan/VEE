@@ -49,9 +49,9 @@ Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
         1.0f
     );
 
-    vk::Viewport viewport;
-    vk::Rect2D scissor;
-    vk::PipelineViewportStateCreateInfo viewport_state_info({}, viewport, scissor);
+    vk::PipelineViewportStateCreateInfo viewport_state_info = {};
+    viewport_state_info.viewportCount = 1;
+    viewport_state_info.scissorCount = 1;
 
     vk::DynamicState dynamic_states[] = {
         vk::DynamicState::eViewport,
@@ -63,6 +63,9 @@ Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
         {}, vk::PrimitiveTopology::eTriangleFan
     );
     vk::PipelineMultisampleStateCreateInfo multisample_state_info({}, vk::SampleCountFlagBits::e1);
+
+    vk::Format format = vk::Format::eB8G8R8A8Srgb;
+    vk::PipelineRenderingCreateInfo rendering_info = {{}, format};
 
     vk::GraphicsPipelineCreateInfo pipeline_info(
         {},
@@ -77,7 +80,11 @@ Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
         &color_blend_state_info,
         &dynamic_state_info,
         layout,
-        m_renderpass
+        {},
+        {},
+        {},
+        {},
+        &rendering_info
     );
 
     vk::Pipeline pipeline = device.createGraphicsPipeline(m_cache, pipeline_info).value;
@@ -86,10 +93,6 @@ Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
 
 Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_cache(vk::PipelineCache cache) {
     m_cache = cache;
-    return *this;
-}
-Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_renderpass(vk::RenderPass renderpass) {
-    m_renderpass = renderpass;
     return *this;
 }
 Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_shader(const Shader& shader) {

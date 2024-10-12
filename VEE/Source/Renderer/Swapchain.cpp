@@ -10,7 +10,6 @@ Swapchain::Swapchain(
     vk::Device device,
     vk::SurfaceKHR surface,
     vk::Format format,
-    vk::RenderPass render_pass,
     uint32_t width,
     uint32_t height
 )
@@ -53,22 +52,9 @@ Swapchain::Swapchain(
         image_view_info.image = swapchain_image,
         image_views.push_back(device.createImageView(image_view_info).value);
     }
-
-
-    // framebuffer
-    vk::FramebufferCreateInfo framebuffer_info({}, render_pass, {}, width, height, 1);
-
-    framebuffers.reserve(images.size());
-    for (uint32_t i = 0; i < images.size(); i++) {
-        framebuffer_info.setAttachments(image_views[i]);
-        framebuffers.push_back(device.createFramebuffer(framebuffer_info).value);
-    }
 }
 
 Swapchain::~Swapchain() {
-    for (const vk::Framebuffer framebuffer : framebuffers) {
-        device.destroyFramebuffer(framebuffer);
-    }
     for (const vk::ImageView view : image_views) {
         device.destroyImageView(view);
     }

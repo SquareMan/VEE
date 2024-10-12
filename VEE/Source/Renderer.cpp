@@ -98,7 +98,7 @@ Renderer::Renderer(const Platform::Window& window)
     command_pool = vk::Device(device).createCommandPool(cpci).value;
 
 
-    // Renderpass
+    // swapchain
     std::vector<vk::SurfaceFormatKHR> surface_formats = gpu.getSurfaceFormatsKHR(surface).value;
     vk::Format format = {};
     for (const vk::SurfaceFormatKHR& surface_format : surface_formats) {
@@ -109,26 +109,8 @@ Renderer::Renderer(const Platform::Window& window)
     }
     assert(format == vk::Format::eB8G8R8A8Srgb);
 
-
-    const vk::AttachmentDescription attachments[] = {{
-        {},
-        format,
-        vk::SampleCountFlagBits::e1,
-        vk::AttachmentLoadOp::eClear,
-        vk::AttachmentStoreOp::eStore,
-        {},
-        {},
-        vk::ImageLayout::eUndefined,
-        vk::ImageLayout::ePresentSrcKHR,
-    }};
-
-    vk::AttachmentReference color_attachment_ref(0, vk::ImageLayout::eColorAttachmentOptimal);
-
-    const vk::SubpassDescription subpass_description({}, {}, {}, color_attachment_ref);
-    const vk::RenderPassCreateInfo render_pass_info({}, attachments, subpass_description);
-    render_pass = device.createRenderPass(render_pass_info).value;
     auto [width, height] = window.get_size();
-    swapchain.emplace(gpu, device, surface, format, render_pass, width, height);
+    swapchain.emplace(gpu, device, surface, format, width, height);
 
     // pipelines
     vk::PipelineCache pipeline_cache = device.createPipelineCache({}).value;
@@ -151,14 +133,12 @@ Renderer::Renderer(const Platform::Window& window)
     // clang-format off
     triangle_pipeline = Vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
-        .with_renderpass(render_pass)
         .with_shader(fragment_shader)
         .with_shader(triangle_vertex_shader)
         .build(device);
 
     square_pipeline = Vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
-        .with_renderpass(render_pass)
         .with_shader(fragment_shader)
         .with_shader(square_vertex_shader)
         .build(device);
@@ -337,16 +317,42 @@ void Renderer::Render() {
         triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &data
     );
 
+    // swapchain image transition
+    // FIXME: This is the most inefficient transition
+    {
+        vk::ImageMemoryBarrier2 image_barrier = {
+            vk::PipelineStageFlagBits2::eAllCommands,
+            vk::AccessFlagBits2::eMemoryWrite,
+            vk::PipelineStageFlagBits2::eAllCommands,
+            vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            {},
+            {},
+            swapchain->images[image_index],
+            {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+        };
+
+        vk::DependencyInfo dependency_info = {};
+        dependency_info.setImageMemoryBarriers(image_barrier);
+        command_buffer.cmd.pipelineBarrier2(dependency_info);
+    }
+
     vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
-
-    const vk::RenderPassBeginInfo render_pass_begin_info(
-        render_pass,
-        swapchain->framebuffers[image_index],
-        {{}, {swapchain->width, swapchain->height}},
+    vk::RenderingAttachmentInfo render_attachment = {
+        swapchain->image_views[image_index],
+        vk::ImageLayout::eColorAttachmentOptimal,
+        {},
+        {},
+        {},
+        vk::AttachmentLoadOp::eClear,
+        vk::AttachmentStoreOp::eStore,
         clear_value
-    );
-
-    command_buffer.cmd.beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);
+    };
+    vk::RenderingInfo render_info = {
+        {}, {{}, {swapchain->width, swapchain->height}}, 1, 0, render_attachment, {}, {}
+    };
+    command_buffer.cmd.beginRendering(render_info);
     {
         const vk::Rect2D scissor({{}, {swapchain->width, swapchain->height}});
         const vk::Viewport viewport(
@@ -368,7 +374,29 @@ void Renderer::Render() {
         command_buffer.cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
         command_buffer.cmd.drawIndexed(3, 1, 0, 0, 0);
     }
-    command_buffer.cmd.endRenderPass();
+    command_buffer.cmd.endRendering();
+
+    // swapchain image transition
+    // FIXME: This is the most inefficient transition
+    {
+        vk::ImageMemoryBarrier2 image_barrier = {
+            vk::PipelineStageFlagBits2::eAllCommands,
+            vk::AccessFlagBits2::eMemoryWrite,
+            vk::PipelineStageFlagBits2::eAllCommands,
+            vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::ePresentSrcKHR,
+            {},
+            {},
+            swapchain->images[image_index],
+            {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+        };
+
+        vk::DependencyInfo dependency_info = {};
+        dependency_info.setImageMemoryBarriers(image_barrier);
+        command_buffer.cmd.pipelineBarrier2(dependency_info);
+    }
+
     std::ignore = command_buffer.cmd.end();
 
     vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
@@ -402,6 +430,6 @@ void Renderer::recreate_swapchain() {
     std::ignore = device.waitIdle();
     auto [width, height] = window->get_size();
     vk::Format old_format = swapchain->format;
-    swapchain.emplace(gpu, device, surface, old_format, render_pass, width, height);
+    swapchain.emplace(gpu, device, surface, old_format, width, height);
 }
 } // namespace Vee

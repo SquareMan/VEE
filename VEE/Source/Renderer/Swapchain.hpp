@@ -15,7 +15,6 @@ public:
         vk::Device device,
         vk::SurfaceKHR surface,
         vk::Format format,
-        vk::RenderPass render_pass,
         uint32_t width,
         uint32_t height
     );
@@ -24,7 +23,6 @@ public:
     vk::SwapchainKHR handle;
     std::vector<vk::Image> images;
     std::vector<vk::ImageView> image_views;
-    std::vector<vk::Framebuffer> framebuffers;
 
     vk::Format format;
     uint32_t width;

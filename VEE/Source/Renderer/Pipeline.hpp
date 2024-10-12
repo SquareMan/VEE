@@ -25,12 +25,10 @@ class PipelineBuilder final {
 public:
     Pipeline build(vk::Device device);
     PipelineBuilder& with_cache(vk::PipelineCache cache);
-    PipelineBuilder& with_renderpass(vk::RenderPass renderpass);
     PipelineBuilder& with_shader(const Shader& shader);
 
 private:
     vk::PipelineCache m_cache;
-    vk::RenderPass m_renderpass;
 
     std::vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stage_infos;
 };
