@@ -305,99 +305,97 @@ void Renderer::Render() {
     std::ignore = device.resetFences(command_buffer.fence);
 
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
-    std::ignore = command_buffer.cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    record_commands(command_buffer.cmd, [&](vk::CommandBuffer cmd) {
+        auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
+        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
+        float data = time_ms.count() / 1000.0f;
 
-    auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
-    auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
-    float data = time_ms.count() / 1000.0f;
+        // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter
+        // which we use here.
+        cmd.pushConstants(
+            triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &data
+        );
 
-    // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter which
-    // we use here.
-    command_buffer.cmd.pushConstants(
-        triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &data
-    );
+        // swapchain image transition
+        // FIXME: This is the most inefficient transition
+        {
+            vk::ImageMemoryBarrier2 image_barrier = {
+                vk::PipelineStageFlagBits2::eAllCommands,
+                vk::AccessFlagBits2::eMemoryWrite,
+                vk::PipelineStageFlagBits2::eAllCommands,
+                vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eColorAttachmentOptimal,
+                {},
+                {},
+                swapchain->images[image_index],
+                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+            };
 
-    // swapchain image transition
-    // FIXME: This is the most inefficient transition
-    {
-        vk::ImageMemoryBarrier2 image_barrier = {
-            vk::PipelineStageFlagBits2::eAllCommands,
-            vk::AccessFlagBits2::eMemoryWrite,
-            vk::PipelineStageFlagBits2::eAllCommands,
-            vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
-            vk::ImageLayout::eUndefined,
+            vk::DependencyInfo dependency_info = {};
+            dependency_info.setImageMemoryBarriers(image_barrier);
+            cmd.pipelineBarrier2(dependency_info);
+        }
+
+        vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
+        vk::RenderingAttachmentInfo render_attachment = {
+            swapchain->image_views[image_index],
             vk::ImageLayout::eColorAttachmentOptimal,
             {},
             {},
-            swapchain->images[image_index],
-            {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
-        };
-
-        vk::DependencyInfo dependency_info = {};
-        dependency_info.setImageMemoryBarriers(image_barrier);
-        command_buffer.cmd.pipelineBarrier2(dependency_info);
-    }
-
-    vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
-    vk::RenderingAttachmentInfo render_attachment = {
-        swapchain->image_views[image_index],
-        vk::ImageLayout::eColorAttachmentOptimal,
-        {},
-        {},
-        {},
-        vk::AttachmentLoadOp::eClear,
-        vk::AttachmentStoreOp::eStore,
-        clear_value
-    };
-    vk::RenderingInfo render_info = {
-        {}, {{}, {swapchain->width, swapchain->height}}, 1, 0, render_attachment, {}, {}
-    };
-    command_buffer.cmd.beginRendering(render_info);
-    {
-        const vk::Rect2D scissor({{}, {swapchain->width, swapchain->height}});
-        const vk::Viewport viewport(
-            0, 0, static_cast<float>(swapchain->width), static_cast<float>(swapchain->height), 1.0f
-        );
-
-        command_buffer.cmd.setScissor(0, scissor);
-        command_buffer.cmd.setViewport(0, viewport);
-
-        command_buffer.cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
-        command_buffer.cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
-        command_buffer.cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
-        command_buffer.cmd.drawIndexed(4, 1, 3, 0, 0);
-
-        command_buffer.cmd.bindPipeline(
-            vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline
-        );
-        command_buffer.cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
-        command_buffer.cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
-        command_buffer.cmd.drawIndexed(3, 1, 0, 0, 0);
-    }
-    command_buffer.cmd.endRendering();
-
-    // swapchain image transition
-    // FIXME: This is the most inefficient transition
-    {
-        vk::ImageMemoryBarrier2 image_barrier = {
-            vk::PipelineStageFlagBits2::eAllCommands,
-            vk::AccessFlagBits2::eMemoryWrite,
-            vk::PipelineStageFlagBits2::eAllCommands,
-            vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::ePresentSrcKHR,
             {},
-            {},
-            swapchain->images[image_index],
-            {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+            vk::AttachmentLoadOp::eClear,
+            vk::AttachmentStoreOp::eStore,
+            clear_value
         };
+        vk::RenderingInfo render_info = {
+            {}, {{}, {swapchain->width, swapchain->height}}, 1, 0, render_attachment, {}, {}
+        };
+        render(render_info, cmd, [&](vk::CommandBuffer cmd) {
+            const vk::Rect2D scissor({{}, {swapchain->width, swapchain->height}});
+            const vk::Viewport viewport(
+                0,
+                0,
+                static_cast<float>(swapchain->width),
+                static_cast<float>(swapchain->height),
+                1.0f
+            );
 
-        vk::DependencyInfo dependency_info = {};
-        dependency_info.setImageMemoryBarriers(image_barrier);
-        command_buffer.cmd.pipelineBarrier2(dependency_info);
-    }
+            cmd.setScissor(0, scissor);
+            cmd.setViewport(0, viewport);
 
-    std::ignore = command_buffer.cmd.end();
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
+            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
+            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+            cmd.drawIndexed(4, 1, 3, 0, 0);
+
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline);
+            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
+            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+            cmd.drawIndexed(3, 1, 0, 0, 0);
+        });
+
+        // swapchain image transition
+        // FIXME: This is the most inefficient transition
+        {
+            vk::ImageMemoryBarrier2 image_barrier = {
+                vk::PipelineStageFlagBits2::eAllCommands,
+                vk::AccessFlagBits2::eMemoryWrite,
+                vk::PipelineStageFlagBits2::eAllCommands,
+                vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+                vk::ImageLayout::eColorAttachmentOptimal,
+                vk::ImageLayout::ePresentSrcKHR,
+                {},
+                {},
+                swapchain->images[image_index],
+                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+            };
+
+            vk::DependencyInfo dependency_info = {};
+            dependency_info.setImageMemoryBarriers(image_barrier);
+            cmd.pipelineBarrier2(dependency_info);
+        }
+    });
 
     vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const vk::SubmitInfo submit_info(
@@ -424,6 +422,23 @@ void Renderer::Render() {
             assert(false);
         }
     }
+}
+
+void Renderer::record_commands(
+    vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func
+) {
+    std::ignore = cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    func(cmd);
+    std::ignore = cmd.end();
+}
+void Renderer::render(
+    vk::RenderingInfo& rendering_info,
+    vk::CommandBuffer cmd,
+    const std::function<void(vk::CommandBuffer cmd)>& func
+) {
+    cmd.beginRendering(rendering_info);
+    func(cmd);
+    cmd.endRendering();
 }
 
 void Renderer::recreate_swapchain() {

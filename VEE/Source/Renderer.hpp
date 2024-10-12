@@ -11,6 +11,7 @@
 #include "Renderer/VkUtil.hpp"
 #include "RingBuffer.hpp"
 
+#include <functional>
 #include <optional>
 #include <vector>
 
@@ -33,6 +34,13 @@ public:
     void Render();
 
 private:
+    void
+    record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
+    void render(
+        vk::RenderingInfo& rendering_info,
+        vk::CommandBuffer cmd,
+        const std::function<void(vk::CommandBuffer cmd)>& func
+    );
     void recreate_swapchain();
 
     const Platform::Window* window;
