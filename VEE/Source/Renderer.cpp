@@ -267,9 +267,12 @@ Renderer::Renderer(const Platform::Window& window)
                                 .value;
         new (&staging_buffer) Buffer(buf, alloc, allocator);
 
-        std::ignore = allocator.copyMemoryToAllocation(vertices, alloc, 0, sizeof(vertices));
-        std::ignore =
-            allocator.copyMemoryToAllocation(indices, alloc, sizeof(vertices), sizeof(indices));
+        std::ignore = allocator.copyMemoryToAllocation(
+            vertices, staging_buffer.allocation, 0, sizeof(vertices)
+        );
+        std::ignore = allocator.copyMemoryToAllocation(
+            indices, staging_buffer.allocation, sizeof(vertices), sizeof(indices)
+        );
     }
 
     {
@@ -342,9 +345,6 @@ Renderer::~Renderer() {
         device.destroySemaphore(command_buffer.submit_semaphore);
     }
     device.destroyCommandPool(command_pool);
-
-    device.destroyBuffer(staging_buffer.buffer);
-    device.destroyBuffer(vertex_buffer.buffer);
 }
 
 void Renderer::Render() {
