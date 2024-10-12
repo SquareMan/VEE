@@ -222,9 +222,11 @@ Renderer::Renderer(const Platform::Window& window)
 
 
     // command buffers
-    const vk::CommandBufferAllocateInfo command_buffer_info(
-        command_pool, vk::CommandBufferLevel::ePrimary, command_buffers.size()
-    );
+    const vk::CommandBufferAllocateInfo command_buffer_info = {
+        command_pool,
+        vk::CommandBufferLevel::ePrimary,
+        static_cast<uint32_t>(command_buffers.size())
+    };
 
     std::vector<vk::CommandBuffer> tmp_command_buffers =
         device.allocateCommandBuffers(command_buffer_info).value;
