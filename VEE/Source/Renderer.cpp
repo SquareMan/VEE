@@ -21,108 +21,56 @@
 namespace Vee {
 Renderer::Renderer(const Platform::Window& window)
     : window(&window) {
-#if !defined(VK_KHR_win32_surface) || !defined(VK_KHR_surface)
-#error Renderer requires win32 platform and vulkan surface extensions
-#endif
-
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
-    // clang-format off
-    instance = Vulkan::InstanceBuilder()
-        .with_application_name("VEE POC")
-        .with_application_version(VK_MAKE_API_VERSION(0, 0, 1, 0))
-        .with_layers({
-#if _DEBUG
-            "VK_LAYER_KHRONOS_validation",
-#endif
-        })
-        .with_extensions({
-            VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-            VK_KHR_SURFACE_EXTENSION_NAME,
-#if defined(VK_EXT_debug_utils)
-            VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-#endif
-        })
-        .build();
-    // clang-format on
 
+    {
 #if _DEBUG
-    if (instance->is_extension_enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-        vk::DebugUtilsMessengerCreateInfoEXT debug_messenger_info = {
-            {},
-            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
-                | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning,
-            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
-                | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-                | vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding
-                | vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral,
-            &Vee::Vulkan::vk_debug_callback
-        };
-        debug_messenger_ =
-            instance->vk_instance.createDebugUtilsMessengerEXT(debug_messenger_info).value;
-    } else {
-        // TODO log error
-        VEE_DEBUGBREAK();
+        constexpr bool enable_validation = true;
+#else
+        constexpr bool enable_validation = false;
+#endif
+        vkb::InstanceBuilder instance_builder;
+        auto inst_res = instance_builder.set_app_name("VEE POC")
+                            .set_app_version(0, 1, 0)
+                            .enable_validation_layers(enable_validation)
+                            .enable_extensions({
+                                VK_KHR_SURFACE_EXTENSION_NAME,
+                                VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+                            })
+                            .set_debug_callback(&Vee::Vulkan::vk_debug_callback)
+                            .require_api_version(1, 3, 0)
+                            .build();
+
+        instance = inst_res.value();
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(instance.instance));
     }
-#endif
-
 
     const vk::Win32SurfaceCreateInfoKHR ci = {{}, GetModuleHandle(nullptr), window.get_handle()};
-    surface = instance->vk_instance.createWin32SurfaceKHR(ci).value;
-    std::vector<vk::PhysicalDevice> physical_devices =
-        instance->vk_instance.enumeratePhysicalDevices().value;
+    surface = static_cast<vk::Instance>(instance).createWin32SurfaceKHR(ci).value;
 
-    assert(!physical_devices.empty());
-    gpu = physical_devices[0];
+    vk::PhysicalDeviceVulkan13Features v13_features;
+    v13_features.synchronization2 = true;
+    v13_features.dynamicRendering = true;
 
-    vk::PhysicalDeviceProperties physical_properties = gpu.getProperties();
-    VkPhysicalDeviceFeatures physical_features = gpu.getFeatures();
+    vk::PhysicalDeviceVulkan12Features v12_features;
+    v12_features.bufferDeviceAddress = true;
+    v12_features.descriptorIndexing = true;
 
-    std::vector<vk::QueueFamilyProperties> queue_families = gpu.getQueueFamilyProperties();
+    vkb::PhysicalDeviceSelector selector(instance, surface);
+    vkb::PhysicalDevice vkb_gpu = selector.set_minimum_version(1, 3)
+                                      .set_required_features_13(v13_features)
+                                      .set_required_features_12(v12_features)
+                                      .select()
+                                      .value();
+    gpu = vkb_gpu.physical_device;
 
-    std::optional<uint32_t> graphics_family_index;
-    std::optional<uint32_t> presentation_family_index;
-
-    for (uint32_t idx = 0; idx < queue_families.size(); ++idx) {
-        if (!graphics_family_index.has_value()
-            && queue_families[idx].queueFlags & vk::QueueFlagBits::eGraphics) {
-            graphics_family_index = idx;
-        }
-
-        if (!presentation_family_index.has_value()
-            && gpu.getSurfaceSupportKHR(idx, surface).value) {
-            presentation_family_index = idx;
-        }
-    }
-
-    std::vector<vk::ExtensionProperties> properties =
-        gpu.enumerateDeviceExtensionProperties().value;
-
-    std::vector<const char*> available_extension_names;
-    std::ranges::transform(
-        properties,
-        std::back_inserter(available_extension_names),
-        [](const auto& property) { return property.extensionName; }
-    );
-
-    std::vector<const char*> requested_extension_names = {"VK_KHR_swapchain"};
-    std::vector<const char*> enabled_extension_names =
-        Vulkan::filter_extensions(available_extension_names, requested_extension_names);
-
-    assert(graphics_family_index.has_value());
-    assert(presentation_family_index.has_value());
-
-    std::set<uint32_t> queue_family_indices({*graphics_family_index, *presentation_family_index});
-    const float priority = 1.0f;
-    std::vector<vk::DeviceQueueCreateInfo> qcis;
-    qcis.reserve(queue_family_indices.size());
-    for (uint32_t unique_index : queue_family_indices) {
-        qcis.push_back({{}, unique_index, 1, &priority});
-    }
-
-    const vk::DeviceCreateInfo dci({}, qcis, {}, enabled_extension_names);
-
-    device = gpu.createDevice(dci).value;
+    vkb::DeviceBuilder device_builder(vkb_gpu);
+    vkb::Device vkb_device = device_builder.build().value();
+    device = vkb_device.device;
     VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
+
+    graphics_queue = vkb_device.get_queue(vkb::QueueType::graphics).value();
+    presentation_queue = vkb_device.get_queue(vkb::QueueType::present).value();
 
     vma::VulkanFunctions vulkan_functions;
     vulkan_functions.vkGetInstanceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr;
@@ -136,22 +84,18 @@ Renderer::Renderer(const Platform::Window& window)
         nullptr,
         {},
         &vulkan_functions,
-        instance->vk_instance,
+        instance.instance,
         VK_API_VERSION_1_3
     };
     vma::Allocator allocator = vma::createAllocator(allocator_info).value;
 
-
-    graphics_queue = device.getQueue(*graphics_family_index, 0);
-    presentation_queue = device.getQueue(*presentation_family_index, 0);
-
-
     // Command pool
     const vk::CommandPoolCreateInfo cpci(
-        vk::CommandPoolCreateFlagBits::eResetCommandBuffer, *graphics_family_index
+        vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+        vkb_device.get_queue_index(vkb::QueueType::graphics).value()
     );
 
-    command_pool = device.createCommandPool(cpci).value;
+    command_pool = vk::Device(device).createCommandPool(cpci).value;
 
 
     // Renderpass
@@ -338,7 +282,7 @@ Renderer::~Renderer() {
     std::ignore = device.waitIdle();
 
 #if _DEBUG
-    instance->vk_instance.destroyDebugUtilsMessengerEXT(debug_messenger_);
+    static_cast<vk::Instance>(instance).destroyDebugUtilsMessengerEXT(debug_messenger_);
 #endif
 
     for (CmdBuffer& command_buffer : command_buffers.buffer) {

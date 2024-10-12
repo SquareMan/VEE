@@ -6,7 +6,6 @@
 
 #include "Platform/Window.hpp"
 #include "Renderer/Buffer.hpp"
-#include "Renderer/Instance.hpp"
 #include "Renderer/Pipeline.hpp"
 #include "Renderer/Swapchain.hpp"
 #include "Renderer/VkUtil.hpp"
@@ -14,6 +13,8 @@
 
 #include <optional>
 #include <vector>
+
+#include <VkBootstrap.h>
 
 struct CmdBuffer {
     vk::CommandBuffer cmd;
@@ -36,8 +37,7 @@ private:
 
     const Platform::Window* window;
 
-    // Fixme: this is ugly, but we have to defer intialization of this to the constructor body
-    std::optional<Vulkan::Instance> instance;
+    vkb::Instance instance;
 #if _DEBUG
     vk::DebugUtilsMessengerEXT debug_messenger_;
 #endif

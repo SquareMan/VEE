@@ -17,6 +17,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(VulkanMemoryAllocator-Hpp)
 include_directories(${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
 
+include(FetchContent)
+FetchContent_Declare(
+        vk_bootstrap
+        GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
+        GIT_TAG v1.3.296
+)
+FetchContent_MakeAvailable(vk_bootstrap)
+
 FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -51,8 +59,6 @@ set(SOURCES
         VEE/Source/Platform/Filesystem.hpp
         VEE/Source/Renderer/VkUtil.cpp
         VEE/Source/Renderer/VkUtil.hpp
-        VEE/Source/Renderer/Instance.cpp
-        VEE/Source/Renderer/Instance.hpp
         VEE/Source/RingBuffer.cpp
         VEE/Source/RingBuffer.hpp
         VEE/Source/Renderer/Pipeline.cpp
@@ -70,7 +76,7 @@ set(SOURCES
 
 add_executable(VEE ${SOURCES})
 target_include_directories(VEE PRIVATE VEE/Source/)
-target_link_libraries(VEE PRIVATE glfw glm::glm)
+target_link_libraries(VEE PRIVATE glfw glm::glm vk-bootstrap::vk-bootstrap)
 
 # Compile Shaders to spv
 set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VEE/Resources)
