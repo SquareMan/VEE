@@ -38,6 +38,10 @@ private:
 
     // Fixme: this is ugly, but we have to defer intialization of this to the constructor body
     std::optional<Vulkan::Instance> instance;
+#if _DEBUG
+    vk::DebugUtilsMessengerEXT debug_messenger_;
+#endif
+
     Vulkan::Pipeline triangle_pipeline;
     Vulkan::Pipeline square_pipeline;
 

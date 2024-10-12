@@ -332,6 +332,10 @@ Renderer::~Renderer() {
     // TODO: Cleanup everything
     std::ignore = device.waitIdle();
 
+#if _DEBUG
+    instance->vk_instance.destroyDebugUtilsMessengerEXT(debug_messenger_);
+#endif
+
     for (CmdBuffer& command_buffer : command_buffers.buffer) {
         device.destroyFence(command_buffer.fence);
         device.destroySemaphore(command_buffer.acquire_semaphore);
