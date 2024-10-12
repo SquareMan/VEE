@@ -14,10 +14,10 @@ Swapchain::Swapchain(
     uint32_t width,
     uint32_t height
 )
-    : device(device)
-    , format(format)
+    : format(format)
     , width(width)
-    , height(height) {
+    , height(height)
+    , device(device) {
     // swapchain
     vk::SurfaceCapabilitiesKHR surface_capabilities = gpu.getSurfaceCapabilitiesKHR(surface).value;
 
@@ -36,7 +36,9 @@ Swapchain::Swapchain(
         {},
         {},
         surface_capabilities.currentTransform,
-        vk::CompositeAlphaFlagBitsKHR::eOpaque
+        vk::CompositeAlphaFlagBitsKHR::eOpaque,
+        // TODO: Allow eMailbox in the future, maybe make it the default
+        vk::PresentModeKHR::eFifoRelaxed
     );
     handle = device.createSwapchainKHR(swapchain_info).value;
 
