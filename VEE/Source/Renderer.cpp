@@ -11,9 +11,12 @@
 #include "Vertex.hpp"
 
 #include <algorithm>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 #include <cassert>
 #include <chrono>
 #include <glm/common.hpp>
+#include <imgui.h>
 #include <numbers>
 #include <set>
 #include <vector>
@@ -252,7 +255,7 @@ Renderer::Renderer(const Platform::Window& window)
         std::ignore = graphics_queue.submit(submit_info, cmd_buffer.fence);
     }
 
-    auto info = allocator.getHeapBudgets();
+    init_imgui();
 
     assert(swapchain != std::nullopt);
 }
@@ -271,6 +274,10 @@ Renderer::~Renderer() {
         device.destroySemaphore(command_buffer.submit_semaphore);
     }
     device.destroyCommandPool(command_pool);
+
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void Renderer::Render() {
@@ -373,6 +380,8 @@ void Renderer::Render() {
             cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
             cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
             cmd.drawIndexed(3, 1, 0, 0, 0);
+
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
         });
 
         // swapchain image transition
@@ -422,6 +431,48 @@ void Renderer::Render() {
             assert(false);
         }
     }
+}
+
+void Renderer::init_imgui() {
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForVulkan(window->glfw_window, true);
+
+    // NOTE: (from imgui example)
+    // The example only requires a single combined image sampler descriptor for the font image and
+    // only uses one descriptor set (for that) If you wish to load e.g. additional textures you may
+    // need to alter pools sizes.
+    vk::DescriptorPoolSize pool_sizes[] = {
+        {vk::DescriptorType::eCombinedImageSampler, 1},
+    };
+
+    vk::DescriptorPoolCreateInfo pool_info = {
+        vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes
+    };
+    vk::DescriptorPool pool = device.createDescriptorPool(pool_info).value;
+
+    vk::PipelineRenderingCreateInfo pipeline_info = {{}, swapchain->format, {}, {}};
+    ImGui_ImplVulkan_InitInfo init_info = {
+        .Instance = instance,
+        .PhysicalDevice = gpu,
+        .Device = device,
+        .Queue = graphics_queue,
+        .DescriptorPool = pool,
+        .MinImageCount = 3,
+        .ImageCount = 3,
+        .UseDynamicRendering = true,
+        .PipelineRenderingCreateInfo = pipeline_info,
+    };
+
+    ImGui_ImplVulkan_LoadFunctions(
+        [](const char* function_name, void* user_data) {
+            return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(
+                *static_cast<VkInstance*>(user_data), function_name
+            );
+        },
+        &instance.instance
+    );
+    ImGui_ImplVulkan_Init(&init_info);
+    ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 void Renderer::record_commands(

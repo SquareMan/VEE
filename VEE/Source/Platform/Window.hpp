@@ -27,7 +27,6 @@ public:
 
     VEE_NODISCARD WindowHandle get_handle() const;
 
-private:
     GLFWwindow* glfw_window = nullptr;
 };
 } // namespace Vee::Platform

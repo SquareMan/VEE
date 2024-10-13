@@ -34,6 +34,8 @@ public:
     void Render();
 
 private:
+    void init_imgui();
+
     void
     record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
     void render(
