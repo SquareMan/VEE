@@ -45,6 +45,8 @@ private:
     );
     void recreate_swapchain();
 
+    void transition_image(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to);
+
     const Platform::Window* window;
 
     vkb::Instance instance;

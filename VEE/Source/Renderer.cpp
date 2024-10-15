@@ -324,25 +324,12 @@ void Renderer::Render() {
         );
 
         // swapchain image transition
-        // FIXME: This is the most inefficient transition
-        {
-            vk::ImageMemoryBarrier2 image_barrier = {
-                vk::PipelineStageFlagBits2::eAllCommands,
-                vk::AccessFlagBits2::eMemoryWrite,
-                vk::PipelineStageFlagBits2::eAllCommands,
-                vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
-                vk::ImageLayout::eUndefined,
-                vk::ImageLayout::eColorAttachmentOptimal,
-                {},
-                {},
-                swapchain->images[image_index],
-                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
-            };
-
-            vk::DependencyInfo dependency_info = {};
-            dependency_info.setImageMemoryBarriers(image_barrier);
-            cmd.pipelineBarrier2(dependency_info);
-        }
+        transition_image(
+            cmd,
+            swapchain->images[image_index],
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal
+        );
 
         vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
         vk::RenderingAttachmentInfo render_attachment = {
@@ -385,25 +372,12 @@ void Renderer::Render() {
         });
 
         // swapchain image transition
-        // FIXME: This is the most inefficient transition
-        {
-            vk::ImageMemoryBarrier2 image_barrier = {
-                vk::PipelineStageFlagBits2::eAllCommands,
-                vk::AccessFlagBits2::eMemoryWrite,
-                vk::PipelineStageFlagBits2::eAllCommands,
-                vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
-                vk::ImageLayout::eColorAttachmentOptimal,
-                vk::ImageLayout::ePresentSrcKHR,
-                {},
-                {},
-                swapchain->images[image_index],
-                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
-            };
-
-            vk::DependencyInfo dependency_info = {};
-            dependency_info.setImageMemoryBarriers(image_barrier);
-            cmd.pipelineBarrier2(dependency_info);
-        }
+        transition_image(
+            cmd,
+            swapchain->images[image_index],
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::ePresentSrcKHR
+        );
     });
 
     vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
@@ -497,5 +471,27 @@ void Renderer::recreate_swapchain() {
     auto [width, height] = window->get_size();
     vk::Format old_format = swapchain->format;
     swapchain.emplace(gpu, device, surface, old_format, width, height);
+}
+
+void Renderer::transition_image(
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to
+) {
+    // FIXME: This is the most inefficient transition
+    vk::ImageMemoryBarrier2 image_barrier = {
+        vk::PipelineStageFlagBits2::eAllCommands,
+        vk::AccessFlagBits2::eMemoryWrite,
+        vk::PipelineStageFlagBits2::eAllCommands,
+        vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+        from,
+        to,
+        {},
+        {},
+        image,
+        {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+    };
+
+    vk::DependencyInfo dependency_info = {};
+    dependency_info.setImageMemoryBarriers(image_barrier);
+    cmd.pipelineBarrier2(dependency_info);
 }
 } // namespace Vee
