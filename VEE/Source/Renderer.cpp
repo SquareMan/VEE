@@ -5,6 +5,7 @@
 #include "Renderer.hpp"
 
 #include "Platform/Filesystem.hpp"
+#include "Renderer/Image.hpp"
 #include "Renderer/Shader.hpp"
 #include "Renderer/VkUtil.hpp"
 #include "VeeCore.hpp"
@@ -257,6 +258,15 @@ Renderer::Renderer(const Platform::Window& window)
 
     init_imgui();
 
+    new (&game_image_) Vee::Image(
+        device,
+        allocator,
+        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
+        {width, height, 1},
+        format,
+        vk::ImageAspectFlagBits::eColor
+    );
+
     assert(swapchain != std::nullopt);
 }
 
@@ -323,53 +333,126 @@ void Renderer::Render() {
             triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &data
         );
 
+        transition_image(
+            cmd,
+            game_image_.image,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal
+        );
+        {
+            vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
+            vk::RenderingAttachmentInfo render_attachment = {
+                game_image_.view,
+                vk::ImageLayout::eColorAttachmentOptimal,
+                {},
+                {},
+                {},
+                vk::AttachmentLoadOp::eClear,
+                vk::AttachmentStoreOp::eStore,
+                clear_value
+            };
+            vk::RenderingInfo render_info = {
+                {},
+                {{}, {game_image_.width(), game_image_.height()}},
+                1,
+                0,
+                render_attachment,
+                {},
+                {}
+            };
+
+            render(render_info, cmd, [&](vk::CommandBuffer cmd) {
+                const vk::Rect2D scissor({{}, {swapchain->width, swapchain->height}});
+                const vk::Viewport viewport(
+                    0,
+                    0,
+                    static_cast<float>(game_image_.width()),
+                    static_cast<float>(game_image_.height()),
+                    1.0f
+                );
+
+                cmd.setScissor(0, scissor);
+                cmd.setViewport(0, viewport);
+
+                cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
+                cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
+                cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+                cmd.drawIndexed(4, 1, 3, 0, 0);
+
+                cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline);
+                cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
+                cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+                cmd.drawIndexed(3, 1, 0, 0, 0);
+            });
+        }
+
+        transition_image(
+            cmd,
+            game_image_.image,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::eTransferSrcOptimal
+        );
+
         // swapchain image transition
         transition_image(
             cmd,
             swapchain->images[image_index],
             vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferDstOptimal
+        );
+
+        {
+            vk::ImageBlit2 region = {
+                vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+                {vk::Offset3D(),
+                 vk::Offset3D{
+                     static_cast<int32_t>(game_image_.width()),
+                     static_cast<int32_t>(game_image_.height()),
+                     1
+                 }},
+                vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+                {vk::Offset3D(),
+                 vk::Offset3D{
+                     static_cast<int32_t>(swapchain->width),
+                     static_cast<int32_t>(swapchain->height),
+                     1
+                 }},
+            };
+            vk::BlitImageInfo2 blit_info = {
+                game_image_.image,
+                vk::ImageLayout::eTransferSrcOptimal,
+                swapchain->images[image_index],
+                vk::ImageLayout::eTransferDstOptimal,
+                region,
+            };
+            cmd.blitImage2(blit_info);
+        }
+
+        // swapchain image transition
+        transition_image(
+            cmd,
+            swapchain->images[image_index],
+            vk::ImageLayout::eTransferDstOptimal,
             vk::ImageLayout::eColorAttachmentOptimal
         );
 
-        vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
-        vk::RenderingAttachmentInfo render_attachment = {
-            swapchain->image_views[image_index],
-            vk::ImageLayout::eColorAttachmentOptimal,
-            {},
-            {},
-            {},
-            vk::AttachmentLoadOp::eClear,
-            vk::AttachmentStoreOp::eStore,
-            clear_value
-        };
-        vk::RenderingInfo render_info = {
-            {}, {{}, {swapchain->width, swapchain->height}}, 1, 0, render_attachment, {}, {}
-        };
-        render(render_info, cmd, [&](vk::CommandBuffer cmd) {
-            const vk::Rect2D scissor({{}, {swapchain->width, swapchain->height}});
-            const vk::Viewport viewport(
-                0,
-                0,
-                static_cast<float>(swapchain->width),
-                static_cast<float>(swapchain->height),
-                1.0f
-            );
-
-            cmd.setScissor(0, scissor);
-            cmd.setViewport(0, viewport);
-
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
-            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
-            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
-            cmd.drawIndexed(4, 1, 3, 0, 0);
-
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline);
-            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
-            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
-            cmd.drawIndexed(3, 1, 0, 0, 0);
-
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-        });
+        {
+            vk::RenderingAttachmentInfo render_attachment = {
+                swapchain->image_views[image_index],
+                vk::ImageLayout::eColorAttachmentOptimal,
+                {},
+                {},
+                {},
+                vk::AttachmentLoadOp::eLoad,
+                vk::AttachmentStoreOp::eStore,
+            };
+            vk::RenderingInfo render_info = {
+                {}, {{}, {swapchain->width, swapchain->height}}, 1, 0, render_attachment, {}, {}
+            };
+            render(render_info, cmd, [&](vk::CommandBuffer cmd) {
+                ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+            });
+        }
 
         // swapchain image transition
         transition_image(
@@ -471,6 +554,8 @@ void Renderer::recreate_swapchain() {
     auto [width, height] = window->get_size();
     vk::Format old_format = swapchain->format;
     swapchain.emplace(gpu, device, surface, old_format, width, height);
+
+    game_image_.resize({width, height, 1});
 }
 
 void Renderer::transition_image(

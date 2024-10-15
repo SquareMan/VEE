@@ -6,6 +6,7 @@
 
 #include "Platform/Window.hpp"
 #include "Renderer/Buffer.hpp"
+#include "Renderer/Image.hpp"
 #include "Renderer/Pipeline.hpp"
 #include "Renderer/Swapchain.hpp"
 #include "Renderer/VkUtil.hpp"
@@ -70,5 +71,7 @@ private:
     Vee::Buffer staging_buffer;
     Vee::Buffer vertex_buffer;
     Vee::Buffer index_buffer;
+
+    Vee::Image game_image_;
 };
 } // namespace Vee
