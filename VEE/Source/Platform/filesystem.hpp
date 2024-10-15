@@ -7,6 +7,6 @@
 #include "VeeCore.hpp"
 #include <vector>
 
-namespace Vee::Platform::Filesystem {
+namespace vee::platform::filesystem {
 VEE_NODISCARD std::vector<char> read_binary_file(const char* filename);
 }

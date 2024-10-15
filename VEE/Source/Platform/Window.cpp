@@ -10,7 +10,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 
-namespace Vee::Platform {
+namespace vee::platform {
 Window::Window(int32_t width, int32_t height) {
     if (!glfwInit()) {
         // TODO log here

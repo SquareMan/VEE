@@ -25,11 +25,11 @@ struct CmdBuffer {
     vk::Semaphore submit_semaphore;
 };
 
-namespace Vee {
+namespace vee {
 struct Vertex;
 class Renderer final {
 public:
-    explicit Renderer(const Platform::Window& Window);
+    explicit Renderer(const platform::Window& Window);
     ~Renderer();
 
     void Render();
@@ -48,15 +48,15 @@ private:
 
     void transition_image(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to);
 
-    const Platform::Window* window;
+    const platform::Window* window;
 
     vkb::Instance instance;
 #if _DEBUG
     vk::DebugUtilsMessengerEXT debug_messenger_;
 #endif
 
-    Vulkan::Pipeline triangle_pipeline;
-    Vulkan::Pipeline square_pipeline;
+    vulkan::Pipeline triangle_pipeline;
+    vulkan::Pipeline square_pipeline;
 
     vk::PhysicalDevice gpu;
     vk::Device device;
@@ -68,10 +68,10 @@ private:
 
     RingBuffer<CmdBuffer, 3> command_buffers;
 
-    Vee::Buffer staging_buffer;
-    Vee::Buffer vertex_buffer;
-    Vee::Buffer index_buffer;
+    vee::Buffer staging_buffer;
+    vee::Buffer vertex_buffer;
+    vee::Buffer index_buffer;
 
-    Vee::Image game_image_;
+    vee::Image game_image_;
 };
 } // namespace Vee

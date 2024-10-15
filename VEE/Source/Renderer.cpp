@@ -4,7 +4,7 @@
 
 #include "Renderer.hpp"
 
-#include "Platform/Filesystem.hpp"
+#include "Platform/filesystem.hpp"
 #include "Renderer/Image.hpp"
 #include "Renderer/Shader.hpp"
 #include "Renderer/VkUtil.hpp"
@@ -22,8 +22,8 @@
 #include <set>
 #include <vector>
 
-namespace Vee {
-Renderer::Renderer(const Platform::Window& window)
+namespace vee {
+Renderer::Renderer(const platform::Window& window)
     : window(&window) {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
@@ -41,7 +41,7 @@ Renderer::Renderer(const Platform::Window& window)
                                 VK_KHR_SURFACE_EXTENSION_NAME,
                                 VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
                             })
-                            .set_debug_callback(&Vee::Vulkan::vk_debug_callback)
+                            .set_debug_callback(&vee::vulkan::vk_debug_callback)
                             .require_api_version(1, 3, 0)
                             .build();
 
@@ -120,28 +120,28 @@ Renderer::Renderer(const Platform::Window& window)
     vk::PipelineCache pipeline_cache = device.createPipelineCache({}).value;
 
     std::vector<char> triangle_vertex_shader_code =
-        Platform::Filesystem::read_binary_file("Resources/triangle.vert.spv");
+        platform::filesystem::read_binary_file("Resources/triangle.vert.spv");
     std::vector<char> square_vertex_shader_code =
-        Platform::Filesystem::read_binary_file("Resources/square.vert.spv");
+        platform::filesystem::read_binary_file("Resources/square.vert.spv");
     std::vector<char> frag_shader_code =
-        Platform::Filesystem::read_binary_file("Resources/color.frag.spv");
+        platform::filesystem::read_binary_file("Resources/color.frag.spv");
 
-    Vulkan::Shader fragment_shader = {device, vk::ShaderStageFlagBits::eFragment, frag_shader_code};
-    Vulkan::Shader triangle_vertex_shader = {
+    vulkan::Shader fragment_shader = {device, vk::ShaderStageFlagBits::eFragment, frag_shader_code};
+    vulkan::Shader triangle_vertex_shader = {
         device, vk::ShaderStageFlagBits::eVertex, triangle_vertex_shader_code
     };
-    Vulkan::Shader square_vertex_shader = {
+    vulkan::Shader square_vertex_shader = {
         device, vk::ShaderStageFlagBits::eVertex, square_vertex_shader_code
     };
 
     // clang-format off
-    triangle_pipeline = Vulkan::PipelineBuilder()
+    triangle_pipeline = vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
         .with_shader(fragment_shader)
         .with_shader(triangle_vertex_shader)
         .build(device);
 
-    square_pipeline = Vulkan::PipelineBuilder()
+    square_pipeline = vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
         .with_shader(fragment_shader)
         .with_shader(square_vertex_shader)
@@ -258,7 +258,7 @@ Renderer::Renderer(const Platform::Window& window)
 
     init_imgui();
 
-    new (&game_image_) Vee::Image(
+    new (&game_image_) vee::Image(
         device,
         allocator,
         vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,

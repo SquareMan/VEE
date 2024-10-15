@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace Vee::Vulkan {
+namespace vee::vulkan {
 Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vector<char>& code) {
     m_device = device;
     m_stage = stage;

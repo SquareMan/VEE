@@ -13,7 +13,7 @@
 
 #include <tuple>
 
-namespace Vee::Platform {
+namespace vee::platform {
 class Window {
 public:
     Window(int32_t width, int32_t height);

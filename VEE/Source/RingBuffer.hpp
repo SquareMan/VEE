@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace Vee {
+namespace vee {
 template <typename T, size_t I> class RingBuffer {
 public:
     T& operator[](size_t idx) {

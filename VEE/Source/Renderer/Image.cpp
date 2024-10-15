@@ -4,7 +4,7 @@
 
 #include "Image.hpp"
 
-namespace Vee {
+namespace vee {
 Image::Image(
     vk::Device device,
     vma::Allocator allocator,

@@ -8,8 +8,8 @@
 #include "Vertex.hpp"
 #include "VkUtil.hpp"
 
-namespace Vee {
-Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
+namespace vee {
+vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     // build layout
     // TODO: Configurable layouts
     const vk::PushConstantRange push_constants[]{{
@@ -91,11 +91,11 @@ Vulkan::Pipeline Vulkan::PipelineBuilder::build(vk::Device device) {
     return Pipeline{layout, pipeline};
 }
 
-Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_cache(vk::PipelineCache cache) {
+vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_cache(vk::PipelineCache cache) {
     m_cache = cache;
     return *this;
 }
-Vulkan::PipelineBuilder& Vulkan::PipelineBuilder::with_shader(const Shader& shader) {
+vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_shader(const Shader& shader) {
     vk::PipelineShaderStageCreateInfo info({}, shader.m_stage, shader.m_module, shader.entrypoint());
     pipeline_shader_stage_infos.push_back(info);
 

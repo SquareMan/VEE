@@ -2,11 +2,11 @@
 // Created by Square on 9/29/2024.
 //
 
-#include "Filesystem.hpp"
+#include "filesystem.hpp"
 
 #include <fstream>
 
-namespace Vee::Platform::Filesystem {
+namespace vee::platform::filesystem {
 std::vector<char> read_binary_file(const char* filename) {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
 

@@ -10,7 +10,7 @@
 
 #include <array>
 
-namespace Vee {
+namespace vee {
 struct Vertex final {
     glm::vec2 pos;
     glm::vec3 color;

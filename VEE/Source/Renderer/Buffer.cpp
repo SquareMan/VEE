@@ -4,7 +4,7 @@
 
 #include "Buffer.hpp"
 
-namespace Vee {
+namespace vee {
 Buffer::~Buffer() {
     allocator.destroyBuffer(buffer, allocation);
 }

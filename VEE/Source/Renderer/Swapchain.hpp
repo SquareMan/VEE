@@ -6,7 +6,7 @@
 
 #include "Renderer/VkUtil.hpp"
 
-namespace Vee {
+namespace vee {
 
 class Swapchain {
 public:

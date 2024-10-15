@@ -6,7 +6,7 @@
 
 #include "VkUtil.hpp"
 
-namespace Vee {
+namespace vee {
 
 class Buffer {
 public:

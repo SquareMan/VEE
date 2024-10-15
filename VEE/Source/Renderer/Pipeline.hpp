@@ -10,10 +10,8 @@
 
 #pragma once
 
-namespace Vee::Vulkan {
+namespace vee::vulkan {
 class Shader;
-}
-namespace Vee::Vulkan {
 
 class Pipeline final {
 public:
@@ -33,4 +31,4 @@ private:
     std::vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stage_infos;
 };
 
-} // namespace Vee::Vulkan
+} // namespace vee::vulkan

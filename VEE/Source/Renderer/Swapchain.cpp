@@ -4,7 +4,7 @@
 
 #include "Swapchain.hpp"
 
-namespace Vee {
+namespace vee {
 Swapchain::Swapchain(
     vk::PhysicalDevice gpu,
     vk::Device device,

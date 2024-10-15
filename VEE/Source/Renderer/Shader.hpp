@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace Vee::Vulkan {
+namespace vee::vulkan {
 
 class Shader final {
 public:
