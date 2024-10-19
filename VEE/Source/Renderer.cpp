@@ -239,22 +239,12 @@ Renderer::Renderer(const platform::Window& window)
     }
 
     // Copy from staging to final buffers
-    {
-        CmdBuffer& cmd_buffer = command_buffers.buffer[0];
-
-        std::ignore = device.resetFences(cmd_buffer.fence);
-        std::ignore = cmd_buffer.cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-        cmd_buffer.cmd.copyBuffer(
-            staging_buffer.buffer, vertex_buffer.buffer, {{0, 0, sizeof(vertices)}}
-        );
-        cmd_buffer.cmd.copyBuffer(
+    immediate_submit([&](vk::CommandBuffer cmd) {
+        cmd.copyBuffer(staging_buffer.buffer, vertex_buffer.buffer, {{0, 0, sizeof(vertices)}});
+        cmd.copyBuffer(
             staging_buffer.buffer, index_buffer.buffer, {{sizeof(vertices), 0, sizeof(indices)}}
         );
-        std::ignore = cmd_buffer.cmd.end();
-
-        vk::SubmitInfo submit_info({}, {}, cmd_buffer.cmd);
-        std::ignore = graphics_queue.submit(submit_info, cmd_buffer.fence);
-    }
+    });
 
     init_imgui();
 
@@ -576,4 +566,16 @@ void Renderer::transition_image(
     dependency_info.setImageMemoryBarriers(image_barrier);
     cmd.pipelineBarrier2(dependency_info);
 }
-} // namespace Vee
+
+void Renderer::immediate_submit(std::function<void(vk::CommandBuffer cmd)> func) const {
+    std::ignore = device.waitForFences(immediate_fence_, true, UINT64_MAX);
+    std::ignore = device.resetFences(immediate_fence_);
+
+    std::ignore = immediate_buffer_.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    func(immediate_buffer_);
+    std::ignore = immediate_buffer_.end();
+
+    vk::SubmitInfo submit_info = {{}, {}, immediate_buffer_};
+    std::ignore = graphics_queue.submit(submit_info, immediate_fence_);
+}
+} // namespace vee

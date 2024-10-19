@@ -66,6 +66,9 @@ private:
     vk::Queue presentation_queue;
     vk::CommandPool command_pool;
 
+    vk::CommandBuffer immediate_buffer_;
+    vk::Fence immediate_fence_;
+
     RingBuffer<CmdBuffer, 3> command_buffers;
 
     vee::Buffer staging_buffer;
