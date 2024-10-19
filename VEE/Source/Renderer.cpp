@@ -4,6 +4,7 @@
 
 #include "Renderer.hpp"
 
+#include "glm/packing.hpp"
 #include "Platform/filesystem.hpp"
 #include "Renderer/Image.hpp"
 #include "Renderer/Shader.hpp"
@@ -18,6 +19,7 @@
 #include <chrono>
 #include <glm/common.hpp>
 #include <imgui.h>
+#include <iostream>
 #include <numbers>
 #include <set>
 #include <vector>
@@ -93,6 +95,7 @@ Renderer::Renderer(const platform::Window& window)
     };
     vma::Allocator allocator = vma::createAllocator(allocator_info).value;
 
+
     // Command pool
     const vk::CommandPoolCreateInfo cpci(
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -100,53 +103,6 @@ Renderer::Renderer(const platform::Window& window)
     );
 
     command_pool = vk::Device(device).createCommandPool(cpci).value;
-
-
-    // swapchain
-    std::vector<vk::SurfaceFormatKHR> surface_formats = gpu.getSurfaceFormatsKHR(surface).value;
-    vk::Format format = {};
-    for (const vk::SurfaceFormatKHR& surface_format : surface_formats) {
-        if (surface_format.format == vk::Format::eB8G8R8A8Srgb) {
-            format = surface_format.format;
-            break;
-        }
-    }
-    assert(format == vk::Format::eB8G8R8A8Srgb);
-
-    auto [width, height] = window.get_size();
-    swapchain.emplace(gpu, device, surface, format, width, height);
-
-    // pipelines
-    vk::PipelineCache pipeline_cache = device.createPipelineCache({}).value;
-
-    std::vector<char> triangle_vertex_shader_code =
-        platform::filesystem::read_binary_file("Resources/triangle.vert.spv");
-    std::vector<char> square_vertex_shader_code =
-        platform::filesystem::read_binary_file("Resources/square.vert.spv");
-    std::vector<char> frag_shader_code =
-        platform::filesystem::read_binary_file("Resources/color.frag.spv");
-
-    vulkan::Shader fragment_shader = {device, vk::ShaderStageFlagBits::eFragment, frag_shader_code};
-    vulkan::Shader triangle_vertex_shader = {
-        device, vk::ShaderStageFlagBits::eVertex, triangle_vertex_shader_code
-    };
-    vulkan::Shader square_vertex_shader = {
-        device, vk::ShaderStageFlagBits::eVertex, square_vertex_shader_code
-    };
-
-    // clang-format off
-    triangle_pipeline = vulkan::PipelineBuilder()
-        .with_cache(pipeline_cache)
-        .with_shader(fragment_shader)
-        .with_shader(triangle_vertex_shader)
-        .build(device);
-
-    square_pipeline = vulkan::PipelineBuilder()
-        .with_cache(pipeline_cache)
-        .with_shader(fragment_shader)
-        .with_shader(square_vertex_shader)
-        .build(device);
-    // clang-format on
 
 
     // command buffers
@@ -166,27 +122,30 @@ Renderer::Renderer(const platform::Window& window)
         command_buffers[i].cmd = tmp_command_buffers[i];
     }
 
+    immediate_buffer_ =
+        device.allocateCommandBuffers({command_pool, vk::CommandBufferLevel::ePrimary, 1})
+            .value.front();
+    immediate_fence_ = device.createFence({vk::FenceCreateFlagBits::eSignaled}).value;
+
 
     // vertex and staging buffers
+    float a = 4.0f * std::numbers::pi_v<float> / 3.0f;
+    float b = 2.0f * std::numbers::pi_v<float> / 3.0f;
+    float c = 0;
     const Vertex vertices[] = {
-        {{4.0f * std::numbers::pi_v<float> / 3.0f, 4.0f * std::numbers::pi_v<float> / 3.0f},
-         {1.0f, 0.0f, 0.0f}},
-        {{2.0f * std::numbers::pi_v<float> / 3.0f, 2.0f * std::numbers::pi_v<float> / 3.0f},
-         {0.0f, 1.0f, 1.0f}},
-        {{0, 0}, {0.0f, 0.0f, 1.0f}},
-        {{-0.25f, -0.25f}, {1.0f, 0.0f, 0.0f}},
-        {{0.25f, -0.25f}, {0.0f, 1.0f, 0.0f}},
-        {{0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}},
-        {{-0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}},
-
+        {{a, a}, {1.0f, 0.0f, 0.0f}, {sin(a), cos(a)}},
+        {{b, b}, {0, 1.0f, 0.0f}, {sin(b), cos(b)}},
+        {{c, c}, {0.0f, 0.0f, 1.0f}, {sin(c), cos(c)}},
+        {{-0.25f, -0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.25f, -0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
     };
     const uint16_t indices[] = {0, 1, 2, 3, 4, 5, 6};
     {
+        // 1MB staging buffer
         vk::BufferCreateInfo buffer_info(
-            {},
-            sizeof(vertices) + sizeof(indices),
-            vk::BufferUsageFlagBits::eTransferSrc,
-            vk::SharingMode::eExclusive
+            {}, 1024 * 1024, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive
         );
         auto [buf, alloc] = allocator
                                 .createBuffer(
@@ -246,8 +205,23 @@ Renderer::Renderer(const platform::Window& window)
         );
     });
 
-    init_imgui();
 
+    // swapchain
+    std::vector<vk::SurfaceFormatKHR> surface_formats = gpu.getSurfaceFormatsKHR(surface).value;
+    vk::Format format = {};
+    for (const vk::SurfaceFormatKHR& surface_format : surface_formats) {
+        if (surface_format.format == vk::Format::eB8G8R8A8Srgb) {
+            format = surface_format.format;
+            break;
+        }
+    }
+    assert(format == vk::Format::eB8G8R8A8Srgb);
+
+    auto [width, height] = window.get_size();
+    swapchain.emplace(gpu, device, surface, format, width, height);
+
+
+    // images/textures
     new (&game_image_) vee::Image(
         device,
         allocator,
@@ -256,6 +230,130 @@ Renderer::Renderer(const platform::Window& window)
         format,
         vk::ImageAspectFlagBits::eColor
     );
+
+    new (&tex_image_) vee::Image(
+        device,
+        allocator,
+        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
+        {16, 16, 1},
+        vk::Format::eB8G8R8A8Unorm,
+        vk::ImageAspectFlagBits::eColor
+    );
+
+    {
+        // checkerboard image
+        const uint32_t black = glm::packUnorm4x8(glm::vec4(0, 0, 0, 1));
+        const uint32_t magenta = glm::packUnorm4x8(glm::vec4(1, 0, 1, 1));
+        std::array<uint32_t, 16 * 16> pixels; // for 16x16 checkerboard texture
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 16; y++) {
+                pixels[y * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+            }
+        }
+
+        std::ignore = allocator.copyMemoryToAllocation(
+            pixels.data(), staging_buffer.allocation, 0, pixels.size() * sizeof(uint32_t)
+        );
+
+        immediate_submit([&](vk::CommandBuffer cmd) {
+            transition_image(
+                cmd,
+                tex_image_.image,
+                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eTransferDstOptimal
+            );
+
+            vk::BufferImageCopy region = {
+                {}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {16, 16, 1}
+            };
+            cmd.copyBufferToImage(
+                staging_buffer.buffer, tex_image_.image, vk::ImageLayout::eTransferDstOptimal, region
+            );
+
+            transition_image(
+                cmd,
+                tex_image_.image,
+                vk::ImageLayout::eTransferDstOptimal,
+                vk::ImageLayout::eShaderReadOnlyOptimal
+            );
+        });
+    }
+
+
+    // pipelines
+    vk::PipelineCache pipeline_cache = device.createPipelineCache({}).value;
+
+    std::vector<char> triangle_vertex_shader_code =
+        platform::filesystem::read_binary_file("Resources/triangle.vert.spv");
+    std::vector<char> square_vertex_shader_code =
+        platform::filesystem::read_binary_file("Resources/square.vert.spv");
+    std::vector<char> vert_color_frag_shader_code =
+        platform::filesystem::read_binary_file("Resources/color.frag.spv");
+    std::vector<char> tex_frag_shader_code =
+        platform::filesystem::read_binary_file("Resources/texture.frag.spv");
+
+    vulkan::Shader vert_color_fragment_shader = {
+        device, vk::ShaderStageFlagBits::eFragment, vert_color_frag_shader_code
+    };
+    vulkan::Shader texture_fragment_shader = {
+        device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code
+    };
+    vulkan::Shader triangle_vertex_shader = {
+        device, vk::ShaderStageFlagBits::eVertex, triangle_vertex_shader_code
+    };
+    vulkan::Shader square_vertex_shader = {
+        device, vk::ShaderStageFlagBits::eVertex, square_vertex_shader_code
+    };
+
+    vk::Sampler tex_sampler = device.createSampler({}).value;
+    vk::DescriptorSetLayoutBinding tex_binding = {
+        0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler
+    };
+    // clang-format off
+    triangle_pipeline = vulkan::PipelineBuilder()
+        .with_cache(pipeline_cache)
+        .with_shader(vert_color_fragment_shader)
+        .with_shader(triangle_vertex_shader)
+        .build(device);
+
+    square_pipeline = vulkan::PipelineBuilder()
+        .with_cache(pipeline_cache)
+        .with_shader(texture_fragment_shader)
+        .with_shader(square_vertex_shader)
+        .with_binding(tex_binding)
+        .build(device);
+    // clang-format on
+
+
+    // descriptor pool
+    {
+        vk::DescriptorPoolSize pool_sizes[] = {{vk::DescriptorType::eCombinedImageSampler, 1}};
+        descriptor_pool_ =
+            device
+                .createDescriptorPool(
+                    {vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, pool_sizes}
+                )
+                .value;
+
+        vk::DescriptorSetAllocateInfo allocate_info = {
+            descriptor_pool_, square_pipeline.descriptor_set_layout
+        };
+        std::vector<vk::DescriptorSet> sets = device.allocateDescriptorSets(allocate_info).value;
+        tex_descriptor_ = sets[0];
+
+        vk::DescriptorImageInfo image_info = {
+            tex_sampler, tex_image_.view, vk::ImageLayout::eShaderReadOnlyOptimal
+        };
+
+        vk::WriteDescriptorSet descriptor_write = {
+            tex_descriptor_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}
+        };
+        device.updateDescriptorSets(descriptor_write, {});
+    }
+
+
+    init_imgui();
+
 
     assert(swapchain != std::nullopt);
 }
@@ -362,6 +460,9 @@ void Renderer::Render() {
                 cmd.setViewport(0, viewport);
 
                 cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
+                cmd.bindDescriptorSets(
+                    vk::PipelineBindPoint::eGraphics, square_pipeline.layout, 0, tex_descriptor_, {}
+                );
                 cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
                 cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
                 cmd.drawIndexed(4, 1, 3, 0, 0);

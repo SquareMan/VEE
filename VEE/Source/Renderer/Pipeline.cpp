@@ -17,7 +17,11 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
         0,
         4,
     }};
-    vk::PipelineLayoutCreateInfo layout_info({}, {}, push_constants);
+
+    vk::DescriptorSetLayoutCreateInfo set_layout_info = {{}, descriptor_set_layout_bindings};
+    vk::DescriptorSetLayout descriptor_layout = device.createDescriptorSetLayout(set_layout_info);
+
+    vk::PipelineLayoutCreateInfo layout_info({}, descriptor_layout, push_constants);
     VkPipelineLayout layout = device.createPipelineLayout(layout_info);
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment;
@@ -88,7 +92,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     );
 
     vk::Pipeline pipeline = device.createGraphicsPipeline(m_cache, pipeline_info).value;
-    return Pipeline{layout, pipeline};
+    return Pipeline{layout, pipeline, descriptor_layout};
 }
 
 vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_cache(vk::PipelineCache cache) {
@@ -101,4 +105,11 @@ vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_shader(const Shader& shad
 
     return *this;
 }
-} // namespace Vee
+
+vulkan::PipelineBuilder&
+vulkan::PipelineBuilder::with_binding(const vk::DescriptorSetLayoutBinding& binding) {
+    descriptor_set_layout_bindings.push_back(binding);
+
+    return *this;
+}
+} // namespace vee

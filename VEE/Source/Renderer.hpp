@@ -46,7 +46,11 @@ private:
     );
     void recreate_swapchain();
 
-    void transition_image(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to);
+    void transition_image(
+        vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to
+    );
+
+    void immediate_submit(std::function<void(vk::CommandBuffer cmd)> func) const;
 
     const platform::Window* window;
 
@@ -76,5 +80,10 @@ private:
     vee::Buffer index_buffer;
 
     vee::Image game_image_;
+
+    vee::Image tex_image_;
+
+    vk::DescriptorPool descriptor_pool_;
+    vk::DescriptorSet tex_descriptor_;
 };
-} // namespace Vee
+} // namespace vee

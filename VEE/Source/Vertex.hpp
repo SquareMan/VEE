@@ -14,6 +14,7 @@ namespace vee {
 struct Vertex final {
     glm::vec2 pos;
     glm::vec3 color;
+    glm::vec2 uv;
 
     static vk::VertexInputBindingDescription binding_description() {
         static constexpr vk::VertexInputBindingDescription binding_description(
@@ -22,8 +23,8 @@ struct Vertex final {
         return binding_description;
     }
 
-    static std::array<vk::VertexInputAttributeDescription, 2> attribute_descriptions() {
-        static constexpr std::array<vk::VertexInputAttributeDescription, 2> attribute_descriptions{
+    static std::array<vk::VertexInputAttributeDescription, 3> attribute_descriptions() {
+        static constexpr std::array<vk::VertexInputAttributeDescription, 3> attribute_descriptions{
             {{
                  0,
                  0,
@@ -35,10 +36,16 @@ struct Vertex final {
                  0,
                  vk::Format::eR32G32B32Sfloat,
                  offsetof(Vertex, color),
+             },
+             {
+                 2,
+                 0,
+                 vk::Format::eR32G32Sfloat,
+                 offsetof(Vertex, uv),
              }}
-        };
+        }; // namespace vee
 
         return attribute_descriptions;
     }
 };
-} // namespace Vee
+} // namespace vee
