@@ -323,14 +323,11 @@ void Renderer::Render() {
 
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     record_commands(command_buffer.cmd, [&](vk::CommandBuffer cmd) {
-        auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
-        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
-        float data = time_ms.count() / 1000.0f;
-
         // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter
         // which we use here.
+        auto time = static_cast<float>(glfwGetTime());
         cmd.pushConstants(
-            triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &data
+            triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &time
         );
 
         transition_image(
