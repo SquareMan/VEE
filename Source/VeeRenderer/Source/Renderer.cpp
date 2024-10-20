@@ -36,7 +36,7 @@ Renderer::Renderer(const platform::Window& window)
         constexpr bool enable_validation = false;
 #endif
         vkb::InstanceBuilder instance_builder;
-        auto inst_res = instance_builder.set_app_name("VEE POC")
+        auto inst_res = instance_builder.set_app_name("HelloTriangle POC")
                             .set_app_version(0, 1, 0)
                             .enable_validation_layers(enable_validation)
                             .enable_extensions({
@@ -352,6 +352,7 @@ Renderer::Renderer(const platform::Window& window)
     }
 
 
+    // TODO: break dependency of the Renderer on imgui
     init_imgui();
 
 
