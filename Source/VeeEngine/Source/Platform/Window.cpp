@@ -11,7 +11,7 @@
 #include "GLFW/glfw3native.h"
 
 namespace vee::platform {
-Window::Window(int32_t width, int32_t height) {
+Window::Window(const char* title, int32_t width, int32_t height) {
     if (!glfwInit()) {
         // TODO log here
         assert(false);
@@ -19,7 +19,7 @@ Window::Window(int32_t width, int32_t height) {
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfw_window = glfwCreateWindow(width, height, "Hello World", nullptr, nullptr);
+    glfw_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!glfw_window) {
         // TODO: log here
         assert(false);

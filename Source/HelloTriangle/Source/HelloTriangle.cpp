@@ -8,7 +8,7 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    const vee::platform::Window window(640, 640);
+    const vee::platform::Window window("Hello Triangle", 640, 640);
     vee::Renderer renderer(window);
 
     while (!window.should_close()) {
