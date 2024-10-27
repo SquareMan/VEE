@@ -5,8 +5,8 @@
 #include "Renderer/Pipeline.hpp"
 
 #include "Renderer/Shader.hpp"
-#include "Vertex.hpp"
 #include "Renderer/VkUtil.hpp"
+#include "Vertex.hpp"
 
 namespace vee {
 vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
@@ -68,6 +68,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     );
     vk::PipelineMultisampleStateCreateInfo multisample_state_info({}, vk::SampleCountFlagBits::e1);
 
+    // FIXME: This should not be hardcoded
     vk::Format format = vk::Format::eB8G8R8A8Srgb;
     vk::PipelineRenderingCreateInfo rendering_info = {{}, format};
 

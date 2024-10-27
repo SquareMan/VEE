@@ -5,11 +5,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
         Private/HelloTriangle.cpp
+        Private/GameRenderer.cpp
+        Private/GameRenderer.hpp
 )
 
 add_executable(HelloTriangle ${SOURCES})
 target_include_directories(HelloTriangle PUBLIC Public/ PRIVATE Private/)
-target_link_libraries(HelloTriangle PRIVATE VeeRuntime VeeEditor)
+target_link_libraries(HelloTriangle PRIVATE VeeRuntime VeeEditor glfw)
 
 # Compile Shaders to spv
 set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Resources)

@@ -14,6 +14,5 @@ public:
     // Run the main engine loop on the current thread. Will not return until the engine has finished
     // running
     void tick();
-
 };
 } // namespace vee

@@ -14,6 +14,9 @@ public:
     EditorApplication(const platform::Window& window);
     void run();
 
+    Engine& get_engine();
+    Renderer& get_renderer();
+
 private:
     Engine engine_;
     platform::Window window_;

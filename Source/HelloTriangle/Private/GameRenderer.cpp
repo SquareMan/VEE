@@ -1,0 +1,342 @@
+//
+// Created by Square on 10/27/2024.
+//
+
+#include "GameRenderer.hpp"
+
+#include "Platform/filesystem.hpp"
+#include "Platform/Window.hpp"
+#include "Renderer/Buffer.hpp"
+#include "Renderer/Image.hpp"
+#include "Renderer/Pipeline.hpp"
+#include "Renderer/RenderCtx.hpp"
+#include "Renderer/Shader.hpp"
+#include "Vertex.hpp"
+
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <numbers>
+
+namespace ht {
+void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
+    ctx_ = ctx;
+
+    // vertex and staging buffers
+    float a = 4.0f * std::numbers::pi_v<float> / 3.0f;
+    float b = 2.0f * std::numbers::pi_v<float> / 3.0f;
+    float c = 0;
+    const vee::Vertex vertices[] = {
+        {{a, a}, {1.0f, 0.0f, 0.0f}, {sin(a), cos(a)}},
+        {{b, b}, {0, 1.0f, 0.0f}, {sin(b), cos(b)}},
+        {{c, c}, {0.0f, 0.0f, 1.0f}, {sin(c), cos(c)}},
+        {{-0.25f, -0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.25f, -0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+    };
+    const uint16_t indices[] = {0, 1, 2, 3, 4, 5, 6};
+    {
+        // 1MB staging buffer
+        vk::BufferCreateInfo buffer_info(
+            {}, 1024 * 1024, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive
+        );
+        auto [buf, alloc] = ctx_->allocator
+                                .createBuffer(
+                                    buffer_info,
+                                    {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite,
+                                     vma::MemoryUsage::eAuto}
+                                )
+                                .value;
+        new (&staging_buffer) vee::Buffer(buf, alloc, ctx_->allocator);
+
+        std::ignore = ctx_->allocator.copyMemoryToAllocation(
+            vertices, staging_buffer.allocation, 0, sizeof(vertices)
+        );
+        std::ignore = ctx_->allocator.copyMemoryToAllocation(
+            indices, staging_buffer.allocation, sizeof(vertices), sizeof(indices)
+        );
+    }
+
+    {
+        vk::BufferCreateInfo buffer_info = {
+            {},
+            sizeof(vertices) + sizeof(indices),
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+            vk::SharingMode::eExclusive
+        };
+        {
+            auto [buf, alloc] =
+                ctx_->allocator
+                    .createBuffer(
+                        buffer_info,
+                        {vma::AllocationCreateFlagBits::eDedicatedMemory, vma::MemoryUsage::eAuto}
+                    )
+                    .value;
+            new (&vertex_buffer) vee::Buffer(buf, alloc, ctx_->allocator);
+        }
+
+        buffer_info.setUsage(
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
+        );
+        {
+            auto [buf, alloc] = ctx_->allocator
+                                    .createBuffer(
+                                        buffer_info,
+                                        {vma::AllocationCreateFlagBits::eDedicatedMemory,
+                                         vma::MemoryUsage::eGpuOnly}
+                                    )
+                                    .value;
+            new (&index_buffer) vee::Buffer(buf, alloc, ctx_->allocator);
+        }
+    }
+
+    // Copy from staging to final buffers
+    ctx_->immediate_submit([&](vk::CommandBuffer cmd) {
+        cmd.copyBuffer(staging_buffer.buffer, vertex_buffer.buffer, {{0, 0, sizeof(vertices)}});
+        cmd.copyBuffer(
+            staging_buffer.buffer, index_buffer.buffer, {{sizeof(vertices), 0, sizeof(indices)}}
+        );
+    });
+
+
+    // images/textures
+    auto [width, height] = ctx_->window->get_size();
+    new (&game_image_) vee::Image(
+        ctx_->device,
+        ctx_->allocator,
+        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
+        {width, height, 1},
+        vk::Format::eB8G8R8A8Srgb,
+        vk::ImageAspectFlagBits::eColor
+    );
+
+    new (&tex_image_) vee::Image(
+        ctx_->device,
+        ctx_->allocator,
+        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
+        {16, 16, 1},
+        vk::Format::eB8G8R8A8Unorm,
+        vk::ImageAspectFlagBits::eColor
+    );
+
+    {
+        // checkerboard image
+        const uint32_t black = glm::packUnorm4x8(glm::vec4(0, 0, 0, 1));
+        const uint32_t magenta = glm::packUnorm4x8(glm::vec4(1, 0, 1, 1));
+        std::array<uint32_t, 16 * 16> pixels; // for 16x16 checkerboard texture
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 16; y++) {
+                pixels[y * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+            }
+        }
+
+        std::ignore = ctx_->allocator.copyMemoryToAllocation(
+            pixels.data(), staging_buffer.allocation, 0, pixels.size() * sizeof(uint32_t)
+        );
+
+        ctx_->immediate_submit([&](vk::CommandBuffer cmd) {
+            vee::vulkan::transition_image(
+                cmd,
+                tex_image_.image,
+                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eTransferDstOptimal
+            );
+
+            vk::BufferImageCopy region = {
+                {}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {16, 16, 1}
+            };
+            cmd.copyBufferToImage(
+                staging_buffer.buffer, tex_image_.image, vk::ImageLayout::eTransferDstOptimal, region
+            );
+
+            vee::vulkan::transition_image(
+                cmd,
+                tex_image_.image,
+                vk::ImageLayout::eTransferDstOptimal,
+                vk::ImageLayout::eShaderReadOnlyOptimal
+            );
+        });
+    }
+
+
+    // pipelines
+    vk::PipelineCache pipeline_cache = ctx_->device.createPipelineCache({}).value;
+
+    std::vector<char> triangle_vertex_shader_code =
+        vee::platform::filesystem::read_binary_file("Resources/triangle.vert.spv");
+    std::vector<char> square_vertex_shader_code =
+        vee::platform::filesystem::read_binary_file("Resources/square.vert.spv");
+    std::vector<char> vert_color_frag_shader_code =
+        vee::platform::filesystem::read_binary_file("Resources/color.frag.spv");
+    std::vector<char> tex_frag_shader_code =
+        vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv");
+
+    vee::vulkan::Shader vert_color_fragment_shader = {
+        ctx_->device, vk::ShaderStageFlagBits::eFragment, vert_color_frag_shader_code
+    };
+    vee::vulkan::Shader texture_fragment_shader = {
+        ctx_->device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code
+    };
+    vee::vulkan::Shader triangle_vertex_shader = {
+        ctx_->device, vk::ShaderStageFlagBits::eVertex, triangle_vertex_shader_code
+    };
+    vee::vulkan::Shader square_vertex_shader = {
+        ctx_->device, vk::ShaderStageFlagBits::eVertex, square_vertex_shader_code
+    };
+
+    vk::Sampler tex_sampler = ctx_->device.createSampler({}).value;
+    vk::DescriptorSetLayoutBinding tex_binding = {
+        0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler
+    };
+    // clang-format off
+    triangle_pipeline = vee::vulkan::PipelineBuilder()
+        .with_cache(pipeline_cache)
+        .with_shader(vert_color_fragment_shader)
+        .with_shader(triangle_vertex_shader)
+        .build(ctx_->device);
+
+    square_pipeline = vee::vulkan::PipelineBuilder()
+        .with_cache(pipeline_cache)
+        .with_shader(texture_fragment_shader)
+        .with_shader(square_vertex_shader)
+        .with_binding(tex_binding)
+        .build(ctx_->device);
+    // clang-format on
+
+
+    // descriptor pool
+    {
+        vk::DescriptorPoolSize pool_sizes[] = {{vk::DescriptorType::eCombinedImageSampler, 1}};
+        descriptor_pool_ =
+            ctx_->device
+                .createDescriptorPool(
+                    {vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, pool_sizes}
+                )
+                .value;
+
+        vk::DescriptorSetAllocateInfo allocate_info = {
+            descriptor_pool_, square_pipeline.descriptor_set_layout
+        };
+        std::vector<vk::DescriptorSet> sets =
+            ctx_->device.allocateDescriptorSets(allocate_info).value;
+        tex_descriptor_ = sets[0];
+
+        vk::DescriptorImageInfo image_info = {
+            tex_sampler, tex_image_.view, vk::ImageLayout::eShaderReadOnlyOptimal
+        };
+
+        vk::WriteDescriptorSet descriptor_write = {
+            tex_descriptor_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}
+        };
+        ctx_->device.updateDescriptorSets(descriptor_write, {});
+    }
+}
+
+void GameRenderer::OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+    //    // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter
+    // which we use here.
+    auto time = static_cast<float>(glfwGetTime());
+    cmd.pushConstants(
+        triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &time
+    );
+
+    vee::vulkan::transition_image(
+        cmd, game_image_.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal
+    );
+    {
+        vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
+        vk::RenderingAttachmentInfo render_attachment = {
+            game_image_.view,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            {},
+            {},
+            {},
+            vk::AttachmentLoadOp::eClear,
+            vk::AttachmentStoreOp::eStore,
+            clear_value
+        };
+        vk::RenderingInfo render_info = {
+            {}, {{}, {game_image_.width(), game_image_.height()}}, 1, 0, render_attachment, {}, {}
+        };
+
+        cmd.beginRendering(render_info);
+        {
+            const vk::Rect2D scissor({{}, {ctx_->swapchain.width, ctx_->swapchain.height}});
+            const vk::Viewport viewport(
+                0,
+                0,
+                static_cast<float>(game_image_.width()),
+                static_cast<float>(game_image_.height()),
+                1.0f
+            );
+
+            cmd.setScissor(0, scissor);
+            cmd.setViewport(0, viewport);
+
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, square_pipeline.layout, 0, tex_descriptor_, {}
+            );
+            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
+            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+            cmd.drawIndexed(4, 1, 3, 0, 0);
+
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline);
+            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
+            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+            cmd.drawIndexed(3, 1, 0, 0, 0);
+        }
+        cmd.endRendering();
+    }
+
+    vee::vulkan::transition_image(
+        cmd,
+        game_image_.image,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::ImageLayout::eTransferSrcOptimal
+    );
+
+    // swapchain image transition
+    vee::vulkan::transition_image(
+        cmd,
+        ctx_->swapchain.images[swapchain_idx],
+        vk::ImageLayout::eUndefined,
+        vk::ImageLayout::eTransferDstOptimal
+    );
+
+    {
+        vk::ImageBlit2 region = {
+            vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+            {vk::Offset3D(),
+             vk::Offset3D{
+                 static_cast<int32_t>(game_image_.width()),
+                 static_cast<int32_t>(game_image_.height()),
+                 1
+             }},
+            vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+            {vk::Offset3D(),
+             vk::Offset3D{
+                 static_cast<int32_t>(ctx_->swapchain.width),
+                 static_cast<int32_t>(ctx_->swapchain.height),
+                 1
+             }},
+        };
+        vk::BlitImageInfo2 blit_info = {
+            game_image_.image,
+            vk::ImageLayout::eTransferSrcOptimal,
+            ctx_->swapchain.images[swapchain_idx],
+            vk::ImageLayout::eTransferDstOptimal,
+            region,
+        };
+        cmd.blitImage2(blit_info);
+    }
+
+    // swapchain image transition
+    vee::vulkan::transition_image(
+        cmd,
+        ctx_->swapchain.images[swapchain_idx],
+        vk::ImageLayout::eTransferDstOptimal,
+        vk::ImageLayout::eColorAttachmentOptimal
+    );
+}
+} // namespace ht

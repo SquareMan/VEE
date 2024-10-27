@@ -10,6 +10,7 @@ namespace vee {
 
 class Swapchain {
 public:
+    Swapchain() = default;
     Swapchain(
         vk::PhysicalDevice gpu,
         vk::Device device,
@@ -25,11 +26,11 @@ public:
     std::vector<vk::ImageView> image_views;
 
     vk::Format format;
-    uint32_t width;
-    uint32_t height;
+    uint32_t width = 0;
+    uint32_t height = 0;
 
 private:
     vk::Device device;
 };
 
-} // namespace Vee
+} // namespace vee

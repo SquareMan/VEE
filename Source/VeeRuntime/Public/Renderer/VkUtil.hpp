@@ -31,4 +31,8 @@ VkBool32 vk_debug_callback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData
 );
+
+void transition_image(
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to
+);
 } // namespace Vee::Vulkan
