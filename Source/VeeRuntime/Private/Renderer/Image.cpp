@@ -2,7 +2,7 @@
 // Created by Square on 10/11/2024.
 //
 
-#include "Image.hpp"
+#include "Renderer/Image.hpp"
 
 namespace vee {
 Image::Image(

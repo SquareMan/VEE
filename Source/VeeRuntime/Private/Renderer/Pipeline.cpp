@@ -2,11 +2,11 @@
 // Created by Square on 10/3/2024.
 //
 
-#include "Pipeline.hpp"
+#include "Renderer/Pipeline.hpp"
 
-#include "Shader.hpp"
+#include "Renderer/Shader.hpp"
 #include "Vertex.hpp"
-#include "VkUtil.hpp"
+#include "Renderer/VkUtil.hpp"
 
 namespace vee {
 vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {

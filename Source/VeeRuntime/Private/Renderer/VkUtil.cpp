@@ -3,7 +3,7 @@
 //
 
 #define VMA_IMPLEMENTATION
-#include "VkUtil.hpp"
+#include "Renderer/VkUtil.hpp"
 
 #include <algorithm>
 #include <iostream>

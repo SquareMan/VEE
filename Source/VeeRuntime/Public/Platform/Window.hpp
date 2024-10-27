@@ -5,7 +5,7 @@
 #pragma once
 
 #ifdef WIN32
-#include "Win32/WindowHandle.hpp"
+#include "WindowHandle.hpp"
 #endif
 #include "VeeCore.hpp"
 

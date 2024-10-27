@@ -2,9 +2,9 @@
 // Created by Square on 10/3/2024.
 //
 
-#include "Shader.hpp"
+#include "Renderer/Shader.hpp"
 
-#include "VkUtil.hpp"
+#include "Renderer/VkUtil.hpp"
 
 #include <vector>
 
