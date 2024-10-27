@@ -23,10 +23,10 @@ public:
     void poll_events() const;
     bool should_close() const;
 
-    VEE_NODISCARD std::tuple<uint32_t, uint32_t> get_size() const;
+    [[nodiscard]] std::tuple<uint32_t, uint32_t> get_size() const;
 
-    VEE_NODISCARD WindowHandle get_handle() const;
+    [[nodiscard]] WindowHandle get_handle() const;
 
     GLFWwindow* glfw_window = nullptr;
 };
-} // namespace Vee::Platform
+} // namespace vee::platform

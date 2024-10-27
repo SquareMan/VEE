@@ -21,7 +21,7 @@
 #include <vector>
 
 namespace vee::vulkan {
-VEE_NODISCARD std::vector<const char*> filter_extensions(
+[[nodiscard]] std::vector<const char*> filter_extensions(
     std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions
 );
 
