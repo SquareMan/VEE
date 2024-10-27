@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.13.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 set(SOURCES
         Source/Renderer.cpp
         Source/Renderer.hpp
@@ -22,11 +21,19 @@ set(SOURCES
         Source/Renderer/Buffer.hpp
         Source/Renderer/Image.cpp
         Source/Renderer/Image.hpp
+        Source/VeeCore.hpp
+        Source/Platform/Filesystem.cpp
+        Source/Platform/Filesystem.hpp
+        Source/Platform/Window.cpp
+        Source/Platform/Window.hpp
+        Source/Platform/Win32/WindowHandle.hpp
+        Source/Engine.cpp
+        Source/Engine.hpp
 )
 
-add_library(VeeRenderer STATIC ${SOURCES})
-target_include_directories(VeeRenderer PUBLIC ${Vulkan_INCLUDE_DIR})
-target_include_directories(VeeRenderer PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
-target_link_libraries(VeeRenderer VeeEngine glm::glm vk-bootstrap::vk-bootstrap imgui)
+add_library(VeeRuntime STATIC ${SOURCES})
+target_include_directories(VeeRuntime PUBLIC ${Vulkan_INCLUDE_DIR})
+target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
+target_link_libraries(VeeRuntime glm::glm vk-bootstrap::vk-bootstrap imgui glfw)
 # TODO: Separate public and private include paths
-target_include_directories(VeeRenderer PUBLIC Source/)
+target_include_directories(VeeRuntime PUBLIC Source/)

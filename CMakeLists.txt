@@ -71,5 +71,5 @@ if (NOT imgui_POPULATED)
 endif ()
 
 add_subdirectory(Source/HelloTriangle)
-add_subdirectory(Source/VeeEngine)
-add_subdirectory(Source/VeeRenderer)
+add_subdirectory(Source/VeeEditor)
+add_subdirectory(Source/VeeRuntime)

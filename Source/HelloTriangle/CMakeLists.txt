@@ -9,7 +9,7 @@ set(SOURCES
 
 add_executable(HelloTriangle ${SOURCES})
 target_include_directories(HelloTriangle PRIVATE Source/)
-target_link_libraries(HelloTriangle PRIVATE VeeEngine VeeRenderer imgui)
+target_link_libraries(HelloTriangle PRIVATE VeeRuntime VeeEditor)
 
 # Compile Shaders to spv
 set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Resources)
