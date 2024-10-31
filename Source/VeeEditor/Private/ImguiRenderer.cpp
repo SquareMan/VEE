@@ -46,10 +46,10 @@ void ImguiRenderer::OnInit(std::shared_ptr<RenderCtx>& ctx) {
     ImGui_ImplVulkan_LoadFunctions(
         [](const char* function_name, void* user_data) {
             return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(
-                *static_cast<VkInstance*>(user_data), function_name
+                static_cast<VkInstance>(user_data), function_name
             );
         },
-        &ctx_->instance.instance
+        ctx_->instance.instance
     );
     ImGui_ImplVulkan_Init(&init_info);
     ImGui_ImplVulkan_CreateFontsTexture();

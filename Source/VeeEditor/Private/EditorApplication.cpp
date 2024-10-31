@@ -31,6 +31,10 @@ void vee::EditorApplication::run() {
 
         ImGui::ShowDemoWindow();
         ImGui::Render();
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
         renderer_.Render();
 
         window_.poll_events();

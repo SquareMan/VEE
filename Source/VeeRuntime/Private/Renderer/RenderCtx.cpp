@@ -47,11 +47,17 @@ RenderCtx::RenderCtx(const platform::Window& window)
     v12_features.descriptorIndexing = true;
 
     vkb::PhysicalDeviceSelector selector(instance, surface);
-    vkb::PhysicalDevice vkb_gpu = selector.set_minimum_version(1, 3)
-                                      .set_required_features_13(v13_features)
-                                      .set_required_features_12(v12_features)
-                                      .select()
-                                      .value();
+    vkb::PhysicalDevice vkb_gpu =
+        selector.set_minimum_version(1, 3)
+            .set_required_features_13(v13_features)
+            .set_required_features_12(v12_features)
+            // NOTE: IMGUI's viewport mode is implemented to use the
+            // vulkan dynamic rendering extension functions when dynamic
+            // rendering is enabled rather than the vulkan 1.3 functions
+            // so we need to enable the extension as well
+            .add_required_extension(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+            .select()
+            .value();
     gpu = vkb_gpu.physical_device;
 
     vkb::DeviceBuilder device_builder(vkb_gpu);
