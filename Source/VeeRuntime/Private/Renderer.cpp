@@ -64,6 +64,7 @@ void Renderer::Render() {
         case vk::Result::eSuboptimalKHR:
         case vk::Result::eErrorOutOfDateKHR:
             ctx_->recreate_swapchain();
+            return;
         default:
             assert(false);
             return;
@@ -74,10 +75,8 @@ void Renderer::Render() {
 
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     record_commands(command_buffer.cmd, [&](vk::CommandBuffer cmd) {
-        {
-            for (std::shared_ptr<IRenderer>& r : renderers_) {
-                r->OnRender(cmd, image_index);
-            }
+        for (std::shared_ptr<IRenderer>& r : renderers_) {
+            r->OnRender(cmd, image_index);
         }
     });
 
