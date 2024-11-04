@@ -8,12 +8,18 @@
 
 namespace vee {
 class RenderCtx;
-}
-namespace vee {
+
 class IRenderer {
 public:
-    virtual void OnInit(std::shared_ptr<RenderCtx>& ctx) = 0;
-    virtual void OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) = 0;
-    virtual void OnDestroy() = 0;
+    IRenderer() = default;
+    IRenderer(const IRenderer&) = default;
+    IRenderer(IRenderer&&) = default;
+    IRenderer& operator=(const IRenderer&) = default;
+    IRenderer& operator=(IRenderer&&) = default;
+    virtual ~IRenderer() = default;
+
+    virtual void on_init(std::shared_ptr<RenderCtx>& ctx) = 0;
+    virtual void on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) = 0;
+    virtual void on_destroy() = 0;
 };
 } // namespace vee

@@ -18,7 +18,7 @@
 #include <numbers>
 
 namespace ht {
-void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
+void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
     ctx_ = ctx;
 
     // vertex and staging buffers
@@ -47,13 +47,13 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
                                      vma::MemoryUsage::eAuto}
                                 )
                                 .value;
-        new (&staging_buffer) vee::Buffer(buf, alloc, ctx_->allocator);
+        new (&staging_buffer_) vee::Buffer(buf, alloc, ctx_->allocator);
 
         std::ignore = ctx_->allocator.copyMemoryToAllocation(
-            vertices, staging_buffer.allocation, 0, sizeof(vertices)
+            vertices, staging_buffer_.allocation, 0, sizeof(vertices)
         );
         std::ignore = ctx_->allocator.copyMemoryToAllocation(
-            indices, staging_buffer.allocation, sizeof(vertices), sizeof(indices)
+            indices, staging_buffer_.allocation, sizeof(vertices), sizeof(indices)
         );
     }
 
@@ -72,7 +72,7 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
                         {vma::AllocationCreateFlagBits::eDedicatedMemory, vma::MemoryUsage::eAuto}
                     )
                     .value;
-            new (&vertex_buffer) vee::Buffer(buf, alloc, ctx_->allocator);
+            new (&vertex_buffer_) vee::Buffer(buf, alloc, ctx_->allocator);
         }
 
         buffer_info.setUsage(
@@ -86,15 +86,15 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
                                          vma::MemoryUsage::eGpuOnly}
                                     )
                                     .value;
-            new (&index_buffer) vee::Buffer(buf, alloc, ctx_->allocator);
+            new (&index_buffer_) vee::Buffer(buf, alloc, ctx_->allocator);
         }
     }
 
     // Copy from staging to final buffers
     ctx_->immediate_submit([&](vk::CommandBuffer cmd) {
-        cmd.copyBuffer(staging_buffer.buffer, vertex_buffer.buffer, {{0, 0, sizeof(vertices)}});
+        cmd.copyBuffer(staging_buffer_.buffer, vertex_buffer_.buffer, {{0, 0, sizeof(vertices)}});
         cmd.copyBuffer(
-            staging_buffer.buffer, index_buffer.buffer, {{sizeof(vertices), 0, sizeof(indices)}}
+            staging_buffer_.buffer, index_buffer_.buffer, {{sizeof(vertices), 0, sizeof(indices)}}
         );
     });
 
@@ -131,7 +131,7 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
         }
 
         std::ignore = ctx_->allocator.copyMemoryToAllocation(
-            pixels.data(), staging_buffer.allocation, 0, pixels.size() * sizeof(uint32_t)
+            pixels.data(), staging_buffer_.allocation, 0, pixels.size() * sizeof(uint32_t)
         );
 
         ctx_->immediate_submit([&](vk::CommandBuffer cmd) {
@@ -146,7 +146,10 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
                 {}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {16, 16, 1}
             };
             cmd.copyBufferToImage(
-                staging_buffer.buffer, tex_image_.image, vk::ImageLayout::eTransferDstOptimal, region
+                staging_buffer_.buffer,
+                tex_image_.image,
+                vk::ImageLayout::eTransferDstOptimal,
+                region
             );
 
             vee::vulkan::transition_image(
@@ -189,13 +192,13 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
         0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler
     };
     // clang-format off
-    triangle_pipeline = vee::vulkan::PipelineBuilder()
+    triangle_pipeline_ = vee::vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
         .with_shader(vert_color_fragment_shader)
         .with_shader(triangle_vertex_shader)
         .build(ctx_->device);
 
-    square_pipeline = vee::vulkan::PipelineBuilder()
+    square_pipeline_ = vee::vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
         .with_shader(texture_fragment_shader)
         .with_shader(square_vertex_shader)
@@ -215,7 +218,7 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
                 .value;
 
         vk::DescriptorSetAllocateInfo allocate_info = {
-            descriptor_pool_, square_pipeline.descriptor_set_layout
+            descriptor_pool_, square_pipeline_.descriptor_set_layout
         };
         std::vector<vk::DescriptorSet> sets =
             ctx_->device.allocateDescriptorSets(allocate_info).value;
@@ -232,12 +235,12 @@ void GameRenderer::OnInit(std::shared_ptr<vee::RenderCtx>& ctx) {
     }
 }
 
-void GameRenderer::OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     //    // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter
     // which we use here.
     auto time = static_cast<float>(glfwGetTime());
     cmd.pushConstants(
-        triangle_pipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &time
+        triangle_pipeline_.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &time
     );
 
     vee::vulkan::transition_image(
@@ -273,17 +276,17 @@ void GameRenderer::OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             cmd.setScissor(0, scissor);
             cmd.setViewport(0, viewport);
 
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline.pipeline);
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline_.pipeline);
             cmd.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, square_pipeline.layout, 0, tex_descriptor_, {}
+                vk::PipelineBindPoint::eGraphics, square_pipeline_.layout, 0, tex_descriptor_, {}
             );
-            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
-            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+            cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
+            cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
             cmd.drawIndexed(4, 1, 3, 0, 0);
 
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline.pipeline);
-            cmd.bindVertexBuffers(0, vertex_buffer.buffer, {{0}});
-            cmd.bindIndexBuffer(index_buffer.buffer, 0, vk::IndexType::eUint16);
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_.pipeline);
+            cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
+            cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
             cmd.drawIndexed(3, 1, 0, 0, 0);
         }
         cmd.endRendering();

@@ -11,7 +11,7 @@
 #include <backends/imgui_impl_vulkan.h>
 
 namespace vee {
-void ImguiRenderer::OnInit(std::shared_ptr<RenderCtx>& ctx) {
+void ImguiRenderer::on_init(std::shared_ptr<RenderCtx>& ctx) {
     ctx_ = ctx;
 
     ImGui::CreateContext();
@@ -55,7 +55,7 @@ void ImguiRenderer::OnInit(std::shared_ptr<RenderCtx>& ctx) {
     ImGui_ImplVulkan_CreateFontsTexture();
 }
 
-void ImguiRenderer::OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     vk::RenderingAttachmentInfo render_attachment = {
         ctx_->swapchain.image_views[swapchain_idx],
         vk::ImageLayout::eColorAttachmentOptimal,
@@ -81,7 +81,7 @@ void ImguiRenderer::OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     );
 }
 
-void ImguiRenderer::OnDestroy() {
+void ImguiRenderer::on_destroy() {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

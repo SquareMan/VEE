@@ -13,19 +13,19 @@ namespace ht {
 
 class GameRenderer : public vee::IRenderer {
 public:
-    void OnInit(std::shared_ptr<vee::RenderCtx>& ctx) override;
-    void OnRender(vk::CommandBuffer cmd, uint32_t swapchain_idx) override;
-    void OnDestroy() override{};
+    void on_init(std::shared_ptr<vee::RenderCtx>& ctx) override;
+    void on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) override;
+    void on_destroy() override {}
 
 private:
     std::shared_ptr<vee::RenderCtx> ctx_;
 
-    vee::vulkan::Pipeline triangle_pipeline;
-    vee::vulkan::Pipeline square_pipeline;
+    vee::vulkan::Pipeline triangle_pipeline_;
+    vee::vulkan::Pipeline square_pipeline_;
 
-    vee::Buffer staging_buffer;
-    vee::Buffer vertex_buffer;
-    vee::Buffer index_buffer;
+    vee::Buffer staging_buffer_;
+    vee::Buffer vertex_buffer_;
+    vee::Buffer index_buffer_;
 
     vee::Image game_image_;
     vee::Image tex_image_;

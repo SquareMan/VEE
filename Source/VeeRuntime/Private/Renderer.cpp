@@ -20,7 +20,7 @@ Renderer::~Renderer() {
     // TODO: Cleanup everything
     std::ignore = ctx_->device.waitIdle();
     for (std::shared_ptr<IRenderer>& renderer : renderers_) {
-        renderer->OnDestroy();
+        renderer->on_destroy();
     }
 
 #if _DEBUG
@@ -37,7 +37,7 @@ Renderer::~Renderer() {
 
 void Renderer::init() {
     for (std::shared_ptr<IRenderer>& r : renderers_) {
-        r->OnInit(ctx_);
+        r->on_init(ctx_);
     }
 }
 
@@ -76,7 +76,7 @@ void Renderer::Render() {
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     record_commands(command_buffer.cmd, [&](vk::CommandBuffer cmd) {
         for (std::shared_ptr<IRenderer>& r : renderers_) {
-            r->OnRender(cmd, image_index);
+            r->on_render(cmd, image_index);
         }
     });
 
