@@ -32,6 +32,8 @@ set(SOURCES
         Public/Renderer/IRenderer.hpp
         Public/Renderer/RenderCtx.hpp
         Private/Renderer/RenderCtx.cpp
+        Private/Transform.cpp
+        Public/Transform.h
 )
 
 add_library(VeeRuntime STATIC ${SOURCES})

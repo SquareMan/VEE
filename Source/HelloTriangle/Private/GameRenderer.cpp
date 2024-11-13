@@ -11,6 +11,7 @@
 #include "Renderer/Pipeline.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Renderer/Shader.hpp"
+#include "Transform.h"
 #include "Vertex.hpp"
 
 #include <GLFW/glfw3.h>
@@ -26,9 +27,9 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
     float b = 2.0f * std::numbers::pi_v<float> / 3.0f;
     float c = 0;
     const vee::Vertex vertices[] = {
-        {{a, a}, {1.0f, 0.0f, 0.0f}, {sin(a), cos(a)}},
-        {{b, b}, {0, 1.0f, 0.0f}, {sin(b), cos(b)}},
-        {{c, c}, {0.0f, 0.0f, 1.0f}, {sin(c), cos(c)}},
+        {{std::cos(a), std::sin(a)}, {1.0f, 0.0f, 0.0f}, {std::cos(a), std::sin(a)}},
+        {{std::cos(c), std::sin(c)}, {0, 1.0f, 0.0f}, {std::cos(c), std::sin(c)}},
+        {{std::cos(b), std::sin(b)}, {0.0f, 0.0f, 1.0f}, {std::cos(b), std::sin(b)}},
         {{-0.25f, -0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
         {{0.25f, -0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
         {{0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
@@ -165,10 +166,8 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
     // pipelines
     vk::PipelineCache pipeline_cache = ctx_->device.createPipelineCache({}).value;
 
-    std::vector<char> triangle_vertex_shader_code =
-        vee::platform::filesystem::read_binary_file("Resources/triangle.vert.spv");
-    std::vector<char> square_vertex_shader_code =
-        vee::platform::filesystem::read_binary_file("Resources/square.vert.spv");
+    std::vector<char> entity_vertex_shader_code =
+        vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv");
     std::vector<char> vert_color_frag_shader_code =
         vee::platform::filesystem::read_binary_file("Resources/color.frag.spv");
     std::vector<char> tex_frag_shader_code =
@@ -180,11 +179,8 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
     vee::vulkan::Shader texture_fragment_shader = {
         ctx_->device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code
     };
-    vee::vulkan::Shader triangle_vertex_shader = {
-        ctx_->device, vk::ShaderStageFlagBits::eVertex, triangle_vertex_shader_code
-    };
-    vee::vulkan::Shader square_vertex_shader = {
-        ctx_->device, vk::ShaderStageFlagBits::eVertex, square_vertex_shader_code
+    vee::vulkan::Shader entity_vertex_shader = {
+        ctx_->device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code
     };
 
     vk::Sampler tex_sampler = ctx_->device.createSampler({}).value;
@@ -195,13 +191,13 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
     triangle_pipeline_ = vee::vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
         .with_shader(vert_color_fragment_shader)
-        .with_shader(triangle_vertex_shader)
+        .with_shader(entity_vertex_shader)
         .build(ctx_->device);
 
     square_pipeline_ = vee::vulkan::PipelineBuilder()
         .with_cache(pipeline_cache)
         .with_shader(texture_fragment_shader)
-        .with_shader(square_vertex_shader)
+        .with_shader(entity_vertex_shader)
         .with_binding(tex_binding)
         .build(ctx_->device);
     // clang-format on
@@ -236,12 +232,7 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
 }
 
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
-    //    // NOTE: triangle_pipeline and square_pipeline have the same layout, it shouldn't matter
-    // which we use here.
     auto time = static_cast<float>(glfwGetTime());
-    cmd.pushConstants(
-        triangle_pipeline_.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(float), &time
-    );
 
     vee::vulkan::transition_image(
         cmd, game_image_.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal
@@ -277,6 +268,15 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             cmd.setViewport(0, viewport);
 
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline_.pipeline);
+            vee::Transform i({((time - static_cast<uint32_t>(time)) - 0.5) * 2, std::sin(time)});
+            glm::mat4x4 mi = i.to_mat();
+            cmd.pushConstants(
+                square_pipeline_.layout,
+                vk::ShaderStageFlagBits::eVertex,
+                0,
+                sizeof(glm::mat4x4),
+                &mi
+            );
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics, square_pipeline_.layout, 0, tex_descriptor_, {}
             );
@@ -285,6 +285,15 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             cmd.drawIndexed(4, 1, 3, 0, 0);
 
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_.pipeline);
+            vee::Transform tfm({}, {0.5f, 0.5f}, time);
+            glm::mat4x4 mtfm = tfm.to_mat();
+            cmd.pushConstants(
+                triangle_pipeline_.layout,
+                vk::ShaderStageFlagBits::eVertex,
+                0,
+                sizeof(glm::mat4x4),
+                &mtfm
+            );
             cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
             cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
             cmd.drawIndexed(3, 1, 0, 0, 0);

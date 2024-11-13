@@ -8,6 +8,8 @@
 #include "Renderer/VkUtil.hpp"
 #include "Vertex.hpp"
 
+#include <glm/mat4x4.hpp>
+
 namespace vee {
 vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     // build layout
@@ -15,7 +17,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     const vk::PushConstantRange push_constants[]{{
         vk::ShaderStageFlagBits::eVertex,
         0,
-        4,
+        sizeof(glm::mat4x4),
     }};
 
     vk::DescriptorSetLayoutCreateInfo set_layout_info = {{}, descriptor_set_layout_bindings};
