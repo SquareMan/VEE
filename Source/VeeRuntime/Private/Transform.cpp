@@ -4,11 +4,12 @@
 
 namespace vee {
 glm::mat4x4 Transform::to_mat() const {
+    float c_theta, s_theta;
+    c_theta = std::cos(rotation);
+    s_theta = std::sin(rotation);
     return {
-        scale.x * glm::vec4{std::cos(rotation), std::sin(rotation), 0, 0},
-        scale.y
-            * glm::
-                vec4{std::cos(rotation + std::numbers::pi / 2), std::sin(rotation + std::numbers::pi / 2), 0, 0},
+        scale.x * glm::vec4{c_theta, s_theta, 0, 0},
+        scale.y * glm::vec4{-s_theta, c_theta, 0, 0},
         {0, 0, 1, 0},
         {position.x, position.y, 0, 1}
     };
