@@ -17,7 +17,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     const vk::PushConstantRange push_constants[]{{
         vk::ShaderStageFlagBits::eVertex,
         0,
-        sizeof(glm::mat4x4),
+        sizeof(glm::mat4x4) * 2,
     }};
 
     vk::DescriptorSetLayoutCreateInfo set_layout_info = {{}, descriptor_set_layout_bindings};

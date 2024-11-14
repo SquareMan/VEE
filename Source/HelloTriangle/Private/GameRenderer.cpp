@@ -15,8 +15,12 @@
 #include "Vertex.hpp"
 
 #include <GLFW/glfw3.h>
+#include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <numbers>
+
+#include <imgui.h>
+
 
 namespace ht {
 void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
@@ -30,10 +34,10 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
         {{std::cos(a), std::sin(a)}, {1.0f, 0.0f, 0.0f}, {std::cos(a), std::sin(a)}},
         {{std::cos(c), std::sin(c)}, {0, 1.0f, 0.0f}, {std::cos(c), std::sin(c)}},
         {{std::cos(b), std::sin(b)}, {0.0f, 0.0f, 1.0f}, {std::cos(b), std::sin(b)}},
-        {{-0.25f, -0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.25f, -0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-        {{-0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
     };
     const uint16_t indices[] = {0, 1, 2, 3, 4, 5, 6};
     {
@@ -162,7 +166,6 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
         });
     }
 
-
     // pipelines
     vk::PipelineCache pipeline_cache = ctx_->device.createPipelineCache({}).value;
 
@@ -234,6 +237,33 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     auto time = static_cast<float>(glfwGetTime());
 
+    static glm::vec2 cam_pos = {};
+    static float cam_rot = 0;
+    static glm::vec2 cam_scale = {1, 1};
+    if (ImGui::Begin("Debug")) {
+        ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_pos));
+        ImGui::DragFloat("Cam Rot", &cam_rot);
+        ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_scale));
+    }
+    ImGui::End();
+
+    vee::Transform cam_transform(cam_pos, glm::radians(cam_rot), cam_scale);
+    const glm::mat4x4 proj = glm::ortho<float>(
+                                 -static_cast<float>(ctx_->swapchain.width) / 2,
+                                 static_cast<float>(ctx_->swapchain.width) / 2,
+                                 -static_cast<float>(ctx_->swapchain.height) / 2,
+                                 static_cast<float>(ctx_->swapchain.height) / 2
+                             )
+                             * glm::inverse(cam_transform.to_mat());
+
+    cmd.pushConstants(
+        square_pipeline_.layout,
+        vk::ShaderStageFlagBits::eVertex,
+        sizeof(glm::mat4x4),
+        sizeof(glm::mat4x4),
+        &proj
+    );
+
     vee::vulkan::transition_image(
         cmd, game_image_.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal
     );
@@ -255,7 +285,7 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
 
         cmd.beginRendering(render_info);
         {
-            const vk::Rect2D scissor({{}, {ctx_->swapchain.width, ctx_->swapchain.height}});
+            const vk::Rect2D scissor({{}, {game_image_.width(), game_image_.height()}});
             const vk::Viewport viewport(
                 0,
                 0,
@@ -268,14 +298,20 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             cmd.setViewport(0, viewport);
 
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline_.pipeline);
-            vee::Transform i({((time - static_cast<uint32_t>(time)) - 0.5) * 2, std::sin(time)});
-            glm::mat4x4 mi = i.to_mat();
+            glm::mat4x4 square_transform =
+                vee::Transform(
+                    100.f
+                        * glm::vec2{((time - static_cast<uint32_t>(time)) - 0.5) * 2, std::sin(time)},
+                    0,
+                    {100.f, 100.f}
+                )
+                    .to_mat();
             cmd.pushConstants(
                 square_pipeline_.layout,
                 vk::ShaderStageFlagBits::eVertex,
                 0,
                 sizeof(glm::mat4x4),
-                &mi
+                &square_transform
             );
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics, square_pipeline_.layout, 0, tex_descriptor_, {}
@@ -285,14 +321,15 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             cmd.drawIndexed(4, 1, 3, 0, 0);
 
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_.pipeline);
-            vee::Transform tfm({}, {0.5f, 0.5f}, time);
-            glm::mat4x4 mtfm = tfm.to_mat();
+            vee::Transform({320.f, 320.f}, time, {100.f, 100.f});
+            glm::mat4x4 triangle_transform =
+                vee::Transform({320.f, 320.f}, time, {100.f, 100.f}).to_mat();
             cmd.pushConstants(
                 triangle_pipeline_.layout,
                 vk::ShaderStageFlagBits::eVertex,
                 0,
                 sizeof(glm::mat4x4),
-                &mtfm
+                &triangle_transform
             );
             cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
             cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);

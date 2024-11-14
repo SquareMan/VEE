@@ -7,6 +7,7 @@ class Transform {
 public:
     glm::vec2 position = {0, 0};
     glm::vec2 scale = {1, 1};
+    // radians
     float rotation = 0.0f;
 
     Transform() = default;
@@ -16,7 +17,12 @@ public:
         , scale({1, 1})
         , rotation(0) {}
 
-    Transform(const glm::vec2& position, const glm::vec2& scale, float rotation)
+    Transform(const glm::vec2& position, float rotation)
+        : position(position)
+        , scale({1, 1})
+        , rotation(rotation) {}
+
+    Transform(const glm::vec2& position, float rotation, const glm::vec2& scale)
         : position(position)
         , scale(scale)
         , rotation(rotation) {}

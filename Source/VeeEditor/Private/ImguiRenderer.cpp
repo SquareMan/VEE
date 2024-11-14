@@ -56,6 +56,12 @@ void ImguiRenderer::on_init(std::shared_ptr<RenderCtx>& ctx) {
 }
 
 void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+    ImGui::Render();
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
     vk::RenderingAttachmentInfo render_attachment = {
         ctx_->swapchain.image_views[swapchain_idx],
         vk::ImageLayout::eColorAttachmentOptimal,
