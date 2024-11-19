@@ -4,6 +4,8 @@
 
 #include "GameRenderer.hpp"
 
+#include "Engine/Entity.h"
+#include "Engine/World.h"
 #include "Platform/filesystem.hpp"
 #include "Platform/Window.hpp"
 #include "Renderer/Buffer.hpp"
@@ -19,6 +21,7 @@
 #include <glm/glm.hpp>
 #include <numbers>
 
+#include <Components/CameraComponent.hpp>
 #include <imgui.h>
 
 
@@ -237,24 +240,18 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     auto time = static_cast<float>(glfwGetTime());
 
-    static glm::vec2 cam_pos = {};
-    static float cam_rot = 0;
-    static glm::vec2 cam_scale = {1, 1};
+    // TODO: deal with multiple cameras
+    auto cams = vee::World::entt_registry.view<vee::CameraComponent, vee::Transform>();
+    auto [e, cam, cam_transform] = *cams.each().begin() ;
+
     if (ImGui::Begin("Debug")) {
-        ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_pos));
-        ImGui::DragFloat("Cam Rot", &cam_rot);
-        ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_scale));
+        ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_transform.position));
+        ImGui::DragFloat("Cam Rot", &cam_transform.rotation);
+        ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_transform.scale));
     }
     ImGui::End();
 
-    vee::Transform cam_transform(cam_pos, glm::radians(cam_rot), cam_scale);
-    const glm::mat4x4 proj = glm::ortho<float>(
-                                 -static_cast<float>(ctx_->swapchain.width) / 2,
-                                 static_cast<float>(ctx_->swapchain.width) / 2,
-                                 -static_cast<float>(ctx_->swapchain.height) / 2,
-                                 static_cast<float>(ctx_->swapchain.height) / 2
-                             )
-                             * glm::inverse(cam_transform.to_mat());
+    const glm::mat4x4 proj = cam.calculate_view_projection(cam_transform);
 
     cmd.pushConstants(
         square_pipeline_.layout,

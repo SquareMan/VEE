@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "World.h"
 
 namespace vee {
 
@@ -14,5 +15,12 @@ public:
     // Run the main engine loop on the current thread. Will not return until the engine has finished
     // running
     void tick();
+
+    [[nodiscard]] World& get_world() {
+        return world_;
+    };
+
+private:
+    World world_;
 };
 } // namespace vee

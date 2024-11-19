@@ -70,6 +70,14 @@ if (NOT imgui_POPULATED)
     target_compile_definitions(imgui PUBLIC IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 endif ()
 
+# entt
+FetchContent_Declare(
+        entt
+        GIT_REPOSITORY https://github.com/skypjack/entt.git
+        GIT_TAG v3.14.0
+)
+FetchContent_MakeAvailable(entt)
+
 add_subdirectory(Source/HelloTriangle)
 add_subdirectory(Source/VeeEditor)
 add_subdirectory(Source/VeeRuntime)

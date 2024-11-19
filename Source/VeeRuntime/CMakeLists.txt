@@ -27,17 +27,23 @@ set(SOURCES
         Private/Platform/Window.cpp
         Public/Platform/Window.hpp
         Public/Platform/WindowHandle.hpp
-        Private/Engine.cpp
-        Public/Engine.hpp
         Public/Renderer/IRenderer.hpp
         Public/Renderer/RenderCtx.hpp
         Private/Renderer/RenderCtx.cpp
+        Private/Engine/Engine.cpp
+        Public/Engine/Engine.hpp
+        Private/Engine/World.cpp
+        Public/Engine/World.h
+        Private/Engine/Entity.cpp
+        Public/Engine/Entity.h
         Private/Transform.cpp
         Public/Transform.h
+        Private/Components/CameraComponent.cpp
+        Public/Components/CameraComponent.hpp
 )
 
 add_library(VeeRuntime STATIC ${SOURCES})
 target_include_directories(VeeRuntime PUBLIC ${Vulkan_INCLUDE_DIR})
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
-target_link_libraries(VeeRuntime glm::glm vk-bootstrap::vk-bootstrap glfw)
+target_link_libraries(VeeRuntime glm::glm vk-bootstrap::vk-bootstrap glfw EnTT::EnTT)
 target_include_directories(VeeRuntime PUBLIC Public/ PRIVATE Private/)
