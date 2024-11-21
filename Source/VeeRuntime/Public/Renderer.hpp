@@ -16,7 +16,7 @@ class RenderCtx;
 struct Vertex;
 class Renderer final {
 public:
-    explicit Renderer(std::shared_ptr<RenderCtx>&& ctx);
+    explicit Renderer();
     ~Renderer();
     void init();
 
@@ -30,7 +30,6 @@ private:
     void
     record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
 
-    std::shared_ptr<RenderCtx> ctx_;
     std::vector<std::shared_ptr<IRenderer>> renderers_;
 };
 } // namespace vee

@@ -40,10 +40,17 @@ set(SOURCES
         Public/Transform.h
         Private/Components/CameraComponent.cpp
         Public/Components/CameraComponent.hpp
+        Private/Components/SpriteRendererComponent.cpp
+        Public/Components/SpriteRendererComponent.hpp
+        Private/Engine/Sprite.cpp
+        Public/Engine/Sprite.hpp
+        Private/Renderer/GameRenderer.cpp
+        Public/Renderer/GameRenderer.hpp
+        Public/Engine/Service.hpp
 )
 
 add_library(VeeRuntime STATIC ${SOURCES})
 target_include_directories(VeeRuntime PUBLIC ${Vulkan_INCLUDE_DIR})
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
-target_link_libraries(VeeRuntime glm::glm vk-bootstrap::vk-bootstrap glfw EnTT::EnTT)
+target_link_libraries(VeeRuntime glm::glm vk-bootstrap::vk-bootstrap glfw imgui EnTT::EnTT)
 target_include_directories(VeeRuntime PUBLIC Public/ PRIVATE Private/)

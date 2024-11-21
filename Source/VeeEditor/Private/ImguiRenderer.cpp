@@ -11,11 +11,11 @@
 #include <backends/imgui_impl_vulkan.h>
 
 namespace vee {
-void ImguiRenderer::on_init(std::shared_ptr<RenderCtx>& ctx) {
-    ctx_ = ctx;
+void ImguiRenderer::on_init() {
+    auto& ctx = RenderCtx::GetService();
 
     ImGui::CreateContext();
-    ImGui_ImplGlfw_InitForVulkan(ctx_->window->glfw_window, true);
+    ImGui_ImplGlfw_InitForVulkan(ctx.window->glfw_window, true);
 
     // NOTE: (from imgui example)
     // The example only requires a single combined image sampler descriptor for the font image and
@@ -28,14 +28,14 @@ void ImguiRenderer::on_init(std::shared_ptr<RenderCtx>& ctx) {
     vk::DescriptorPoolCreateInfo pool_info = {
         vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes
     };
-    vk::DescriptorPool pool = ctx_->device.createDescriptorPool(pool_info).value;
+    vk::DescriptorPool pool = ctx.device.createDescriptorPool(pool_info).value;
 
-    vk::PipelineRenderingCreateInfo pipeline_info = {{}, ctx_->swapchain.format, {}, {}};
+    vk::PipelineRenderingCreateInfo pipeline_info = {{}, ctx.swapchain.format, {}, {}};
     ImGui_ImplVulkan_InitInfo init_info = {
-        .Instance = ctx_->instance,
-        .PhysicalDevice = ctx_->gpu,
-        .Device = ctx_->device,
-        .Queue = ctx_->graphics_queue,
+        .Instance = ctx.instance,
+        .PhysicalDevice = ctx.gpu,
+        .Device = ctx.device,
+        .Queue = ctx.graphics_queue,
         .DescriptorPool = pool,
         .MinImageCount = 3,
         .ImageCount = 3,
@@ -49,13 +49,15 @@ void ImguiRenderer::on_init(std::shared_ptr<RenderCtx>& ctx) {
                 static_cast<VkInstance>(user_data), function_name
             );
         },
-        ctx_->instance.instance
+        ctx.instance.instance
     );
     ImGui_ImplVulkan_Init(&init_info);
     ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+    auto& ctx = RenderCtx::GetService();
+
     ImGui::Render();
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
@@ -63,7 +65,7 @@ void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     }
 
     vk::RenderingAttachmentInfo render_attachment = {
-        ctx_->swapchain.image_views[swapchain_idx],
+        ctx.swapchain.image_views[swapchain_idx],
         vk::ImageLayout::eColorAttachmentOptimal,
         {},
         {},
@@ -72,7 +74,7 @@ void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
         vk::AttachmentStoreOp::eStore,
     };
     vk::RenderingInfo render_info = {
-        {}, {{}, {ctx_->swapchain.width, ctx_->swapchain.height}}, 1, 0, render_attachment, {}, {}
+        {}, {{}, {ctx.swapchain.width, ctx.swapchain.height}}, 1, 0, render_attachment, {}, {}
     };
     cmd.beginRendering(render_info);
     { ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd); }
@@ -81,7 +83,7 @@ void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     // swapchain image transition
     vulkan::transition_image(
         cmd,
-        ctx_->swapchain.images[swapchain_idx],
+        ctx.swapchain.images[swapchain_idx],
         vk::ImageLayout::eColorAttachmentOptimal,
         vk::ImageLayout::ePresentSrcKHR
     );

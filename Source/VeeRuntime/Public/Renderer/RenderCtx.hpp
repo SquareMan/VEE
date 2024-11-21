@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Engine/Service.hpp"
 #include "RingBuffer.hpp"
 #include "Swapchain.hpp"
 #include "VkUtil.hpp"
@@ -23,9 +24,9 @@ namespace platform {
 class Window;
 }
 
-class RenderCtx {
+class RenderCtx : public Service<RenderCtx> {
 public:
-    explicit RenderCtx(const platform::Window& window);
+    RenderCtx(ConstructionToken, const platform::Window& window);
 
     void recreate_swapchain();
     void immediate_submit(const std::function<void(vk::CommandBuffer cmd)>& func) const;
@@ -48,5 +49,8 @@ public:
     vk::Fence immediate_fence_;
 
     RingBuffer<CmdBuffer, 3> command_buffers;
+
+    vk::PipelineCache pipeline_cache;
+    vk::DescriptorPool descriptor_pool;
 };
 }; // namespace vee

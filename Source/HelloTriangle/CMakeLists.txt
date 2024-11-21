@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
         Private/HelloTriangle.cpp
-        Private/GameRenderer.cpp
-        Private/GameRenderer.hpp
 )
 
 add_executable(HelloTriangle ${SOURCES})

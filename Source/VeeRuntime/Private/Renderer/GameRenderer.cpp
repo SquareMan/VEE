@@ -2,8 +2,9 @@
 // Created by Square on 10/27/2024.
 //
 
-#include "GameRenderer.hpp"
+#include "Renderer/GameRenderer.hpp"
 
+#include "../../../VeeEditor/Public/EditorApplication.hpp"
 #include "Engine/Entity.h"
 #include "Engine/World.h"
 #include "Platform/filesystem.hpp"
@@ -22,12 +23,13 @@
 #include <numbers>
 
 #include <Components/CameraComponent.hpp>
+#include <Components/SpriteRendererComponent.hpp>
 #include <imgui.h>
 
 
-namespace ht {
-void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
-    ctx_ = ctx;
+namespace vee {
+void GameRenderer::on_init() {
+    auto& ctx = RenderCtx::GetService();
 
     // vertex and staging buffers
     float a = 4.0f * std::numbers::pi_v<float> / 3.0f;
@@ -48,19 +50,19 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
         vk::BufferCreateInfo buffer_info(
             {}, 1024 * 1024, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive
         );
-        auto [buf, alloc] = ctx_->allocator
+        auto [buf, alloc] = ctx.allocator
                                 .createBuffer(
                                     buffer_info,
                                     {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite,
                                      vma::MemoryUsage::eAuto}
                                 )
                                 .value;
-        new (&staging_buffer_) vee::Buffer(buf, alloc, ctx_->allocator);
+        new (&staging_buffer_) vee::Buffer(buf, alloc, ctx.allocator);
 
-        std::ignore = ctx_->allocator.copyMemoryToAllocation(
+        std::ignore = ctx.allocator.copyMemoryToAllocation(
             vertices, staging_buffer_.allocation, 0, sizeof(vertices)
         );
-        std::ignore = ctx_->allocator.copyMemoryToAllocation(
+        std::ignore = ctx.allocator.copyMemoryToAllocation(
             indices, staging_buffer_.allocation, sizeof(vertices), sizeof(indices)
         );
     }
@@ -74,32 +76,32 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
         };
         {
             auto [buf, alloc] =
-                ctx_->allocator
+                ctx.allocator
                     .createBuffer(
                         buffer_info,
                         {vma::AllocationCreateFlagBits::eDedicatedMemory, vma::MemoryUsage::eAuto}
                     )
                     .value;
-            new (&vertex_buffer_) vee::Buffer(buf, alloc, ctx_->allocator);
+            new (&vertex_buffer_) vee::Buffer(buf, alloc, ctx.allocator);
         }
 
         buffer_info.setUsage(
             vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
         );
         {
-            auto [buf, alloc] = ctx_->allocator
+            auto [buf, alloc] = ctx.allocator
                                     .createBuffer(
                                         buffer_info,
                                         {vma::AllocationCreateFlagBits::eDedicatedMemory,
                                          vma::MemoryUsage::eGpuOnly}
                                     )
                                     .value;
-            new (&index_buffer_) vee::Buffer(buf, alloc, ctx_->allocator);
+            new (&index_buffer_) vee::Buffer(buf, alloc, ctx.allocator);
         }
     }
 
     // Copy from staging to final buffers
-    ctx_->immediate_submit([&](vk::CommandBuffer cmd) {
+    ctx.immediate_submit([&](vk::CommandBuffer cmd) {
         cmd.copyBuffer(staging_buffer_.buffer, vertex_buffer_.buffer, {{0, 0, sizeof(vertices)}});
         cmd.copyBuffer(
             staging_buffer_.buffer, index_buffer_.buffer, {{sizeof(vertices), 0, sizeof(indices)}}
@@ -108,21 +110,21 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
 
 
     // images/textures
-    auto [width, height] = ctx_->window->get_size();
+    auto [width, height] = ctx.window->get_size();
     new (&game_image_) vee::Image(
-        ctx_->device,
-        ctx_->allocator,
+        ctx.device,
+        ctx.allocator,
         vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
         {width, height, 1},
         vk::Format::eB8G8R8A8Srgb,
         vk::ImageAspectFlagBits::eColor
     );
 
-    new (&tex_image_) vee::Image(
-        ctx_->device,
-        ctx_->allocator,
+    tex_image_ = std::make_shared<vee::Image>(
+        ctx.device,
+        ctx.allocator,
         vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
-        {16, 16, 1},
+        vk::Extent3D{16, 16, 1},
         vk::Format::eB8G8R8A8Unorm,
         vk::ImageAspectFlagBits::eColor
     );
@@ -138,14 +140,14 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
             }
         }
 
-        std::ignore = ctx_->allocator.copyMemoryToAllocation(
+        std::ignore = ctx.allocator.copyMemoryToAllocation(
             pixels.data(), staging_buffer_.allocation, 0, pixels.size() * sizeof(uint32_t)
         );
 
-        ctx_->immediate_submit([&](vk::CommandBuffer cmd) {
+        ctx.immediate_submit([&](vk::CommandBuffer cmd) {
             vee::vulkan::transition_image(
                 cmd,
-                tex_image_.image,
+                tex_image_->image,
                 vk::ImageLayout::eUndefined,
                 vk::ImageLayout::eTransferDstOptimal
             );
@@ -155,94 +157,78 @@ void GameRenderer::on_init(std::shared_ptr<vee::RenderCtx>& ctx) {
             };
             cmd.copyBufferToImage(
                 staging_buffer_.buffer,
-                tex_image_.image,
+                tex_image_->image,
                 vk::ImageLayout::eTransferDstOptimal,
                 region
             );
 
             vee::vulkan::transition_image(
                 cmd,
-                tex_image_.image,
+                tex_image_->image,
                 vk::ImageLayout::eTransferDstOptimal,
                 vk::ImageLayout::eShaderReadOnlyOptimal
             );
         });
+
+        entt::locator<std::shared_ptr<vee::Image>>::emplace(tex_image_);
     }
 
     // pipelines
-    vk::PipelineCache pipeline_cache = ctx_->device.createPipelineCache({}).value;
-
     std::vector<char> entity_vertex_shader_code =
         vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv");
-    std::vector<char> vert_color_frag_shader_code =
-        vee::platform::filesystem::read_binary_file("Resources/color.frag.spv");
     std::vector<char> tex_frag_shader_code =
         vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv");
 
-    vee::vulkan::Shader vert_color_fragment_shader = {
-        ctx_->device, vk::ShaderStageFlagBits::eFragment, vert_color_frag_shader_code
-    };
     vee::vulkan::Shader texture_fragment_shader = {
-        ctx_->device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code
+        ctx.device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code
     };
     vee::vulkan::Shader entity_vertex_shader = {
-        ctx_->device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code
+        ctx.device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code
     };
 
-    vk::Sampler tex_sampler = ctx_->device.createSampler({}).value;
+    vk::Sampler tex_sampler = ctx.device.createSampler({}).value;
     vk::DescriptorSetLayoutBinding tex_binding = {
         0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler
     };
     // clang-format off
-    triangle_pipeline_ = vee::vulkan::PipelineBuilder()
-        .with_cache(pipeline_cache)
-        .with_shader(vert_color_fragment_shader)
-        .with_shader(entity_vertex_shader)
-        .build(ctx_->device);
-
-    square_pipeline_ = vee::vulkan::PipelineBuilder()
-        .with_cache(pipeline_cache)
+    sprite_pipeline_ = vee::vulkan::PipelineBuilder()
+        .with_cache(ctx.pipeline_cache)
         .with_shader(texture_fragment_shader)
         .with_shader(entity_vertex_shader)
         .with_binding(tex_binding)
-        .build(ctx_->device);
+        .build(ctx.device);
     // clang-format on
 
 
     // descriptor pool
     {
-        vk::DescriptorPoolSize pool_sizes[] = {{vk::DescriptorType::eCombinedImageSampler, 1}};
-        descriptor_pool_ =
-            ctx_->device
-                .createDescriptorPool(
-                    {vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, pool_sizes}
-                )
-                .value;
-
         vk::DescriptorSetAllocateInfo allocate_info = {
-            descriptor_pool_, square_pipeline_.descriptor_set_layout
+            ctx.descriptor_pool, sprite_pipeline_.descriptor_set_layout
         };
         std::vector<vk::DescriptorSet> sets =
-            ctx_->device.allocateDescriptorSets(allocate_info).value;
+            ctx.device.allocateDescriptorSets(allocate_info).value;
         tex_descriptor_ = sets[0];
 
         vk::DescriptorImageInfo image_info = {
-            tex_sampler, tex_image_.view, vk::ImageLayout::eShaderReadOnlyOptimal
+            tex_sampler, tex_image_->view, vk::ImageLayout::eShaderReadOnlyOptimal
         };
 
         vk::WriteDescriptorSet descriptor_write = {
             tex_descriptor_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}
         };
-        ctx_->device.updateDescriptorSets(descriptor_write, {});
+        ctx.device.updateDescriptorSets(descriptor_write, {});
     }
 }
 
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+    auto& ctx = RenderCtx::GetService();
+
     auto time = static_cast<float>(glfwGetTime());
+    Engine& engine = EditorApplication::GetService().get_engine();
 
     // TODO: deal with multiple cameras
-    auto cams = vee::World::entt_registry.view<vee::CameraComponent, vee::Transform>();
-    auto [e, cam, cam_transform] = *cams.each().begin() ;
+    auto cams = engine.get_world().entt_registry.view<vee::CameraComponent, vee::Transform>();
+    auto [e, cam, cam_transform] = *cams.each().begin();
 
     if (ImGui::Begin("Debug")) {
         ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_transform.position));
@@ -253,8 +239,10 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
 
     const glm::mat4x4 proj = cam.calculate_view_projection(cam_transform);
 
+    // Push view projection matrix
+    // TODO: this should go in a buffer
     cmd.pushConstants(
-        square_pipeline_.layout,
+        sprite_pipeline_.layout,
         vk::ShaderStageFlagBits::eVertex,
         sizeof(glm::mat4x4),
         sizeof(glm::mat4x4),
@@ -294,39 +282,45 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             cmd.setScissor(0, scissor);
             cmd.setViewport(0, viewport);
 
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, square_pipeline_.pipeline);
-            glm::mat4x4 square_transform =
-                vee::Transform(
-                    100.f
-                        * glm::vec2{((time - static_cast<uint32_t>(time)) - 0.5) * 2, std::sin(time)},
-                    0,
-                    {100.f, 100.f}
-                )
-                    .to_mat();
-            cmd.pushConstants(
-                square_pipeline_.layout,
-                vk::ShaderStageFlagBits::eVertex,
-                0,
-                sizeof(glm::mat4x4),
-                &square_transform
-            );
-            cmd.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, square_pipeline_.layout, 0, tex_descriptor_, {}
-            );
-            cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
-            cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
-            cmd.drawIndexed(4, 1, 3, 0, 0);
+            auto view =
+                engine.get_world().entt_registry.view<vee::Transform, vee::SpriteRendererComponent>(
+                );
+            for (const auto [ent, trans, spr] : view.each()) {
+                cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, spr.pipeline_.pipeline);
 
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_.pipeline);
+                glm::mat4x4 local_to_world = trans.to_mat();
+                cmd.pushConstants(
+                    spr.pipeline_.layout,
+                    vk::ShaderStageFlagBits::eVertex,
+                    0,
+                    sizeof(glm::mat4x4),
+                    &local_to_world
+                );
+                cmd.bindDescriptorSets(
+                    vk::PipelineBindPoint::eGraphics,
+                    spr.pipeline_.layout,
+                    0,
+                    spr.descriptor_set_,
+                    {}
+                );
+                cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
+                cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
+                cmd.drawIndexed(4, 1, 3, 0, 0);
+            }
+
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, sprite_pipeline_.pipeline);
             vee::Transform({320.f, 320.f}, time, {100.f, 100.f});
             glm::mat4x4 triangle_transform =
                 vee::Transform({320.f, 320.f}, time, {100.f, 100.f}).to_mat();
             cmd.pushConstants(
-                triangle_pipeline_.layout,
+                sprite_pipeline_.layout,
                 vk::ShaderStageFlagBits::eVertex,
                 0,
                 sizeof(glm::mat4x4),
                 &triangle_transform
+            );
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, sprite_pipeline_.layout, 0, tex_descriptor_, {}
             );
             cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
             cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
@@ -345,7 +339,7 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     // swapchain image transition
     vee::vulkan::transition_image(
         cmd,
-        ctx_->swapchain.images[swapchain_idx],
+        ctx.swapchain.images[swapchain_idx],
         vk::ImageLayout::eUndefined,
         vk::ImageLayout::eTransferDstOptimal
     );
@@ -362,15 +356,15 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1},
             {vk::Offset3D(),
              vk::Offset3D{
-                 static_cast<int32_t>(ctx_->swapchain.width),
-                 static_cast<int32_t>(ctx_->swapchain.height),
+                 static_cast<int32_t>(ctx.swapchain.width),
+                 static_cast<int32_t>(ctx.swapchain.height),
                  1
              }},
         };
         vk::BlitImageInfo2 blit_info = {
             game_image_.image,
             vk::ImageLayout::eTransferSrcOptimal,
-            ctx_->swapchain.images[swapchain_idx],
+            ctx.swapchain.images[swapchain_idx],
             vk::ImageLayout::eTransferDstOptimal,
             region,
         };
@@ -380,9 +374,9 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     // swapchain image transition
     vee::vulkan::transition_image(
         cmd,
-        ctx_->swapchain.images[swapchain_idx],
+        ctx.swapchain.images[swapchain_idx],
         vk::ImageLayout::eTransferDstOptimal,
         vk::ImageLayout::eColorAttachmentOptimal
     );
 }
-} // namespace ht
+} // namespace vee

@@ -7,19 +7,26 @@
 #include "Platform/Window.hpp"
 #include "Renderer.hpp"
 
+#include <Engine/Service.hpp>
+
 
 namespace vee {
-class EditorApplication {
+class EditorApplication : public Service<EditorApplication> {
 public:
-    EditorApplication(const platform::Window& window);
+    EditorApplication(const ConstructionToken&, const platform::Window& window);
+
     void run();
 
     Engine& get_engine();
     Renderer& get_renderer();
 
 private:
+    EditorApplication(const EditorApplication&) = delete;
+    EditorApplication& operator=(const EditorApplication&) = delete;
+
     Engine engine_;
     platform::Window window_;
+    // TODO: this needs to be in the Engine
     Renderer renderer_;
 };
 }; // namespace vee

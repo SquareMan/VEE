@@ -5,6 +5,7 @@
 #include "EditorApplication.hpp"
 
 #include "ImguiRenderer.hpp"
+#include "Renderer/GameRenderer.hpp"
 #include "Renderer/RenderCtx.hpp"
 
 #include <backends/imgui_impl_glfw.h>
@@ -13,15 +14,17 @@
 #include <iostream>
 
 
-vee::EditorApplication::EditorApplication(const platform::Window& window)
-    : window_(window)
-    , renderer_(std::make_shared<RenderCtx>(window)) {
+vee::EditorApplication::EditorApplication(const ConstructionToken&, const platform::Window& window)
+    : window_(window) {
+    RenderCtx::InitService(window);
+
+    renderer_.push_renderer<GameRenderer>();
+    renderer_.push_renderer<ImguiRenderer>();
+    renderer_.init();
     engine_.init();
 }
 
 void vee::EditorApplication::run() {
-    renderer_.push_renderer<ImguiRenderer>();
-    renderer_.init();
     while (!window_.should_close()) {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();

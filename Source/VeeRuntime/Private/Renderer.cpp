@@ -10,47 +10,49 @@
 
 #include <cassert>
 #include <chrono>
+#include <entt/locator/locator.hpp>
 #include <vector>
 
 namespace vee {
-Renderer::Renderer(std::shared_ptr<RenderCtx>&& ctx)
-    : ctx_(ctx) {}
+Renderer::Renderer() {}
 
 Renderer::~Renderer() {
     // TODO: Cleanup everything
-    std::ignore = ctx_->device.waitIdle();
+    RenderCtx& ctx = RenderCtx::GetService();
+    std::ignore = ctx.device.waitIdle();
     for (std::shared_ptr<IRenderer>& renderer : renderers_) {
         renderer->on_destroy();
     }
 
 #if _DEBUG
-    static_cast<vk::Instance>(ctx_->instance).destroyDebugUtilsMessengerEXT(ctx_->debug_messenger_);
+    static_cast<vk::Instance>(ctx.instance).destroyDebugUtilsMessengerEXT(ctx.debug_messenger_);
 #endif
 
-    for (CmdBuffer& command_buffer : ctx_->command_buffers.buffer) {
-        ctx_->device.destroyFence(command_buffer.fence);
-        ctx_->device.destroySemaphore(command_buffer.acquire_semaphore);
-        ctx_->device.destroySemaphore(command_buffer.submit_semaphore);
+    for (CmdBuffer& command_buffer : ctx.command_buffers.buffer) {
+        ctx.device.destroyFence(command_buffer.fence);
+        ctx.device.destroySemaphore(command_buffer.acquire_semaphore);
+        ctx.device.destroySemaphore(command_buffer.submit_semaphore);
     }
-    ctx_->device.destroyCommandPool(ctx_->command_pool);
+    ctx.device.destroyCommandPool(ctx.command_pool);
 }
 
 void Renderer::init() {
     for (std::shared_ptr<IRenderer>& r : renderers_) {
-        r->on_init(ctx_);
+        r->on_init();
     }
 }
 
 void Renderer::Render() {
-    CmdBuffer& command_buffer = ctx_->command_buffers.get_next();
+    RenderCtx& ctx = RenderCtx::GetService();
+    CmdBuffer& command_buffer = ctx.command_buffers.get_next();
 
-    std::ignore = ctx_->device.waitForFences(command_buffer.fence, true, UINT64_MAX);
+    std::ignore = ctx.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
     uint32_t image_index = UINT32_MAX;
     {
         // Opt out of return value transformation to avoid asserting on
         // vk::Result::eErrorOutOfDateKHR
-        const vk::Result result = ctx_->device.acquireNextImageKHR(
-            ctx_->swapchain.handle, 0, command_buffer.acquire_semaphore, nullptr, &image_index
+        const vk::Result result = ctx.device.acquireNextImageKHR(
+            ctx.swapchain.handle, 0, command_buffer.acquire_semaphore, nullptr, &image_index
         );
         switch (result) {
         case vk::Result::eSuccess:
@@ -63,7 +65,7 @@ void Renderer::Render() {
             return;
         case vk::Result::eSuboptimalKHR:
         case vk::Result::eErrorOutOfDateKHR:
-            ctx_->recreate_swapchain();
+            ctx.recreate_swapchain();
             return;
         default:
             assert(false);
@@ -71,7 +73,7 @@ void Renderer::Render() {
         }
     }
     assert(image_index != UINT32_MAX);
-    std::ignore = ctx_->device.resetFences(command_buffer.fence);
+    std::ignore = ctx.device.resetFences(command_buffer.fence);
 
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     record_commands(command_buffer.cmd, [&](vk::CommandBuffer cmd) {
@@ -87,21 +89,19 @@ void Renderer::Render() {
         command_buffer.cmd,
         command_buffer.submit_semaphore
     );
-    std::ignore = ctx_->graphics_queue.submit(submit_info, command_buffer.fence);
+    std::ignore = ctx.graphics_queue.submit(submit_info, command_buffer.fence);
 
 
-    const vk::PresentInfoKHR pi(
-        command_buffer.submit_semaphore, ctx_->swapchain.handle, image_index
-    );
+    const vk::PresentInfoKHR pi(command_buffer.submit_semaphore, ctx.swapchain.handle, image_index);
     {
         // Opt out of return value transformation to avoid asserting on
         // vk::Result::eErrorOutOfDateKHR
-        switch (ctx_->presentation_queue.presentKHR(&pi)) {
+        switch (ctx.presentation_queue.presentKHR(&pi)) {
         case vk::Result::eSuccess:
             break;
         case vk::Result::eSuboptimalKHR:
         case vk::Result::eErrorOutOfDateKHR:
-            ctx_->recreate_swapchain();
+            ctx.recreate_swapchain();
             break;
         default:
             assert(false);

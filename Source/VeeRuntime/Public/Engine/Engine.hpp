@@ -20,7 +20,16 @@ public:
         return world_;
     };
 
+    [[nodiscard]] const World& get_world() const {
+        return world_;
+    };
+
+    [[nodiscard]] double get_game_time() const {
+        return game_time_;
+    }
+
 private:
+    double game_time_;
     World world_;
 };
 } // namespace vee

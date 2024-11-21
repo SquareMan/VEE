@@ -18,7 +18,7 @@ public:
     IRenderer& operator=(IRenderer&&) = default;
     virtual ~IRenderer() = default;
 
-    virtual void on_init(std::shared_ptr<RenderCtx>& ctx) = 0;
+    virtual void on_init() = 0;
     virtual void on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) = 0;
     virtual void on_destroy() = 0;
 };

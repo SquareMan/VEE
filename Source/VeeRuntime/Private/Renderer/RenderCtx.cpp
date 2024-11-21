@@ -9,7 +9,7 @@
 #include <functional>
 
 namespace vee {
-RenderCtx::RenderCtx(const platform::Window& window)
+RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
     : window(&window) {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
@@ -131,6 +131,15 @@ RenderCtx::RenderCtx(const platform::Window& window)
 
     auto [width, height] = window.get_size();
     new (&swapchain) Swapchain(gpu, device, surface, format, width, height);
+
+    pipeline_cache = device.createPipelineCache({}).value;
+
+    vk::DescriptorPoolSize pool_sizes[] = {{vk::DescriptorType::eCombinedImageSampler, 1000}};
+    descriptor_pool = device
+                           .createDescriptorPool(
+                               {vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes}
+                           )
+                           .value;
 }
 
 void RenderCtx::recreate_swapchain() {
