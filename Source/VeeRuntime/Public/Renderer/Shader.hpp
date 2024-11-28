@@ -25,4 +25,4 @@ public:
 private:
     vk::Device m_device;
 };
-} // namespace Vee::Vulkan
+} // namespace vee::vulkan

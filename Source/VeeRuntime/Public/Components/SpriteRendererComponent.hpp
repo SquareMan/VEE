@@ -14,8 +14,8 @@ public:
     explicit SpriteRendererComponent(Sprite&& sprite);
 
 public:
-    vee::Sprite sprite_;
-    vee::vulkan::Pipeline pipeline_;
+    Sprite sprite_;
+    vulkan::Pipeline pipeline_;
     vk::DescriptorSet descriptor_set_;
 };
 }; // namespace vee

@@ -20,16 +20,17 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
         constexpr bool enable_validation = false;
 #endif
         vkb::InstanceBuilder instance_builder;
-        auto inst_res = instance_builder.set_app_name("HelloTriangle POC")
-                            .set_app_version(0, 1, 0)
-                            .enable_validation_layers(enable_validation)
-                            .enable_extensions({
-                                VK_KHR_SURFACE_EXTENSION_NAME,
-                                VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-                            })
-                            .set_debug_callback(&vee::vulkan::vk_debug_callback)
-                            .require_api_version(1, 3, 0)
-                            .build();
+        auto inst_res =
+            instance_builder.set_app_name("HelloTriangle POC")
+                .set_app_version(0, 1, 0)
+                .enable_validation_layers(enable_validation)
+                .enable_extensions({
+                    VK_KHR_SURFACE_EXTENSION_NAME,
+                    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+                })
+                .set_debug_callback(&vee::vulkan::vk_debug_callback)
+                .require_api_version(1, 3, 0)
+                .build();
 
         instance = inst_res.value();
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(instance.instance));
@@ -97,9 +98,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
 
     // command buffers
     const vk::CommandBufferAllocateInfo command_buffer_info = {
-        command_pool,
-        vk::CommandBufferLevel::ePrimary,
-        static_cast<uint32_t>(command_buffers.size())
+        command_pool, vk::CommandBufferLevel::ePrimary, static_cast<uint32_t>(command_buffers.size())
     };
 
     std::vector<vk::CommandBuffer> tmp_command_buffers =
@@ -113,8 +112,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
     }
 
     immediate_buffer_ =
-        device.allocateCommandBuffers({command_pool, vk::CommandBufferLevel::ePrimary, 1})
-            .value.front();
+        device.allocateCommandBuffers({command_pool, vk::CommandBufferLevel::ePrimary, 1}).value.front();
     immediate_fence_ = device.createFence({vk::FenceCreateFlagBits::eSignaled}).value;
 
 
@@ -135,11 +133,10 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
     pipeline_cache = device.createPipelineCache({}).value;
 
     vk::DescriptorPoolSize pool_sizes[] = {{vk::DescriptorType::eCombinedImageSampler, 1000}};
-    descriptor_pool = device
-                           .createDescriptorPool(
-                               {vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes}
-                           )
-                           .value;
+    descriptor_pool =
+        device
+            .createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes})
+            .value;
 }
 
 void RenderCtx::recreate_swapchain() {

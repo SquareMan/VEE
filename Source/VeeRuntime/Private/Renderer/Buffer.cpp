@@ -8,4 +8,4 @@ namespace vee {
 Buffer::~Buffer() {
     allocator.destroyBuffer(buffer, allocation);
 }
-} // Vee
+} // namespace vee

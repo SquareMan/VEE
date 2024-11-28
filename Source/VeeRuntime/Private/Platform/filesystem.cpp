@@ -18,4 +18,4 @@ std::vector<char> read_binary_file(const char* filename) {
 
     return result;
 }
-} // namespace Vee::Platform::Filesystem
+} // namespace vee::platform::filesystem

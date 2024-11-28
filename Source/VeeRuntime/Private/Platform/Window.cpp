@@ -40,11 +40,7 @@ bool Window::should_close() const {
 }
 std::tuple<uint32_t, uint32_t> Window::get_size() const {
     std::tuple<uint32_t, uint32_t> result;
-    glfwGetWindowSize(
-        glfw_window,
-        reinterpret_cast<int32_t*>(&std::get<0>(result)),
-        reinterpret_cast<int32_t*>(&std::get<1>(result))
-    );
+    glfwGetWindowSize(glfw_window, reinterpret_cast<int32_t*>(&std::get<0>(result)), reinterpret_cast<int32_t*>(&std::get<1>(result)));
     return result;
 }
 
@@ -53,4 +49,4 @@ WindowHandle Window::get_handle() const {
     // TODO: not platform independent
     return glfwGetWin32Window(glfw_window);
 }
-} // namespace Vee::Platform
+} // namespace vee::platform

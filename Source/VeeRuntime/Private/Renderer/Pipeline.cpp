@@ -28,8 +28,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment;
     color_blend_attachment.setColorWriteMask(
-        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
-        | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
     );
 
     vk::PipelineColorBlendStateCreateInfo color_blend_state_info;
@@ -37,22 +36,10 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
 
     auto binding_description = Vertex::binding_description();
     auto attribute_descriptions = Vertex::attribute_descriptions();
-    vk::PipelineVertexInputStateCreateInfo vertex_input_state_info(
-        {}, binding_description, attribute_descriptions
-    );
+    vk::PipelineVertexInputStateCreateInfo vertex_input_state_info({}, binding_description, attribute_descriptions);
 
     vk::PipelineRasterizationStateCreateInfo rasterization_state_info(
-        {},
-        {},
-        {},
-        vk::PolygonMode::eFill,
-        vk::CullModeFlagBits::eBack,
-        vk::FrontFace::eClockwise,
-        {},
-        {},
-        {},
-        {},
-        1.0f
+        {}, {}, {}, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, {}, {}, {}, {}, 1.0f
     );
 
     vk::PipelineViewportStateCreateInfo viewport_state_info = {};
@@ -65,9 +52,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     };
     vk::PipelineDynamicStateCreateInfo dynamic_state_info({}, dynamic_states);
 
-    vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_info(
-        {}, vk::PrimitiveTopology::eTriangleFan
-    );
+    vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_info({}, vk::PrimitiveTopology::eTriangleFan);
     vk::PipelineMultisampleStateCreateInfo multisample_state_info({}, vk::SampleCountFlagBits::e1);
 
     // FIXME: This should not be hardcoded
@@ -75,23 +60,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     vk::PipelineRenderingCreateInfo rendering_info = {{}, format};
 
     vk::GraphicsPipelineCreateInfo pipeline_info(
-        {},
-        pipeline_shader_stage_infos,
-        &vertex_input_state_info,
-        &input_assembly_state_info,
-        {},
-        &viewport_state_info,
-        &rasterization_state_info,
-        &multisample_state_info,
-        {},
-        &color_blend_state_info,
-        &dynamic_state_info,
-        layout,
-        {},
-        {},
-        {},
-        {},
-        &rendering_info
+        {}, pipeline_shader_stage_infos, &vertex_input_state_info, &input_assembly_state_info, {}, &viewport_state_info, &rasterization_state_info, &multisample_state_info, {}, &color_blend_state_info, &dynamic_state_info, layout, {}, {}, {}, {}, &rendering_info
     );
 
     vk::Pipeline pipeline = device.createGraphicsPipeline(m_cache, pipeline_info).value;
@@ -109,8 +78,8 @@ vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_shader(const Shader& shad
     return *this;
 }
 
-vulkan::PipelineBuilder&
-vulkan::PipelineBuilder::with_binding(const vk::DescriptorSetLayoutBinding& binding) {
+vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_binding(const vk::DescriptorSetLayoutBinding& binding
+) {
     descriptor_set_layout_bindings.push_back(binding);
 
     return *this;

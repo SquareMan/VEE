@@ -7,7 +7,8 @@
 #include <array>
 
 namespace vee {
-template <typename T, size_t I> class RingBuffer {
+template <typename T, size_t I>
+class RingBuffer {
 public:
     T& operator[](size_t idx) {
         return buffer[idx];
@@ -27,4 +28,4 @@ public:
     std::array<T, I> buffer;
     uint32_t index = 0;
 };
-} // namespace Vee
+} // namespace vee

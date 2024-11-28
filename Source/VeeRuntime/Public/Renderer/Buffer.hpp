@@ -14,7 +14,7 @@ public:
     Buffer(vk::Buffer buffer, vma::Allocation allocation, vma::Allocator allocator)
         : buffer(buffer)
         , allocation(allocation)
-        , allocator(allocator){};
+        , allocator(allocator) {};
     ~Buffer();
 
     vk::Buffer buffer;
@@ -24,4 +24,4 @@ private:
     vma::Allocator allocator;
 };
 
-} // namespace Vee
+} // namespace vee

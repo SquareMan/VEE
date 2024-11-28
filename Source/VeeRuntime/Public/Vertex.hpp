@@ -17,9 +17,7 @@ struct Vertex final {
     glm::vec2 uv;
 
     static vk::VertexInputBindingDescription binding_description() {
-        static constexpr vk::VertexInputBindingDescription binding_description(
-            0, sizeof(Vertex), vk::VertexInputRate::eVertex
-        );
+        static constexpr vk::VertexInputBindingDescription binding_description(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
         return binding_description;
     }
 

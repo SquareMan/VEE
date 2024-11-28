@@ -84,10 +84,7 @@ void Renderer::Render() {
 
     vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const vk::SubmitInfo submit_info(
-        command_buffer.acquire_semaphore,
-        wait_stage,
-        command_buffer.cmd,
-        command_buffer.submit_semaphore
+        command_buffer.acquire_semaphore, wait_stage, command_buffer.cmd, command_buffer.submit_semaphore
     );
     std::ignore = ctx.graphics_queue.submit(submit_info, command_buffer.fence);
 
@@ -109,9 +106,7 @@ void Renderer::Render() {
     }
 }
 
-void Renderer::record_commands(
-    vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func
-) {
+void Renderer::record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func) {
     std::ignore = cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
     func(cmd);
     std::ignore = cmd.end();

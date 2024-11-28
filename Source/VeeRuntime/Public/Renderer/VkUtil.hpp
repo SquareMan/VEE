@@ -21,18 +21,11 @@
 #include <vector>
 
 namespace vee::vulkan {
-[[nodiscard]] std::vector<const char*> filter_extensions(
-    std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions
-);
+[[nodiscard]] std::vector<const char*> filter_extensions(std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions);
 
 VkBool32 vk_debug_callback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData
 );
 
-void transition_image(
-    vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to
-);
-} // namespace Vee::Vulkan
+void transition_image(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to);
+} // namespace vee::vulkan

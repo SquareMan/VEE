@@ -11,14 +11,7 @@ namespace vee {
 class Image {
 public:
     Image() = default;
-    Image(
-        vk::Device device,
-        vma::Allocator allocator,
-        vk::ImageUsageFlags usage_flags,
-        vk::Extent3D extent,
-        vk::Format format,
-        vk::ImageAspectFlags aspect_flags
-    );
+    Image(vk::Device device, vma::Allocator allocator, vk::ImageUsageFlags usage_flags, vk::Extent3D extent, vk::Format format, vk::ImageAspectFlags aspect_flags);
     ~Image();
 
     // Destructively resizes this image.
@@ -45,4 +38,4 @@ private:
     void free_resources();
 };
 
-} // namespace Vee
+} // namespace vee

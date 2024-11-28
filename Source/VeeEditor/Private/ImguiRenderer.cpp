@@ -25,9 +25,7 @@ void ImguiRenderer::on_init() {
         {vk::DescriptorType::eCombinedImageSampler, 1},
     };
 
-    vk::DescriptorPoolCreateInfo pool_info = {
-        vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes
-    };
+    vk::DescriptorPoolCreateInfo pool_info = {vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes};
     vk::DescriptorPool pool = ctx.device.createDescriptorPool(pool_info).value;
 
     vk::PipelineRenderingCreateInfo pipeline_info = {{}, ctx.swapchain.format, {}, {}};
@@ -45,9 +43,7 @@ void ImguiRenderer::on_init() {
 
     ImGui_ImplVulkan_LoadFunctions(
         [](const char* function_name, void* user_data) {
-            return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(
-                static_cast<VkInstance>(user_data), function_name
-            );
+            return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(static_cast<VkInstance>(user_data), function_name);
         },
         ctx.instance.instance
     );
@@ -73,20 +69,13 @@ void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
         vk::AttachmentLoadOp::eLoad,
         vk::AttachmentStoreOp::eStore,
     };
-    vk::RenderingInfo render_info = {
-        {}, {{}, {ctx.swapchain.width, ctx.swapchain.height}}, 1, 0, render_attachment, {}, {}
-    };
+    vk::RenderingInfo render_info = {{}, {{}, {ctx.swapchain.width, ctx.swapchain.height}}, 1, 0, render_attachment, {}, {}};
     cmd.beginRendering(render_info);
     { ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd); }
     cmd.endRendering();
 
     // swapchain image transition
-    vulkan::transition_image(
-        cmd,
-        ctx.swapchain.images[swapchain_idx],
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::ePresentSrcKHR
-    );
+    vulkan::transition_image(cmd, ctx.swapchain.images[swapchain_idx], vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 }
 
 void ImguiRenderer::on_destroy() {

@@ -12,6 +12,7 @@ BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: false
+BreakTemplateDeclarations: Yes
 ColumnLimit: 100
 ContinuationIndentWidth: 4
 IncludeBlocks: Preserve
@@ -25,9 +26,10 @@ PenaltyBreakBeforeFirstCallParameter: 30
 PenaltyBreakComment: 10
 PenaltyBreakFirstLessLess: 0
 PenaltyBreakString: 10
-PenaltyBreakTemplateDeclaration: 10
+PenaltyBreakTemplateDeclaration: 0
 PenaltyExcessCharacter: 100
-PenaltyReturnTypeOnItsOwnLine: 60
+PenaltyIndentedWhitespace: 10000
+PenaltyReturnTypeOnItsOwnLine: 100000
 PointerAlignment: Left
 SortIncludes: CaseInsensitive
 SpaceBeforeParens: ControlStatements

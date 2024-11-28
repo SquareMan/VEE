@@ -7,14 +7,7 @@
 #include <VkBootstrap.h>
 
 namespace vee {
-Swapchain::Swapchain(
-    vk::PhysicalDevice gpu,
-    vk::Device device,
-    vk::SurfaceKHR surface,
-    vk::Format format,
-    uint32_t width,
-    uint32_t height
-)
+Swapchain::Swapchain(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR surface, vk::Format format, uint32_t width, uint32_t height)
     : format(format)
     , width(width)
     , height(height)
@@ -28,16 +21,12 @@ Swapchain::Swapchain(
             .value();
 
     handle = swapchain.swapchain;
-    std::ranges::transform(
-        swapchain.get_images().value(),
-        std::back_inserter(images),
-        [](const VkImage& image) { return image; }
-    );
-    std::ranges::transform(
-        swapchain.get_image_views().value(),
-        std::back_inserter(image_views),
-        [](const VkImageView& view) { return view; }
-    );
+    std::ranges::transform(swapchain.get_images().value(), std::back_inserter(images), [](const VkImage& image) {
+        return image;
+    });
+    std::ranges::transform(swapchain.get_image_views().value(), std::back_inserter(image_views), [](const VkImageView& view) {
+        return view;
+    });
     format = static_cast<vk::Format>(swapchain.image_format);
     width = swapchain.extent.width;
     height = swapchain.extent.height;

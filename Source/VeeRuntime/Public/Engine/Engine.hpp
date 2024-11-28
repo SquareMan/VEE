@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    double game_time_;
+    double game_time_ = 0.0;
     World world_;
 };
 } // namespace vee

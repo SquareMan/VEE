@@ -13,9 +13,7 @@ Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vect
     m_device = device;
     m_stage = stage;
 
-    const vk::ShaderModuleCreateInfo shader_info(
-        {}, code.size(), reinterpret_cast<const uint32_t*>(code.data())
-    );
+    const vk::ShaderModuleCreateInfo shader_info({}, code.size(), reinterpret_cast<const uint32_t*>(code.data()));
     m_module = device.createShaderModule(shader_info).value;
 }
 
@@ -25,4 +23,4 @@ Shader::~Shader() {
 const char* Shader::entrypoint() const {
     return m_entrypoint.c_str();
 }
-} // namespace Vee::Vulkan
+} // namespace vee::vulkan

@@ -4,5 +4,4 @@
 
 #include "Engine/Sprite.hpp"
 
-namespace vee {
-} // vee
+namespace vee {} // namespace vee

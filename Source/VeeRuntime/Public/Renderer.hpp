@@ -22,13 +22,14 @@ public:
 
     void Render();
 
-    template <class T = IRenderer> void push_renderer() {
+    template <class T>
+    void push_renderer() {
+        static_assert(std::is_base_of_v<IRenderer, T>, "T must derive from IRenderer");
         auto v = renderers_.emplace_back(std::make_shared<T>());
     }
 
 private:
-    void
-    record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
+    void record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
 
     std::vector<std::shared_ptr<IRenderer>> renderers_;
 };

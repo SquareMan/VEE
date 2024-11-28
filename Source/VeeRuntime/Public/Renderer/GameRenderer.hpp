@@ -31,4 +31,4 @@ private:
     vk::DescriptorSet tex_descriptor_;
 };
 
-} // namespace ht
+} // namespace vee
