@@ -85,14 +85,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(entt)
 
 # Boost (log)
-set(BOOST_INCLUDE_LIBRARIES log log_setup)
+set(BOOST_INCLUDE_LIBRARIES log)
 set(BOOST_ENABLE_CMAKE ON)
-#FetchContent_Declare(
-#        Boost
-#        GIT_REPOSITORY https://github.com/boostorg/boost.git
-#        GIT_TAG boost-1.87.0
-#        GIT_SHALLOW TRUE
-#)
 FetchContent_Declare(
         Boost
         URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.7z # downloading a zip release speeds up the download
