@@ -2,23 +2,25 @@
 // Created by Square on 11/18/2024.
 //
 
-#include "Components/SpriteRendererComponent.hpp"
+module;
+#include "Renderer/VkUtil.hpp"
 
 #include "Platform/filesystem.hpp"
+#include "Renderer/Pipeline.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Renderer/Shader.hpp"
 
 #include <entt/locator/locator.hpp>
+
+module SpriteRendererComponent;
 
 vee::SpriteRendererComponent::SpriteRendererComponent(const Sprite& sprite)
     : sprite_(sprite) {
     auto& ctx = RenderCtx::GetService();
 
     // TODO: Reuse these resources when appropriate
-    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv"
-    );
-    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv"
-    );
+    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv");
+    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv");
 
     vee::vulkan::Shader texture_fragment_shader = {ctx.device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code};
     vee::vulkan::Shader entity_vertex_shader = {ctx.device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code};

@@ -2,13 +2,16 @@
 // Created by Square on 11/17/2024.
 //
 
-#pragma once
+module;
+#include "Transform.h"
+
 #include "glm/mat4x4.hpp"
 
-namespace vee {
-class Transform;
+export module CameraComponent;
 
-class CameraComponent {
+namespace vee {
+
+export class CameraComponent {
 public:
     glm::mat4x4 projection_matrix;
 

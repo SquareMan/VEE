@@ -14,6 +14,8 @@ target_sources(VeeRuntime
         PUBLIC
         FILE_SET modules TYPE CXX_MODULES FILES
         Public/Logging.ixx
+        Public/Components/CameraComponent.ixx
+        Public/Components/SpriteRendererComponent.ixx
 
         FILE_SET headers TYPE HEADERS FILES
         Public/Renderer.hpp
@@ -35,8 +37,6 @@ target_sources(VeeRuntime
         Public/Engine/World.h
         Public/Engine/Entity.h
         Public/Transform.h
-        Public/Components/CameraComponent.hpp
-        Public/Components/SpriteRendererComponent.hpp
         Public/Engine/Sprite.hpp
         Public/Renderer/GameRenderer.hpp
         Public/Engine/Service.hpp

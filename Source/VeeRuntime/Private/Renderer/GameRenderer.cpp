@@ -22,10 +22,10 @@
 #include <glm/glm.hpp>
 #include <numbers>
 
-#include <Components/CameraComponent.hpp>
-#include <Components/SpriteRendererComponent.hpp>
 #include <imgui.h>
 
+import CameraComponent;
+import SpriteRendererComponent;
 
 namespace vee {
 void GameRenderer::on_init() {

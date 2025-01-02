@@ -3,11 +3,14 @@
 //
 
 #include "Engine/Engine.hpp"
-#include "Components/CameraComponent.hpp"
-#include "Components/SpriteRendererComponent.hpp"
+#include "Renderer/Image.hpp"
+#include "Engine/Sprite.hpp"
 #include "Transform.h"
 
 #include <glfw/glfw3.h>
+
+import CameraComponent;
+import SpriteRendererComponent;
 
 namespace vee {
 
