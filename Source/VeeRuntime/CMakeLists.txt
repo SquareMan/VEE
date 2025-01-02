@@ -4,8 +4,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(VeeRuntime)
-target_include_directories(VeeRuntime PUBLIC ${Vulkan_INCLUDE_DIR})
-target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include)
+target_include_directories(VeeRuntime PUBLIC
+        ${Vulkan_INCLUDE_DIR}
+        ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/include
+        ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/VulkanMemoryAllocator/include
+)
 target_link_libraries(VeeRuntime PUBLIC glm::glm vk-bootstrap::vk-bootstrap glfw imgui EnTT::EnTT)
 target_link_libraries(VeeRuntime PRIVATE Boost::log Boost::log_setup magic_enum)
 target_include_directories(VeeRuntime PUBLIC Public/ PRIVATE Private/)
@@ -63,3 +66,13 @@ target_sources(VeeRuntime
         Private/Renderer/GameRenderer.cpp
         Private/Logging.cpp
 )
+
+target_compile_definitions(VeeRuntime PUBLIC
+        VULKAN_HPP_NO_EXCEPTIONS
+        VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+        VMA_STATIC_VULKAN_FUNCTIONS=0
+        VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+)
+if (WIN32)
+    target_compile_definitions(VeeRuntime PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+endif ()

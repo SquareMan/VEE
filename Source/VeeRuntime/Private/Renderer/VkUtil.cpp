@@ -5,6 +5,8 @@
 #define VMA_IMPLEMENTATION
 #include "Renderer/VkUtil.hpp"
 
+#include "VeeCore.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>

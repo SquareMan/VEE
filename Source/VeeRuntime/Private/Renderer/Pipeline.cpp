@@ -21,10 +21,10 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     }};
 
     vk::DescriptorSetLayoutCreateInfo set_layout_info = {{}, descriptor_set_layout_bindings};
-    vk::DescriptorSetLayout descriptor_layout = device.createDescriptorSetLayout(set_layout_info);
+    vk::DescriptorSetLayout descriptor_layout = device.createDescriptorSetLayout(set_layout_info).value;
 
     vk::PipelineLayoutCreateInfo layout_info({}, descriptor_layout, push_constants);
-    VkPipelineLayout layout = device.createPipelineLayout(layout_info);
+    VkPipelineLayout layout = device.createPipelineLayout(layout_info).value;
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment;
     color_blend_attachment.setColorWriteMask(
@@ -78,8 +78,7 @@ vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_shader(const Shader& shad
     return *this;
 }
 
-vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_binding(const vk::DescriptorSetLayoutBinding& binding
-) {
+vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_binding(const vk::DescriptorSetLayoutBinding& binding) {
     descriptor_set_layout_bindings.push_back(binding);
 
     return *this;
