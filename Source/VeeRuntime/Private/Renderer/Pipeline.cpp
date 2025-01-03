@@ -5,10 +5,11 @@
 #include "Renderer/Pipeline.hpp"
 
 #include "Renderer/Shader.hpp"
-#include "Renderer/VkUtil.hpp"
 #include "Vertex.hpp"
 
 #include <glm/mat4x4.hpp>
+
+import VkUtil;
 
 namespace vee {
 vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
@@ -24,7 +25,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     vk::DescriptorSetLayout descriptor_layout = device.createDescriptorSetLayout(set_layout_info).value;
 
     vk::PipelineLayoutCreateInfo layout_info({}, descriptor_layout, push_constants);
-    VkPipelineLayout layout = device.createPipelineLayout(layout_info).value;
+    vk::PipelineLayout layout = device.createPipelineLayout(layout_info).value;
 
     vk::PipelineColorBlendAttachmentState color_blend_attachment;
     color_blend_attachment.setColorWriteMask(

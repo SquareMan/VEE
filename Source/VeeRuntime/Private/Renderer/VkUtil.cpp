@@ -2,19 +2,19 @@
 // Created by Square on 10/1/2024.
 //
 
-#define VMA_IMPLEMENTATION
-#include "Renderer/VkUtil.hpp"
-
+module;
 #include "VeeCore.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <iterator>
+#include <vulkan/vulkan_hpp_macros.hpp>
+module VkUtil;
 
-#include <vulkan/vulkan.hpp>
+import vulkan_hpp;
 
 // Implement storage for Vulkan-hpp's dynamic loader
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+// VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace vee::vulkan {
 std::vector<const char*> filter_extensions(std::vector<const char*>& available_extensions, std::vector<const char*>& requested_extensions) {
@@ -32,12 +32,12 @@ std::vector<const char*> filter_extensions(std::vector<const char*>& available_e
 
     return result;
 }
-VkBool32 vk_debug_callback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData
+vk::Bool32 vk_debug_callback(
+    vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity, vk::DebugUtilsMessageTypeFlagsEXT messageTypes, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData
 ) {
     std::cout << pCallbackData->pMessage << std::endl;
     VEE_DEBUGBREAK();
-    return VK_FALSE;
+    return vk::False;
 }
 
 void transition_image(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to) {

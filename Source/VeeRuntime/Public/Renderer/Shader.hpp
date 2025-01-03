@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "Renderer/VkUtil.hpp"
-
 #include <string>
 #include <vector>
+
+import vulkan_hpp;
 
 namespace vee::vulkan {
 

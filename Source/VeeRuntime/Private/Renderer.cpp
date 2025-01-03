@@ -2,6 +2,13 @@
 // Created by Square on 9/28/2024.
 //
 
+#include <compare>
+#include <tuple>
+#include <xmemory>
+#include <vector>
+#include <memory>
+#include <xstring>
+
 #include "Renderer.hpp"
 
 #include "Platform/Window.hpp"
@@ -12,6 +19,8 @@
 #include <chrono>
 #include <entt/locator/locator.hpp>
 #include <vector>
+
+import VkUtil;
 
 namespace vee {
 Renderer::Renderer() {}

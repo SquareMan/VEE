@@ -1,14 +1,18 @@
 //
 // Created by Square on 10/27/2024.
 //
+#include <xstring>
 
 #include "ImguiRenderer.hpp"
 
 #include "Platform/Window.hpp"
 #include "Renderer/RenderCtx.hpp"
 
+#include <vulkan/vulkan_hpp_macros.hpp>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+
+import VkUtil;
 
 namespace vee {
 void ImguiRenderer::on_init() {

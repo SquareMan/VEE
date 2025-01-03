@@ -2,7 +2,13 @@
 // Created by Square on 10/11/2024.
 //
 
+#include <compare>
+
 #include "Renderer/Image.hpp"
+
+import vulkan_hpp;
+import vk_mem_alloc_hpp;
+import VkUtil;
 
 namespace vee {
 Image::Image(vk::Device device, vma::Allocator allocator, vk::ImageUsageFlags usage_flags, vk::Extent3D extent, vk::Format format, vk::ImageAspectFlags aspect_flags)

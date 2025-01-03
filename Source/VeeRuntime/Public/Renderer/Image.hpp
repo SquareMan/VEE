@@ -4,7 +4,10 @@
 
 #pragma once
 
-#include "Renderer/VkUtil.hpp"
+#include <stdint.h>
+
+import vulkan_hpp;
+import vk_mem_alloc_hpp;
 
 namespace vee {
 

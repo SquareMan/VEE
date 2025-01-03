@@ -2,6 +2,12 @@
 // Created by Square on 10/27/2024.
 //
 
+#include <compare>
+#include <tuple>
+#include <xmemory>
+#include <vector>
+#include <xstring>
+
 #include "Renderer/GameRenderer.hpp"
 
 #include "../../../VeeEditor/Public/EditorApplication.hpp"
@@ -26,6 +32,7 @@
 
 import CameraComponent;
 import SpriteRendererComponent;
+import VkUtil;
 
 namespace vee {
 void GameRenderer::on_init() {

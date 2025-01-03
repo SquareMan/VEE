@@ -2,11 +2,16 @@
 // Created by Square on 10/27/2024.
 //
 
+#include <xstring>
 #include "Renderer/RenderCtx.hpp"
 
 #include "Platform/Window.hpp"
 
 #include <functional>
+#include <vulkan/vulkan_hpp_macros.hpp>
+
+import vulkan_hpp;
+import VkUtil;
 
 namespace vee {
 RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
@@ -25,10 +30,10 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
                 .set_app_version(0, 1, 0)
                 .enable_validation_layers(enable_validation)
                 .enable_extensions({
-                    VK_KHR_SURFACE_EXTENSION_NAME,
-                    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+                    vk::KHRSurfaceExtensionName,
+                    vk::KHRWin32SurfaceExtensionName,
                 })
-                .set_debug_callback(&vee::vulkan::vk_debug_callback)
+                .set_debug_callback(reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(&vee::vulkan::vk_debug_callback))
                 .require_api_version(1, 3, 0)
                 .build();
 

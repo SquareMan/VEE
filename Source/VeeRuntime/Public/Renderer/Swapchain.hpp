@@ -4,7 +4,9 @@
 
 #pragma once
 
-#include "Renderer/VkUtil.hpp"
+#include <vector>
+
+import vulkan_hpp;
 
 namespace vee {
 

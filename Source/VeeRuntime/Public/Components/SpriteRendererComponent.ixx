@@ -4,6 +4,11 @@
 
 module;
 
+#include <compare>
+#include <tuple>
+#include <xmemory>
+#include <vector>
+
 #include "Engine/Sprite.hpp"
 #include "Renderer/Pipeline.hpp"
 

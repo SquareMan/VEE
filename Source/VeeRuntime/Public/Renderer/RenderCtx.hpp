@@ -7,10 +7,12 @@
 #include "Engine/Service.hpp"
 #include "RingBuffer.hpp"
 #include "Swapchain.hpp"
-#include "VkUtil.hpp"
 
 #include <functional>
 #include <VkBootstrap.h>
+
+import vulkan_hpp;
+import vk_mem_alloc_hpp;
 
 struct CmdBuffer {
     vk::CommandBuffer cmd;
