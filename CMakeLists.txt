@@ -11,8 +11,13 @@ include(FetchContent)
 # VMA HPP
 FetchContent_Declare(
         VulkanMemoryAllocator-Hpp
-        GIT_REPOSITORY https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
-        GIT_TAG v3.1.0
+#        GIT_REPOSITORY https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
+#        GIT_HASH f1ecbfd5029cce57558bcbbb60f93895ff1acbcc # Commit for module support
+
+        # vma::detail::resultCheck is missing an inline specifier in the above commit, temporarily use this repo with the fix
+        GIT_REPOSITORY https://github.com/walkiewicz125/VulkanMemoryAllocator-Hpp.git
+        GIT_HASH abc1f44d51b9de65ebe86cb8051a1c2cfd914e5b
+
         GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(VulkanMemoryAllocator-Hpp)
