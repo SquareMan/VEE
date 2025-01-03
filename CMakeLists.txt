@@ -4,69 +4,54 @@ project(VEE VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# download CPM.cmake
+file(
+        DOWNLOAD
+        https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.40.5/CPM.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
+        EXPECTED_HASH SHA256=c46b876ae3b9f994b4f05a4c15553e0485636862064f1fcc9d8b4f832086bc5d
+)
+include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
+
+
+# ---------------- DEPENDENCIES ------------------------
+# Vulkan SDK should be installed on the system
 find_package(Vulkan REQUIRED SPIRV-Tools)
 
-include(FetchContent)
-
-# VMA HPP
-FetchContent_Declare(
-        VulkanMemoryAllocator-Hpp
-#        GIT_REPOSITORY https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
-#        GIT_HASH f1ecbfd5029cce57558bcbbb60f93895ff1acbcc # Commit for module support
-
-        # vma::detail::resultCheck is missing an inline specifier in the above commit, temporarily use this repo with the fix
+CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@3.1.0")
+#CPMAddPackage("gh:YaaZ/VulkanMemoryAllocator-Hpp@3.1.0")
+# vma::detail::resultCheck is missing an inline specifier in the current release, temporarily use this repo with the fix
+CPMAddPackage(
+        NAME VulkanMemoryAllocator-Hpp
+        VERSION 3.1.0
         GIT_REPOSITORY https://github.com/walkiewicz125/VulkanMemoryAllocator-Hpp.git
-        GIT_HASH abc1f44d51b9de65ebe86cb8051a1c2cfd914e5b
-
-        GIT_SHALLOW TRUE
+        GIT_TAG abc1f44d51b9de65ebe86cb8051a1c2cfd914e5b
+        OPTIONS "VMA_BUILD_CXX_MODULE ON" "VMA_BUILD_WITH_VULKAN_MODULE ON"
 )
-FetchContent_MakeAvailable(VulkanMemoryAllocator-Hpp)
-
-# vk_bootstrap
-FetchContent_Declare(
-        vk_bootstrap
-        GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-        GIT_TAG v1.3.296
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(vk_bootstrap)
-
-# glfw
-FetchContent_Declare(
-        glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
+CPMAddPackage("gh:charles-lunarg/vk-bootstrap@1.3.296")
+CPMAddPackage(
+        NAME glfw
+        GITHUB_REPOSITORY glfw/glfw
         GIT_TAG 3.3.8
-        GIT_SHALLOW TRUE
+        OPTIONS
+        "GLFW_BUILD_DOCS OFF CACHE BOOL \"\" FORCE"
+        "GLFW_BUILD_TESTS OFF CACHE BOOL \"\" FORCE"
+        "GLFW_BUILD_EXAMPLES OFF CACHE BOOL \"\" FORCE"
 )
-if (NOT glfw_POPULATED)
-    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    FetchContent_Populate(glfw)
-endif ()
-
-add_subdirectory(${glfw_SOURCE_DIR})
-
-# glm
-FetchContent_Declare(
-        glm
-        GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 1.0.1
-        GIT_SHALLOW TRUE
+CPMAddPackage("gh:g-truc/glm#1.0.1")
+CPMAddPackage("gh:ocornut/imgui@1.91.4-docking")
+CPMAddPackage("gh:skypjack/entt@3.14.0")
+CPMAddPackage(
+        NAME Boost
+        VERSION 1.87.0
+        URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.7z # downloading a zip release speeds up the download
+        URL_HASH SHA256=61d61a3f33283bab8f3736745a4e47c37141f07e413986cd05d1f942c69d529a
+        OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES log"
 )
-FetchContent_MakeAvailable(glm)
+CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
 
-# imgui
-FetchContent_Declare(
-        imgui
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.91.4-docking
-        GIT_SHALLOW TRUE
-)
-FetchContent_GetProperties(imgui)
-if (NOT imgui_POPULATED)
-    FetchContent_Populate(imgui)
-    add_Library(imgui STATIC
+if (imgui_ADDED)
+    add_library(imgui STATIC
             ${imgui_SOURCE_DIR}/imgui.cpp
             ${imgui_SOURCE_DIR}/imgui_draw.cpp
             ${imgui_SOURCE_DIR}/imgui_demo.cpp
@@ -79,36 +64,6 @@ if (NOT imgui_POPULATED)
     target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
     target_compile_definitions(imgui PUBLIC IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 endif ()
-
-# entt
-FetchContent_Declare(
-        entt
-        GIT_REPOSITORY https://github.com/skypjack/entt.git
-        GIT_TAG v3.14.0
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(entt)
-
-# Boost (log)
-set(BOOST_INCLUDE_LIBRARIES log)
-set(BOOST_ENABLE_CMAKE ON)
-FetchContent_Declare(
-        Boost
-        URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.7z # downloading a zip release speeds up the download
-        USES_TERMINAL_DOWNLOAD TRUE
-        GIT_PROGRESS TRUE
-        DOWNLOAD_NO_EXTRACT FALSE
-)
-FetchContent_MakeAvailable(Boost)
-
-# magic_enum
-FetchContent_Declare(
-        magic_enum
-        GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
-        GIT_TAG v0.9.7
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(magic_enum)
 
 add_subdirectory(Source/HelloTriangle)
 add_subdirectory(Source/VeeEditor)
