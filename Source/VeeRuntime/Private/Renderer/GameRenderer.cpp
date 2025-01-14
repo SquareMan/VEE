@@ -9,7 +9,7 @@ module;
 #include <xmemory>
 #include <xstring>
 
-#include "Engine/Engine.hpp"
+#include "../../../VeeEditor/Public/EditorApplication.hpp"
 #include "Engine/Entity.h"
 #include "Engine/World.h"
 #include "Platform/filesystem.hpp"
@@ -25,7 +25,6 @@ module;
 #include <imgui.h>
 module GameRenderer;
 
-import Vee.Engine;
 import vulkan_hpp;
 import vk_mem_alloc_hpp;
 import CameraComponent;
@@ -163,7 +162,7 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     auto& ctx = RenderCtx::GetService();
 
     auto time = static_cast<float>(glfwGetTime());
-    Engine& engine = Application::GetService().get_engine();
+    Engine& engine = EditorApplication::GetService().get_engine();
 
     // TODO: deal with multiple cameras
     auto cams = engine.get_world().entt_registry.view<vee::CameraComponent, vee::Transform>();

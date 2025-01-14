@@ -18,14 +18,14 @@ protected:
 public:
     using ServiceType = Type;
 
-    template <typename ServiceClass = ServiceType, typename... Args>
+    template <typename... Args>
     static void InitService(Args&&... args) {
         assert(!entt::locator<ServiceType>::has_value() && "Service already initialized");
 
         if constexpr (Visibility == ConstructorVisibility::Private) {
-            entt::locator<ServiceType>::reset(new ServiceClass(ConstructionToken(), args...));
+            entt::locator<ServiceType>::emplace(ConstructionToken(), args...);
         } else {
-            entt::locator<ServiceType>::reset(new ServiceClass(args...));
+            entt::locator<ServiceType>::emplace(args...);
         }
     }
 

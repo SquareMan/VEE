@@ -2,15 +2,14 @@
 // Created by Square on 10/22/2024.
 //
 
-module;
+#include "EditorApplication.hpp"
+
 #include "ImguiRenderer.hpp"
 
-#include "Engine/Engine.hpp"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 #include <iostream>
-module Vee.Editor;
 
 import Vee.Renderer;
 import GameRenderer;
