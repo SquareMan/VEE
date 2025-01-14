@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.28.0)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 add_library(VeeRuntime)
 # I don't know why this isn't brought in from linking to the library
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/VulkanMemoryAllocator/include)
