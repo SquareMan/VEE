@@ -24,12 +24,10 @@ target_include_directories(VeeRuntime PRIVATE Private/)
 
 target_sources(VeeRuntime
         PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
-        Public/Logging.ixx
-
         FILE_SET headers TYPE HEADERS
         BASE_DIRS Public/
         FILES
+        Public/Logging.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Vertex.hpp

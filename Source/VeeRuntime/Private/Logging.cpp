@@ -1,7 +1,8 @@
 //
 // Created by Square on 12/22/2024.
 //
-module;
+#include "Logging.hpp"
+
 #include <array>
 #include <boost/core/null_deleter.hpp>
 #include <boost/log/attributes/clock.hpp>
@@ -16,14 +17,11 @@ module;
 #include <iostream>
 #include <magic_enum/magic_enum.hpp>
 
-module Logging;
-
 namespace attrs = boost::log::attributes;
 namespace expr = boost::log::expressions;
 namespace keywords = boost::log::keywords;
 namespace sinks = boost::log::sinks;
 namespace sources = boost::log::sources;
-
 
 std::ostream& operator<<(std::ostream& strm, Severity severity) {
     return strm << magic_enum::enum_name(severity);
