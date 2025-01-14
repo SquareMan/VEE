@@ -115,7 +115,7 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(gLogger, sources::severity_logger_mt<Severit
     return lg;
 }
 
-void vee::_log(Severity severity, std::string msg, const std::source_location& location) {
+void vee::_log_msg(Severity severity, std::string msg, const std::source_location& location) {
     auto& logger = gLogger::get();
     auto attrs = logger.get_attributes();
     boost::log::attribute_cast<attrs::mutable_constant<std::string>>(attrs["File"]).set(location.file_name());
