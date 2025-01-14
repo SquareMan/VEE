@@ -16,17 +16,18 @@ set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Resources)
 set(SHADER_BINARY_PATH ${CMAKE_CURRENT_BINARY_DIR}/Resources)
 
 file(MAKE_DIRECTORY ${SHADER_BINARY_PATH})
-file(GLOB shaders CONFIGURE_DEPENDS
-        ${SHADER_SOURCE_PATH}/*.frag
-        ${SHADER_SOURCE_PATH}/*.vert
+set(SHADERS
+        Resources/color.frag
+        Resources/entity.vert
+        Resources/texture.frag
 )
-foreach (shader IN LISTS shaders)
-    get_filename_component(FILENAME ${shader} NAME)
+foreach (SHADER IN LISTS SHADERS)
+    get_filename_component(FILENAME ${SHADER} NAME)
     add_custom_command(
             COMMAND glslc ${SHADER_SOURCE_PATH}/${FILENAME} -o ${SHADER_BINARY_PATH}/${FILENAME}.spv
             OUTPUT ${SHADER_BINARY_PATH}/${FILENAME}.spv
-            DEPENDS ${shader}
-            COMMENT "Compiling ${FILENAME}"
+            DEPENDS ${SHADER}
+            COMMENT "Building SPIR-V object ${SHADER_SOURCE_PATH}/${FILENAME}"
     )
     list(APPEND SPV_SHADERS ${SHADER_BINARY_PATH}/${FILENAME}.spv)
 endforeach ()
