@@ -2,15 +2,9 @@
 // Created by Square on 10/8/2024.
 //
 
-#include <xstring>
-
 #include "Renderer/Swapchain.hpp"
 
-#include <algorithm>
-#include <iterator>
 #include <VkBootstrap.h>
-
-import VkUtil;
 
 namespace vee {
 Swapchain::Swapchain(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR surface, vk::Format format, uint32_t width, uint32_t height)
@@ -20,9 +14,9 @@ Swapchain::Swapchain(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR s
     , device(device) {
     vkb::Swapchain swapchain =
         vkb::SwapchainBuilder(gpu, device, surface)
-            .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
+            .set_desired_present_mode(VK_PRESENT_MODE_FIFO_RELAXED_KHR)
             .set_desired_min_image_count(vkb::SwapchainBuilder::TRIPLE_BUFFERING)
-            .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
+            .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
             .build()
             .value();
 

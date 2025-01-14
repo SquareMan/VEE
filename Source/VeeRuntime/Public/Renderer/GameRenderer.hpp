@@ -9,8 +9,6 @@
 #include "Renderer/IRenderer.hpp"
 #include "Renderer/Pipeline.hpp"
 
-#include <memory>
-
 namespace vee {
 
 class GameRenderer : public vee::IRenderer {

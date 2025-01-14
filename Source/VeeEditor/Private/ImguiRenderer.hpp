@@ -4,9 +4,6 @@
 
 #pragma once
 #include "Renderer/IRenderer.hpp"
-#include <stdint.h>
-
-import vulkan_hpp;
 
 namespace vee {
 

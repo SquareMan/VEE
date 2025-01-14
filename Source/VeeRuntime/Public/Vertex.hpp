@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Renderer/VkUtil.hpp"
 
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"

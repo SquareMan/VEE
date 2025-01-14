@@ -4,8 +4,7 @@
 
 #pragma once
 
-import vulkan_hpp;
-import vk_mem_alloc_hpp;
+#include "VkUtil.hpp"
 
 namespace vee {
 

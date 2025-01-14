@@ -4,9 +4,11 @@
 
 #pragma once
 
+#define VK_NO_PROTOTYPES
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
-import vulkan_hpp;
+#pragma once
 
 namespace vee::vulkan {
 class Shader;

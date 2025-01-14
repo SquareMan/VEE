@@ -8,8 +8,7 @@ add_library(VeeRuntime)
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/VulkanMemoryAllocator/include)
 target_link_libraries(VeeRuntime
         PUBLIC
-        Vulkan-Hpp-Module
-        VulkanMemoryAllocator-Hpp-Module
+        VulkanMemoryAllocator-Hpp
         glm::glm
         vk-bootstrap::vk-bootstrap
         glfw
@@ -29,7 +28,6 @@ target_sources(VeeRuntime
         Public/Logging.ixx
         Public/Components/CameraComponent.ixx
         Public/Components/SpriteRendererComponent.ixx
-        Public/Renderer/VkUtil.ixx
 
         FILE_SET headers TYPE HEADERS
         BASE_DIRS Public/
@@ -37,6 +35,7 @@ target_sources(VeeRuntime
         Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Vertex.hpp
+        Public/Renderer/VkUtil.hpp
         Public/Renderer/Pipeline.hpp
         Public/Renderer/Shader.hpp
         Public/Renderer/Swapchain.hpp
@@ -79,3 +78,12 @@ target_sources(VeeRuntime
         Private/Logging.cpp
 )
 
+target_compile_definitions(VeeRuntime PUBLIC
+        VULKAN_HPP_NO_EXCEPTIONS
+        VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+        VMA_STATIC_VULKAN_FUNCTIONS=0
+        VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+)
+if (WIN32)
+    target_compile_definitions(VeeRuntime PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+endif ()

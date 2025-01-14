@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <stdint.h>
-
-import vulkan_hpp;
+#include "VkUtil.hpp"
 
 namespace vee {
 class RenderCtx;

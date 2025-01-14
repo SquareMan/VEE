@@ -28,21 +28,6 @@ CPMAddPackage(
         GIT_TAG abc1f44d51b9de65ebe86cb8051a1c2cfd914e5b
         OPTIONS "VMA_BUILD_CXX_MODULE ON" "VMA_BUILD_WITH_VULKAN_MODULE ON"
 )
-
-if (WIN32)
-    target_compile_definitions(Vulkan-Hpp-Module PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-endif ()
-target_compile_definitions(Vulkan-Hpp-Module PUBLIC
-        VULKAN_HPP_NO_EXCEPTIONS
-        VULKAN_HPP_RAII_NO_EXCEPTIONS
-        VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
-)
-target_compile_features(Vulkan-Hpp-Module PUBLIC cxx_std_23)
-target_compile_definitions(VulkanMemoryAllocator-Hpp-Module PUBLIC
-        VMA_STATIC_VULKAN_FUNCTIONS=0
-        VMA_DYNAMIC_VULKAN_FUNCTIONS=1
-)
-target_compile_features(VulkanMemoryAllocator-Hpp-Module PUBLIC cxx_std_23)
 CPMAddPackage("gh:charles-lunarg/vk-bootstrap@1.3.296")
 CPMAddPackage(
         NAME glfw

@@ -4,9 +4,9 @@
 
 #include "Renderer/Shader.hpp"
 
-#include <vector>
+#include "Renderer/VkUtil.hpp"
 
-import VkUtil;
+#include <vector>
 
 namespace vee::vulkan {
 Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vector<char>& code) {

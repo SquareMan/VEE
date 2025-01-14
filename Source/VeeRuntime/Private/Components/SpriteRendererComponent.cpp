@@ -3,7 +3,7 @@
 //
 
 module;
-#include <xstring>
+#include "Renderer/VkUtil.hpp"
 
 #include "Platform/filesystem.hpp"
 #include "Renderer/Pipeline.hpp"
@@ -13,8 +13,6 @@ module;
 #include <entt/locator/locator.hpp>
 
 module SpriteRendererComponent;
-
-import VkUtil;
 
 vee::SpriteRendererComponent::SpriteRendererComponent(const Sprite& sprite)
     : sprite_(sprite) {
