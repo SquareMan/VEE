@@ -21,7 +21,7 @@ std::ostream& operator<<(std::ostream& strm, Severity severity);
 
 namespace vee {
 
-void _log_msg(Severity severity, std::string msg, const std::source_location& location);
+void _log_msg(Severity severity, std::string_view msg, const std::source_location& location);
 
 template <const Severity severity, typename... Args>
 struct _log_fmt {
@@ -29,7 +29,12 @@ struct _log_fmt {
         const std::string msg = std::format(fmt, std::forward<Args>(args)...);
         _log_msg(severity, msg, loc);
     }
+
+    explicit _log_fmt(const char* msg, const std::source_location& loc = std::source_location::current()) {
+        _log_msg(severity, msg, loc);
+    }
 };
+
 template <const Severity severity, typename... Args>
 _log_fmt(std::format_string<Args...> fmt, Args&&... args) -> _log_fmt<severity, Args...>;
 

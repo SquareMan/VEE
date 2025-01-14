@@ -5,6 +5,8 @@
 #define VMA_IMPLEMENTATION
 #include "Renderer/VkUtil.hpp"
 
+#include "../../../../out/Release-Visual Studio/_deps/boost-src/libs/log/include/boost/log/expressions/message.hpp"
+#include "Logging.hpp"
 #include "VeeCore.hpp"
 
 #include <algorithm>
@@ -35,7 +37,16 @@ std::vector<const char*> filter_extensions(std::vector<const char*>& available_e
 VkBool32 vk_debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData
 ) {
-    std::cout << pCallbackData->pMessage << std::endl;
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        log_error(pCallbackData->pMessage);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        log_warning(pCallbackData->pMessage);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        log_info(pCallbackData->pMessage);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        log_debug(pCallbackData->pMessage);
+    }
+
     VEE_DEBUGBREAK();
     return VK_FALSE;
 }
