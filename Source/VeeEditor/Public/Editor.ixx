@@ -3,9 +3,9 @@
 //
 
 module;
+#include "Engine/Engine.hpp"
 #include "Engine/Service.hpp"
 #include "Platform/Window.hpp"
-#include <entt/entt.hpp>
 export module Vee.Editor;
 
 import vulkan_hpp;

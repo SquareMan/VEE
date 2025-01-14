@@ -3,12 +3,11 @@
 //
 
 module;
+#include "Transform.h"
 
 #include "glm/mat4x4.hpp"
 
 export module CameraComponent;
-
-import Vee.Engine;
 
 namespace vee {
 
