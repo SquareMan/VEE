@@ -1,24 +1,25 @@
 //
-// Created by Square on 10/22/2024.
+// Created by Square on 1/13/2025.
 //
 
-#pragma once
+module;
 #include "Engine/Engine.hpp"
+#include "Engine/Service.hpp"
 #include "Platform/Window.hpp"
+export module Vee.Editor;
 
-#include <Engine/Service.hpp>
-
+import Vee.Engine;
 import Vee.Renderer;
 
 namespace vee {
-class EditorApplication : public Service<EditorApplication> {
+export class EditorApplication : public Application {
 public:
     EditorApplication(const ConstructionToken&, const platform::Window& window);
 
-    void run();
+    void run() override;
 
-    Engine& get_engine();
-    Renderer& get_renderer();
+    Engine& get_engine() override;
+    Renderer& get_renderer() override;
 
 private:
     EditorApplication(const EditorApplication&) = delete;

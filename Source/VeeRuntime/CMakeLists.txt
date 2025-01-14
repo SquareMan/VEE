@@ -25,7 +25,8 @@ target_include_directories(VeeRuntime PRIVATE Private/)
 
 target_sources(VeeRuntime
         PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
+        FILE_SET CXX_MODULES FILES
+        Public/Engine.ixx
         Public/Logging.ixx
         Public/Components/CameraComponent.ixx
         Public/Components/SpriteRendererComponent.ixx
@@ -40,7 +41,7 @@ target_sources(VeeRuntime
         Public/Renderer/Swapchain.ixx
         Public/Renderer/VkUtil.ixx
 
-        FILE_SET headers TYPE HEADERS
+        FILE_SET HEADERS
         BASE_DIRS Public/
         FILES
         Public/RingBuffer.hpp
