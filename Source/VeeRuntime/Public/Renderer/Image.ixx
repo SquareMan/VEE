@@ -2,16 +2,17 @@
 // Created by Square on 10/11/2024.
 //
 
-#pragma once
-
+module;
+#include <compare>
 #include <stdint.h>
+export module Vee.Renderer:Image;
 
 import vulkan_hpp;
 import vk_mem_alloc_hpp;
 
 namespace vee {
 
-class Image {
+export class Image {
 public:
     Image() = default;
     Image(vk::Device device, vma::Allocator allocator, vk::ImageUsageFlags usage_flags, vk::Extent3D extent, vk::Format format, vk::ImageAspectFlags aspect_flags);

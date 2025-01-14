@@ -2,19 +2,21 @@
 // Created by Square on 9/28/2024.
 //
 
-#pragma once
-
-#include "Renderer/Buffer.hpp"
-#include "Renderer/Image.hpp"
-#include "Renderer/IRenderer.hpp"
-#include "Renderer/Pipeline.hpp"
-
+module;
+#include <memory>
 #include <functional>
+export module Vee.Renderer;
+
+export import :Buffer;
+export import :Image;
+export import :IRenderer;
+export import :Pipeline;
+export import :Ctx;
+export import :Shader;
+export import :Swapchain;
 
 namespace vee {
-class RenderCtx;
-struct Vertex;
-class Renderer final {
+export class Renderer final {
 public:
     explicit Renderer();
     ~Renderer();

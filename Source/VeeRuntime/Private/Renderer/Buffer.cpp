@@ -2,8 +2,9 @@
 // Created by Square on 10/10/2024.
 //
 
+module;
 #include <compare>
-#include "Renderer/Buffer.hpp"
+module Vee.Renderer;
 
 namespace vee {
 Buffer::~Buffer() {

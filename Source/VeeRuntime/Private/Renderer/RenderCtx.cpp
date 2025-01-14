@@ -2,13 +2,13 @@
 // Created by Square on 10/27/2024.
 //
 
-#include <xstring>
-#include "Renderer/RenderCtx.hpp"
-
+module;
 #include "Platform/Window.hpp"
 
+#include <cassert>
 #include <functional>
-#include <vulkan/vulkan_hpp_macros.hpp>
+#include <xstring>
+module Vee.Renderer;
 
 import vulkan_hpp;
 import VkUtil;
@@ -16,7 +16,7 @@ import VkUtil;
 namespace vee {
 RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
     : window(&window) {
-    VULKAN_HPP_DEFAULT_DISPATCHER.init();
+    vk::defaultDispatchLoaderDynamic.init();
 
     {
 #if _DEBUG
@@ -38,7 +38,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
                 .build();
 
         instance = inst_res.value();
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(instance.instance));
+        vk::defaultDispatchLoaderDynamic.init(vk::Instance(instance.instance));
     }
 
     const vk::Win32SurfaceCreateInfoKHR ci = {{}, GetModuleHandle(nullptr), window.get_handle()};
@@ -61,7 +61,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
             // vulkan dynamic rendering extension functions when dynamic
             // rendering is enabled rather than the vulkan 1.3 functions
             // so we need to enable the extension as well
-            .add_required_extension(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+            .add_required_extension(vk::KHRDynamicRenderingExtensionName)
             .select()
             .value();
     gpu = vkb_gpu.physical_device;
@@ -69,14 +69,14 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
     vkb::DeviceBuilder device_builder(vkb_gpu);
     vkb::Device vkb_device = device_builder.build().value();
     device = vkb_device.device;
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
+    vk::defaultDispatchLoaderDynamic.init(device);
 
     graphics_queue = vkb_device.get_queue(vkb::QueueType::graphics).value();
     presentation_queue = vkb_device.get_queue(vkb::QueueType::present).value();
 
     vma::VulkanFunctions vulkan_functions;
-    vulkan_functions.vkGetInstanceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr;
-    vulkan_functions.vkGetDeviceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr;
+    vulkan_functions.vkGetInstanceProcAddr = vk::defaultDispatchLoaderDynamic.vkGetInstanceProcAddr;
+    vulkan_functions.vkGetDeviceProcAddr = vk::defaultDispatchLoaderDynamic.vkGetDeviceProcAddr;
     vma::AllocatorCreateInfo allocator_info = {
         vma::AllocatorCreateFlagBits::eExtMemoryBudget,
         gpu,
@@ -87,7 +87,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
         {},
         &vulkan_functions,
         instance.instance,
-        VK_API_VERSION_1_3
+        vk::ApiVersion13,
     };
     allocator = vma::createAllocator(allocator_info).value;
 

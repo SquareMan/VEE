@@ -5,14 +5,14 @@
 #include "EditorApplication.hpp"
 
 #include "ImguiRenderer.hpp"
-#include "Renderer/GameRenderer.hpp"
-#include "Renderer/RenderCtx.hpp"
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 #include <iostream>
 
+import Vee.Renderer;
+import GameRenderer;
 
 vee::EditorApplication::EditorApplication(const ConstructionToken&, const platform::Window& window)
     : window_(window) {

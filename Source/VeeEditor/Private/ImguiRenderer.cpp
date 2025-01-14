@@ -6,12 +6,12 @@
 #include "ImguiRenderer.hpp"
 
 #include "Platform/Window.hpp"
-#include "Renderer/RenderCtx.hpp"
 
-#include <vulkan/vulkan_hpp_macros.hpp>
+#include <entt/locator/locator.hpp>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
+import Vee.Renderer;
 import VkUtil;
 
 namespace vee {
@@ -47,7 +47,7 @@ void ImguiRenderer::on_init() {
 
     ImGui_ImplVulkan_LoadFunctions(
         [](const char* function_name, void* user_data) {
-            return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(static_cast<VkInstance>(user_data), function_name);
+            return vk::defaultDispatchLoaderDynamic.vkGetInstanceProcAddr(static_cast<VkInstance>(user_data), function_name);
         },
         ctx.instance.instance
     );

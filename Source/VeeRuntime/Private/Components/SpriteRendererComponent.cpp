@@ -6,14 +6,13 @@ module;
 #include <xstring>
 
 #include "Platform/filesystem.hpp"
-#include "Renderer/Pipeline.hpp"
-#include "Renderer/RenderCtx.hpp"
-#include "Renderer/Shader.hpp"
 
 #include <entt/locator/locator.hpp>
 
 module SpriteRendererComponent;
 
+import vulkan_hpp;
+import Vee.Renderer;
 import VkUtil;
 
 vee::SpriteRendererComponent::SpriteRendererComponent(const Sprite& sprite)

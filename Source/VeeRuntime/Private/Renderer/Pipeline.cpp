@@ -2,12 +2,11 @@
 // Created by Square on 10/3/2024.
 //
 
-#include "Renderer/Pipeline.hpp"
-
-#include "Renderer/Shader.hpp"
+module;
 #include "Vertex.hpp"
 
 #include <glm/mat4x4.hpp>
+module Vee.Renderer;
 
 import VkUtil;
 

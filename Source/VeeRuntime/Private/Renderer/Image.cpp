@@ -2,9 +2,9 @@
 // Created by Square on 10/11/2024.
 //
 
+module;
 #include <compare>
-
-#include "Renderer/Image.hpp"
+module Vee.Renderer;
 
 import vulkan_hpp;
 import vk_mem_alloc_hpp;

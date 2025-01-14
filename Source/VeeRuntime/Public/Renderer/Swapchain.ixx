@@ -2,15 +2,15 @@
 // Created by Square on 10/8/2024.
 //
 
-#pragma once
-
+module;
 #include <vector>
+export module Vee.Renderer:Swapchain;
 
 import vulkan_hpp;
 
 namespace vee {
 
-class Swapchain {
+export class Swapchain {
 public:
     Swapchain() = default;
     Swapchain(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR surface, vk::Format format, uint32_t width, uint32_t height);

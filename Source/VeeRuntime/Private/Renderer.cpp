@@ -2,23 +2,20 @@
 // Created by Square on 9/28/2024.
 //
 
+module;
+#include "Platform/Window.hpp"
+#include "Vertex.hpp"
+
 #include <compare>
 #include <tuple>
 #include <xmemory>
 #include <vector>
 #include <memory>
 #include <xstring>
-
-#include "Renderer.hpp"
-
-#include "Platform/Window.hpp"
-#include "Renderer/RenderCtx.hpp"
-#include "Vertex.hpp"
-
 #include <cassert>
 #include <chrono>
 #include <entt/locator/locator.hpp>
-#include <vector>
+module Vee.Renderer;
 
 import VkUtil;
 

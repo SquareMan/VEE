@@ -2,9 +2,9 @@
 // Created by Square on 10/3/2024.
 //
 
-#include "Renderer/Shader.hpp"
-
+module;
 #include <vector>
+module Vee.Renderer;
 
 import VkUtil;
 
