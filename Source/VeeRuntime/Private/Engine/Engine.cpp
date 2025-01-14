@@ -3,6 +3,7 @@
 //
 
 #include "Engine/Engine.hpp"
+#include "Renderer/Image.hpp"
 #include "Engine/Sprite.hpp"
 #include "Transform.h"
 
@@ -10,7 +11,6 @@
 
 import CameraComponent;
 import SpriteRendererComponent;
-import Vee.Renderer;
 
 namespace vee {
 

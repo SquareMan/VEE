@@ -2,16 +2,18 @@
 // Created by Square on 10/27/2024.
 //
 
-module;
-#include <memory>
-export module GameRenderer;
+#pragma once
 
-import vulkan_hpp;
-import Vee.Renderer;
+#include "Renderer/Buffer.hpp"
+#include "Renderer/Image.hpp"
+#include "Renderer/IRenderer.hpp"
+#include "Renderer/Pipeline.hpp"
+
+#include <memory>
 
 namespace vee {
 
-export class GameRenderer : public vee::IRenderer {
+class GameRenderer : public vee::IRenderer {
 public:
     void on_init() override;
     void on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) override;

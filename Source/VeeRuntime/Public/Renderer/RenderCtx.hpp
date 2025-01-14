@@ -2,15 +2,14 @@
 // Created by Square on 10/27/2024.
 //
 
-module;
+#pragma once
+
 #include "Engine/Service.hpp"
 #include "RingBuffer.hpp"
-#include "Platform/Window.hpp"
+#include "Swapchain.hpp"
 
 #include <functional>
 #include <VkBootstrap.h>
-export module Vee.Renderer:Ctx;
-import :Swapchain;
 
 import vulkan_hpp;
 import vk_mem_alloc_hpp;
@@ -23,7 +22,11 @@ struct CmdBuffer {
 };
 
 namespace vee {
-export class RenderCtx : public Service<RenderCtx> {
+namespace platform {
+class Window;
+}
+
+class RenderCtx : public Service<RenderCtx> {
 public:
     RenderCtx(ConstructionToken, const platform::Window& window);
 

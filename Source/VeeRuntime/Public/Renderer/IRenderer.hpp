@@ -2,16 +2,16 @@
 // Created by Square on 10/27/2024.
 //
 
-module;
+#pragma once
+
 #include <stdint.h>
-export module Vee.Renderer:IRenderer;
 
 import vulkan_hpp;
 
 namespace vee {
-export class RenderCtx;
+class RenderCtx;
 
-export class IRenderer {
+class IRenderer {
 public:
     IRenderer() = default;
     IRenderer(const IRenderer&) = default;

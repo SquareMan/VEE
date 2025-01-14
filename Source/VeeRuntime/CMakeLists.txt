@@ -29,31 +29,31 @@ target_sources(VeeRuntime
         Public/Logging.ixx
         Public/Components/CameraComponent.ixx
         Public/Components/SpriteRendererComponent.ixx
-        Public/Renderer.ixx
-        Public/Renderer/Buffer.ixx
-        Public/Renderer/GameRenderer.ixx
-        Public/Renderer/Image.ixx
-        Public/Renderer/IRenderer.ixx
-        Public/Renderer/Pipeline.ixx
-        Public/Renderer/RenderCtx.ixx
-        Public/Renderer/Shader.ixx
-        Public/Renderer/Swapchain.ixx
         Public/Renderer/VkUtil.ixx
 
         FILE_SET headers TYPE HEADERS
         BASE_DIRS Public/
         FILES
+        Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Vertex.hpp
+        Public/Renderer/Pipeline.hpp
+        Public/Renderer/Shader.hpp
+        Public/Renderer/Swapchain.hpp
+        Public/Renderer/Buffer.hpp
+        Public/Renderer/Image.hpp
         Public/VeeCore.hpp
         Public/Platform/Filesystem.hpp
         Public/Platform/Window.hpp
         Public/Platform/WindowHandle.hpp
+        Public/Renderer/IRenderer.hpp
+        Public/Renderer/RenderCtx.hpp
         Public/Engine/Engine.hpp
         Public/Engine/World.h
         Public/Engine/Entity.h
         Public/Transform.h
         Public/Engine/Sprite.hpp
+        Public/Renderer/GameRenderer.hpp
         Public/Engine/Service.hpp
 
         PRIVATE

@@ -2,18 +2,24 @@
 // Created by Square on 10/27/2024.
 //
 
-module;
 #include <compare>
 #include <tuple>
-#include <vector>
 #include <xmemory>
+#include <vector>
 #include <xstring>
+
+#include "Renderer/GameRenderer.hpp"
 
 #include "../../../VeeEditor/Public/EditorApplication.hpp"
 #include "Engine/Entity.h"
 #include "Engine/World.h"
 #include "Platform/filesystem.hpp"
 #include "Platform/Window.hpp"
+#include "Renderer/Buffer.hpp"
+#include "Renderer/Image.hpp"
+#include "Renderer/Pipeline.hpp"
+#include "Renderer/RenderCtx.hpp"
+#include "Renderer/Shader.hpp"
 #include "Transform.h"
 #include "Vertex.hpp"
 
@@ -23,10 +29,7 @@ module;
 #include <numbers>
 
 #include <imgui.h>
-module GameRenderer;
 
-import vulkan_hpp;
-import vk_mem_alloc_hpp;
 import CameraComponent;
 import SpriteRendererComponent;
 import VkUtil;
@@ -127,8 +130,10 @@ void GameRenderer::on_init() {
     }
 
     // pipelines
-    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv");
-    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv");
+    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv"
+    );
+    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv"
+    );
 
     vee::vulkan::Shader texture_fragment_shader = {ctx.device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code};
     vee::vulkan::Shader entity_vertex_shader = {ctx.device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code};

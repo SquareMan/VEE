@@ -2,23 +2,23 @@
 // Created by Square on 10/3/2024.
 //
 
-module;
+#pragma once
+
 #include <vector>
-export module Vee.Renderer:Pipeline;
 
 import vulkan_hpp;
 
 namespace vee::vulkan {
-export class Shader;
+class Shader;
 
-export class Pipeline final {
+class Pipeline final {
 public:
     vk::PipelineLayout layout;
     vk::Pipeline pipeline;
     vk::DescriptorSetLayout descriptor_set_layout;
 };
 
-export class PipelineBuilder final {
+class PipelineBuilder final {
 public:
     Pipeline build(vk::Device device);
     PipelineBuilder& with_cache(vk::PipelineCache cache);

@@ -3,10 +3,10 @@
 //
 
 #pragma once
+#include "Renderer/IRenderer.hpp"
 #include <stdint.h>
 
 import vulkan_hpp;
-import Vee.Renderer;
 
 namespace vee {
 

@@ -9,8 +9,6 @@
 
 #include <array>
 
-import vulkan_hpp;
-
 namespace vee {
 struct Vertex final {
     glm::vec2 pos;

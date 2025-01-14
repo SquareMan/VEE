@@ -3,9 +3,8 @@
 //
 
 #pragma once
+#include "Renderer/Image.hpp"
 #include <memory>
-
-import Vee.Renderer;
 
 namespace vee {
 

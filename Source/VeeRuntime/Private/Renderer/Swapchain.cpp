@@ -2,13 +2,13 @@
 // Created by Square on 10/8/2024.
 //
 
+#include <xstring>
 
-module;
+#include "Renderer/Swapchain.hpp"
+
 #include <algorithm>
 #include <iterator>
 #include <VkBootstrap.h>
-#include <xstring>
-module Vee.Renderer;
 
 import VkUtil;
 

@@ -10,11 +10,9 @@ module;
 #include <vector>
 
 #include "Engine/Sprite.hpp"
+#include "Renderer/Pipeline.hpp"
 
 export module SpriteRendererComponent;
-
-import vulkan_hpp;
-import Vee.Renderer;
 
 namespace vee {
 export class SpriteRendererComponent {

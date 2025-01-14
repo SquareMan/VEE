@@ -2,16 +2,16 @@
 // Created by Square on 10/3/2024.
 //
 
-module;
+#pragma once
+
 #include <string>
 #include <vector>
-export module Vee.Renderer:Shader;
 
 import vulkan_hpp;
 
 namespace vee::vulkan {
 
-export class Shader final {
+class Shader final {
 public:
     Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vector<char>& code);
     ~Shader();

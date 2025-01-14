@@ -5,10 +5,10 @@
 #pragma once
 #include "Engine/Engine.hpp"
 #include "Platform/Window.hpp"
+#include "Renderer.hpp"
 
 #include <Engine/Service.hpp>
 
-import Vee.Renderer;
 
 namespace vee {
 class EditorApplication : public Service<EditorApplication> {
