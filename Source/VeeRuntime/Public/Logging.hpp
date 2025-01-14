@@ -65,22 +65,22 @@ struct log_dynamic {
     ) {
         switch (severity) {
         case Severity::Trace:
-            log_trace(fmt, std::forward<Args>(args)...);
+            log_trace<Args...>(fmt, std::forward<Args>(args)..., loc);
             break;
         case Severity::Debug:
-            log_debug(fmt, std::forward<Args>(args)...);
+            log_debug<Args...>(fmt, std::forward<Args>(args)..., loc);
             break;
         case Severity::Info:
-            log_info(fmt, std::forward<Args>(args)...);
+            log_info<Args...>(fmt, std::forward<Args>(args)..., loc);
             break;
         case Severity::Warning:
-            log_warning(fmt, std::forward<Args>(args)...);
+            log_warning<Args...>(fmt, std::forward<Args>(args)..., loc);
             break;
         case Severity::Error:
-            log_error(fmt, std::forward<Args>(args)...);
+            log_error<Args...>(fmt, std::forward<Args>(args)..., loc);
             break;
         case Severity::Fatal:
-            log_fatal(fmt, std::forward<Args>(args)...);
+            log_fatal<Args...>(fmt, std::forward<Args>(args)..., loc);
             break;
         }
     }
