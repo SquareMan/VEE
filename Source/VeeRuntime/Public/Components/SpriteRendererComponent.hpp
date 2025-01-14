@@ -2,15 +2,13 @@
 // Created by Square on 11/18/2024.
 //
 
-module;
+#pragma once
 
 #include "Engine/Sprite.hpp"
 #include "Renderer/Pipeline.hpp"
 
-export module SpriteRendererComponent;
-
 namespace vee {
-export class SpriteRendererComponent {
+class SpriteRendererComponent {
 public:
     explicit SpriteRendererComponent(const Sprite& sprite);
     explicit SpriteRendererComponent(Sprite&& sprite);

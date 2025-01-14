@@ -2,10 +2,11 @@
 // Created by Square on 11/17/2024.
 //
 
-module;
-#include <glm/ext.hpp>
+#include "Components/CameraComponent.hpp"
 
-module CameraComponent;
+#include "Transform.h"
+
+#include <glm/ext.hpp>
 
 namespace vee {
 
