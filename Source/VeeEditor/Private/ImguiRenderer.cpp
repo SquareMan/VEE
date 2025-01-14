@@ -1,13 +1,15 @@
 //
 // Created by Square on 10/27/2024.
 //
-module;
+#include <xstring>
+
+#include "ImguiRenderer.hpp"
+
 #include "Platform/Window.hpp"
 
+#include <entt/locator/locator.hpp>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
-#include <entt/entt.hpp>
-module Vee.Editor;
 
 import Vee.Renderer;
 import VkUtil;
