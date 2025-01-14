@@ -1,6 +1,9 @@
-﻿#include "Transform.h"
-
+﻿
+module;
 #include <numbers>
+#include <glm/glm.hpp>
+#include <entt/entt.hpp>
+module Vee.Engine;
 
 namespace vee {
 glm::mat4x4 Transform::to_mat() const {

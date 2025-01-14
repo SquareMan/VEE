@@ -50,10 +50,6 @@ target_sources(VeeRuntime
         Public/Platform/Filesystem.hpp
         Public/Platform/Window.hpp
         Public/Platform/WindowHandle.hpp
-        Public/Engine/Engine.hpp
-        Public/Engine/World.h
-        Public/Engine/Entity.h
-        Public/Transform.h
         Public/Engine/Sprite.hpp
         Public/Engine/Service.hpp
 
@@ -71,7 +67,6 @@ target_sources(VeeRuntime
         Private/Renderer/RenderCtx.cpp
         Private/Engine/Engine.cpp
         Private/Engine/World.cpp
-        Private/Engine/Entity.cpp
         Private/Transform.cpp
         Private/Components/CameraComponent.cpp
         Private/Components/SpriteRendererComponent.cpp

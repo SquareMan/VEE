@@ -3,11 +3,11 @@
 //
 
 module;
-#include "Engine/Engine.hpp"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 #include <iostream>
+#include <entt/entt.hpp>
 module Vee.Editor;
 
 import Vee.Renderer;

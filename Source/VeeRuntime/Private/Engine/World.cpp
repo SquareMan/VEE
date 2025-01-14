@@ -1,4 +1,6 @@
-﻿#include "Engine/World.h"
+﻿module;
+#include <entt/entt.hpp>
+module Vee.Engine;
 
 vee::Entity vee::World::spawn_entity() {
     const entt::entity ent = entt_registry.create();

@@ -2,11 +2,12 @@
 // Created by Square on 10/20/2024.
 //
 
-#include "Engine/Engine.hpp"
+module;
 #include "Engine/Sprite.hpp"
-#include "Transform.h"
-
 #include <glfw/glfw3.h>
+#include <glm/glm.hpp>
+#include <entt/entt.hpp>
+module Vee.Engine;
 
 import CameraComponent;
 import SpriteRendererComponent;
