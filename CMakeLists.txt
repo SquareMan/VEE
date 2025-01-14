@@ -3,6 +3,7 @@ project(VEE VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 # download CPM.cmake
 file(
@@ -26,7 +27,6 @@ CPMAddPackage(
         VERSION 3.1.0
         GIT_REPOSITORY https://github.com/walkiewicz125/VulkanMemoryAllocator-Hpp.git
         GIT_TAG abc1f44d51b9de65ebe86cb8051a1c2cfd914e5b
-        OPTIONS "VMA_BUILD_CXX_MODULE ON" "VMA_BUILD_WITH_VULKAN_MODULE ON"
 )
 CPMAddPackage("gh:charles-lunarg/vk-bootstrap@1.3.296")
 CPMAddPackage(
