@@ -58,7 +58,7 @@ struct log_fatal {
     [[noreturn]] explicit log_fatal(std::format_string<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current()) {
         _log_fmt<Severity::Fatal, Args...>(fmt, std::forward<Args>(args)..., loc);
         VEE_DEBUGBREAK();
-        std::exit(-1);
+        std::abort();
     }
 };
 template <typename... Args>
