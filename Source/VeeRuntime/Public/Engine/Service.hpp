@@ -29,6 +29,10 @@ public:
         }
     }
 
+    static void ShutdownService() {
+        entt::locator<ServiceType>::reset();
+    }
+
     static auto GetService() -> ServiceType& {
         return entt::locator<ServiceType>::value();
     }
