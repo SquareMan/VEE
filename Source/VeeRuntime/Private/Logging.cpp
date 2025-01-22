@@ -2,6 +2,7 @@
 // Created by Square on 12/22/2024.
 //
 #include "Logging.hpp"
+#include "LogUtil.hpp"
 
 #include <array>
 #include <boost/core/null_deleter.hpp>
@@ -17,6 +18,7 @@
 #include <iostream>
 #include <magic_enum/magic_enum.hpp>
 
+
 namespace attrs = boost::log::attributes;
 namespace expr = boost::log::expressions;
 namespace keywords = boost::log::keywords;
@@ -27,27 +29,7 @@ std::ostream& operator<<(std::ostream& strm, Severity severity) {
     return strm << magic_enum::enum_name(severity);
 }
 
-enum class Color { Blue, Cyan, Faint, Green, Magenta, Red, Yellow, SIZE };
-auto colored_expression(auto fmt, Color color) {
-    return expr::wrap_formatter([fmt, color](const boost::log::record_view& record_view, boost::log::formatting_ostream& stream) {
-        static constexpr auto color_codes = std::array{
-            "\033[34m",
-            "\033[36m",
-            "\033[2;90m",
-            "\033[32m",
-            "\033[35m",
-            "\033[31m",
-            "\033[33m",
-        };
-        static_assert(color_codes.size() == static_cast<uint32_t>(Color::SIZE));
-
-        stream << color_codes[static_cast<uint32_t>(color)];
-        fmt(record_view, stream);
-        stream << "\033[0;10m";
-    });
-}
-
-std::string_view last_n_chars(const boost::log::value_ref<std::string>& value_ref, size_t n) {
+std::string_view vee::log::last_n_chars(const boost::log::value_ref<std::string>& value_ref, size_t n) {
     if (!value_ref) {
         return "";
     }
@@ -59,16 +41,18 @@ std::string_view last_n_chars(const boost::log::value_ref<std::string>& value_re
     return {val.data() + val.size() - n, n};
 }
 
-BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", Severity)
 
 BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(gLogger, sources::severity_logger_mt<Severity>) {
+    using namespace vee::log;
     // Library Core Initialization
     boost::log::add_common_attributes();
     boost::log::register_simple_formatter_factory<Severity, char>("Severity");
     auto core = boost::log::core::get();
 
     // Add file sink
-    boost::log::add_file_log(keywords::file_name = ".log", keywords::format = "%TimeStamp% %Severity% %File%:%Line% (%Function%) : %Message%");
+    boost::log::add_file_log(
+        keywords::file_name = ".log", keywords::format = "%TimeStamp% %Severity% %File%:%Line% (%Function%) : %Message%", keywords::filter = severity <= Severity::Assert
+    );
 
     // Setup and add console sink
     auto console_sink = boost::make_shared<sinks::synchronous_sink<sinks::text_ostream_backend>>();
@@ -102,6 +86,7 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(gLogger, sources::severity_logger_mt<Severit
             ]
         << expr::auto_newline
     );
+    console_sink->set_filter(severity <= Severity::Assert);
     // clang-format on
     core->add_sink(console_sink);
 

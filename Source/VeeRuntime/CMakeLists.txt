@@ -25,6 +25,7 @@ target_sources(VeeRuntime
         BASE_DIRS Public/
         FILES
         Public/Logging.hpp
+        Public/Assert.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Vertex.hpp
@@ -51,6 +52,13 @@ target_sources(VeeRuntime
         Public/Engine/Service.hpp
 
         PRIVATE
+        FILE_SET private_headers TYPE HEADERS
+        BASE_DIRS Private/
+        FILES
+        Private/LogUtil.hpp
+
+        PRIVATE
+        Private/Assert.cpp
         Private/Renderer.cpp
         Private/RingBuffer.cpp
         Private/Renderer/VkUtil.cpp

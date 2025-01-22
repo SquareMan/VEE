@@ -5,8 +5,8 @@
 
 #include "VeeCore.hpp"
 
-#include <source_location>
 #include <format>
+#include <source_location>
 
 enum class Severity {
     Trace,
@@ -15,6 +15,8 @@ enum class Severity {
     Warning,
     Error,
     Fatal,
+    // This is a little dirty. The Assert severity is only for controlling which sinks to output assertion logs to
+    Assert,
 };
 
 std::ostream& operator<<(std::ostream& strm, Severity severity);
@@ -60,14 +62,19 @@ struct log_fatal {
         VEE_DEBUGBREAK();
         std::abort();
     }
+
+    [[noreturn]] explicit log_fatal(const char* msg, const std::source_location& loc = std::source_location::current()) {
+        _log_fmt<Severity::Fatal>(msg, loc);
+        VEE_DEBUGBREAK();
+        std::abort();
+    }
 };
 template <typename... Args>
 log_fatal(std::format_string<Args...> fmt, Args&&... args) -> log_fatal<Args...>;
 
 template <typename... Args>
 struct log_dynamic {
-    log_dynamic(Severity severity, std::format_string<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current()
-    ) {
+    log_dynamic(Severity severity, std::format_string<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current()) {
         switch (severity) {
         case Severity::Trace:
             log_trace<Args...>(fmt, std::forward<Args>(args)..., loc);
