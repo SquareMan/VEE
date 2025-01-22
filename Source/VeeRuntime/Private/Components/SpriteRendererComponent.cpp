@@ -4,6 +4,7 @@
 
 #include "Components/SpriteRendererComponent.hpp"
 
+#include "Assert.hpp"
 #include "Platform/filesystem.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Renderer/Shader.hpp"
@@ -39,7 +40,7 @@ vee::SpriteRendererComponent::SpriteRendererComponent(const Sprite& sprite)
     std::vector<vk::DescriptorSet> sets = ctx.device.allocateDescriptorSets(allocate_info).value;
     descriptor_set_ = sets[0];
 
-    assert(sprite.image_ != nullptr);
+    VASSERT(sprite.image_ != nullptr);
     vk::DescriptorImageInfo image_info = {tex_sampler, sprite_.image_->view, vk::ImageLayout::eShaderReadOnlyOptimal};
 
     vk::WriteDescriptorSet descriptor_write = {descriptor_set_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}};

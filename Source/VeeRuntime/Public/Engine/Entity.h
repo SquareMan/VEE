@@ -1,6 +1,6 @@
 ﻿#pragma once
+#include "Assert.hpp"
 #include "Transform.h"
-
 
 #include <entt/entity/handle.hpp>
 #include <entt/entity/registry.hpp>
@@ -19,13 +19,13 @@ public:
 
     template <typename T, typename... Args>
     T& add_component(Args&&... args) {
-        assert(registry && "Entity has a null registry");
+        VASSERT(registry, "Entity has a null registry");
         return registry->emplace<T>(entt_entity, std::forward<Args>(args)...);
     }
 
     template <typename T>
     [[nodiscard]] T* get_component() {
-        assert(registry && "Entity has a null registry");
+        VASSERT(registry, "Entity has a null registry");
         return registry->try_get<Transform>(entt_entity);
     }
 };

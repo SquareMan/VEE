@@ -4,25 +4,23 @@
 
 #include "Platform/Window.hpp"
 
-#include <cassert>
-
+#include "Assert.hpp"
 #include "GLFW/glfw3.h"
+
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 
 namespace vee::platform {
 Window::Window(const char* title, int32_t width, int32_t height) {
     if (!glfwInit()) {
-        // TODO log here
-        assert(false);
+        VASSERT(false, "Failed to initialize GLFW");
         return;
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfw_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!glfw_window) {
-        // TODO: log here
-        assert(false);
+        VASSERT(false, "failed to create GLFW window");
         return;
     }
 }
@@ -45,7 +43,7 @@ std::tuple<uint32_t, uint32_t> Window::get_size() const {
 }
 
 WindowHandle Window::get_handle() const {
-    assert(glfw_window != nullptr);
+    VASSERT(glfw_window != nullptr, "GLFW window was not initialized");
     // TODO: not platform independent
     return glfwGetWin32Window(glfw_window);
 }

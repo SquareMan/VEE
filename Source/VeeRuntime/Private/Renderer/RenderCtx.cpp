@@ -4,9 +4,11 @@
 
 #include "Renderer/RenderCtx.hpp"
 
+#include "Assert.hpp"
 #include "Platform/Window.hpp"
 
 #include <functional>
+#include <magic_enum/magic_enum.hpp>
 
 namespace vee {
 RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
@@ -103,7 +105,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
 
     std::vector<vk::CommandBuffer> tmp_command_buffers =
         device.allocateCommandBuffers(command_buffer_info).value;
-    assert(command_buffers.size() == tmp_command_buffers.size());
+    VASSERT(command_buffers.size() == tmp_command_buffers.size());
     for (uint32_t i = 0; i < tmp_command_buffers.size(); ++i) {
         command_buffers[i].fence = device.createFence({vk::FenceCreateFlagBits::eSignaled}).value;
         command_buffers[i].acquire_semaphore = device.createSemaphore({}).value;
@@ -125,7 +127,7 @@ RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
             break;
         }
     }
-    assert(format == vk::Format::eB8G8R8A8Srgb);
+    VASSERT(format == vk::Format::eB8G8R8A8Srgb, "Expected surface format unavailable. Found vk::Format::{}", magic_enum::enum_name<vk::Format>(format));
 
     auto [width, height] = window.get_size();
     new (&swapchain) Swapchain(gpu, device, surface, format, width, height);

@@ -4,11 +4,11 @@
 
 #include "Renderer.hpp"
 
+#include "Assert.hpp"
 #include "Platform/Window.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Vertex.hpp"
 
-#include <cassert>
 #include <chrono>
 #include <entt/locator/locator.hpp>
 #include <vector>
@@ -57,22 +57,16 @@ void Renderer::Render() {
         switch (result) {
         case vk::Result::eSuccess:
             break;
-        case vk::Result::eTimeout:
-            assert(false);
-            return;
-        case vk::Result::eNotReady:
-            assert(false);
-            return;
         case vk::Result::eSuboptimalKHR:
         case vk::Result::eErrorOutOfDateKHR:
             ctx.recreate_swapchain();
             return;
         default:
-            assert(false);
+            VASSERT(false);
             return;
         }
     }
-    assert(image_index != UINT32_MAX);
+    VASSERT(image_index != UINT32_MAX, "failed to acquire image index");
     std::ignore = ctx.device.resetFences(command_buffer.fence);
 
     std::ignore = command_buffer.cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
@@ -101,7 +95,7 @@ void Renderer::Render() {
             ctx.recreate_swapchain();
             break;
         default:
-            assert(false);
+            VASSERT(false);
         }
     }
 }

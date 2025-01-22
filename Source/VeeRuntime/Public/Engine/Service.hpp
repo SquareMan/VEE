@@ -3,6 +3,8 @@
 //
 
 #pragma once
+
+#include "Assert.hpp"
 #include <entt/locator/locator.hpp>
 
 namespace vee {
@@ -20,7 +22,7 @@ public:
 
     template <typename... Args>
     static void InitService(Args&&... args) {
-        assert(!entt::locator<ServiceType>::has_value() && "Service already initialized");
+        VASSERT(!entt::locator<ServiceType>::has_value(), "Service already initialized");
 
         if constexpr (Visibility == ConstructorVisibility::Private) {
             entt::locator<ServiceType>::emplace(ConstructionToken(), args...);
