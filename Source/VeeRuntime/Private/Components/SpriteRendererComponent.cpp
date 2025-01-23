@@ -5,7 +5,7 @@
 #include "Components/SpriteRendererComponent.hpp"
 
 #include "Assert.hpp"
-#include "Platform/filesystem.hpp"
+#include "Platform/Filesystem.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Renderer/Shader.hpp"
 

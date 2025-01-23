@@ -7,7 +7,7 @@
 #include "../../../VeeEditor/Public/EditorApplication.hpp"
 #include "Engine/Entity.h"
 #include "Engine/World.h"
-#include "Platform/filesystem.hpp"
+#include "Platform/Filesystem.hpp"
 #include "Platform/Window.hpp"
 #include "Renderer/Buffer.hpp"
 #include "Renderer/Image.hpp"
