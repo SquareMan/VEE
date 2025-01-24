@@ -28,8 +28,13 @@ public:
         return game_time_;
     }
 
+    [[nodiscard]] double get_delta_time() const {
+        return delta_time_;
+    };
+
 private:
     double game_time_ = 0.0;
+    double delta_time_ = 0.0;
     World world_;
 };
 } // namespace vee

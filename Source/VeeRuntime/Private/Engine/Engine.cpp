@@ -34,7 +34,9 @@ void Engine::shutdown() {}
 
 
 void Engine::tick() {
-    game_time_ = glfwGetTime();
+    const double new_time = glfwGetTime();
+    delta_time_ = new_time - game_time_;
+    game_time_ = new_time;
 
     World& world = get_world();
     auto view = world.entt_registry.view<SpriteRendererComponent, Transform>();
@@ -45,5 +47,6 @@ void Engine::tick() {
         trans.position *= 100.f;
     }
 }
+
 
 } // namespace vee
