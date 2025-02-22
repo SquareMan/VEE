@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "Keys.hpp"
+
 #ifdef WIN32
 #include "WindowHandle.hpp"
 #endif
@@ -11,6 +13,7 @@
 
 #include "GLFW/glfw3.h"
 
+#include <set>
 #include <tuple>
 
 namespace vee::platform {
@@ -28,5 +31,13 @@ public:
     [[nodiscard]] WindowHandle get_handle() const;
 
     GLFWwindow* glfw_window = nullptr;
+
+    [[nodiscard]] bool is_key_down(Key key) const;
+
+private:
+    static void key_callback_dispatcher(GLFWwindow* glfw_window, int key, int scancode, int action, int mods);
+    void key_callback(int key, int scancode, int action, int mods);
+
+    std::set<Key> down_keys;
 };
 } // namespace vee::platform

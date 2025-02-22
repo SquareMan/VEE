@@ -26,6 +26,7 @@ target_sources(VeeRuntime
         FILES
         Public/Logging.hpp
         Public/Assert.hpp
+        Public/Keys.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Vertex.hpp
