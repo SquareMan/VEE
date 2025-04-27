@@ -19,15 +19,8 @@ include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 # Vulkan SDK should be installed on the system
 find_package(Vulkan REQUIRED SPIRV-Tools)
 
-CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@3.1.0")
-#CPMAddPackage("gh:YaaZ/VulkanMemoryAllocator-Hpp@3.1.0")
-# vma::detail::resultCheck is missing an inline specifier in the current release, temporarily use this repo with the fix
-CPMAddPackage(
-        NAME VulkanMemoryAllocator-Hpp
-        VERSION 3.1.0
-        GIT_REPOSITORY https://github.com/walkiewicz125/VulkanMemoryAllocator-Hpp.git
-        GIT_TAG abc1f44d51b9de65ebe86cb8051a1c2cfd914e5b
-)
+#CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@3.2.1")
+CPMAddPackage("gh:YaaZ/VulkanMemoryAllocator-Hpp@3.2.1")
 CPMAddPackage("gh:charles-lunarg/vk-bootstrap@1.3.296")
 CPMAddPackage(
         NAME glfw
