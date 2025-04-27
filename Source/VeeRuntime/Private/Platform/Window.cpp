@@ -43,7 +43,7 @@ Window::~Window() {
     }
 }
 
-void Window::poll_events() const {
+void Window::poll_events() {
     glfwPollEvents();
 }
 

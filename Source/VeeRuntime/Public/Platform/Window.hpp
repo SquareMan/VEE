@@ -27,6 +27,7 @@ public:
 
     Window(Window&& other) {
         *this = std::move(other);
+        glfwSetWindowUserPointer(glfw_window, this);
     };
     Window& operator=(Window&& other) {
         this->glfw_window = other.glfw_window;
@@ -42,7 +43,7 @@ public:
 
     ~Window();
 
-    void poll_events() const;
+    void poll_events();
     bool should_close() const;
 
     [[nodiscard]] std::tuple<uint32_t, uint32_t> get_size() const;
