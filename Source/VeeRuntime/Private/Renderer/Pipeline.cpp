@@ -26,7 +26,7 @@ vulkan::Pipeline vulkan::PipelineBuilder::build(vk::Device device) {
     vk::PipelineLayoutCreateInfo layout_info({}, descriptor_layout, push_constants);
     VkPipelineLayout layout = device.createPipelineLayout(layout_info).value;
 
-    vk::PipelineColorBlendAttachmentState color_blend_attachment;
+    vk::PipelineColorBlendAttachmentState color_blend_attachment(true, vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd, vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd);
     color_blend_attachment.setColorWriteMask(
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
     );
