@@ -14,9 +14,9 @@
 #include <iostream>
 
 
-vee::EditorApplication::EditorApplication(const ConstructionToken&, const platform::Window& window)
-    : window_(window) {
-    RenderCtx::InitService(window);
+vee::EditorApplication::EditorApplication(const ConstructionToken&, platform::Window&& window)
+    : window_(std::move(window)) {
+    RenderCtx::InitService(window_);
 
     renderer_.push_renderer<GameRenderer>();
     renderer_.push_renderer<ImguiRenderer>();

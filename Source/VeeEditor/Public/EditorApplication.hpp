@@ -13,7 +13,7 @@
 namespace vee {
 class EditorApplication : public Service<EditorApplication> {
 public:
-    EditorApplication(const ConstructionToken&, const platform::Window& window);
+    EditorApplication(const ConstructionToken&, platform::Window&& window);
 
     void run();
 

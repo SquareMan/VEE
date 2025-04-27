@@ -25,9 +25,9 @@ public:
         VASSERT(!entt::locator<ServiceType>::has_value(), "Service already initialized");
 
         if constexpr (Visibility == ConstructorVisibility::Private) {
-            entt::locator<ServiceType>::emplace(ConstructionToken(), args...);
+            entt::locator<ServiceType>::emplace(ConstructionToken(), std::forward<Args>(args)...);
         } else {
-            entt::locator<ServiceType>::emplace(args...);
+            entt::locator<ServiceType>::emplace(std::forward<Args>(args)...);
         }
     }
 

@@ -14,25 +14,33 @@
 #include <magic_enum/magic_enum.hpp>
 
 namespace vee::platform {
-Window::Window(const char* title, int32_t width, int32_t height) {
+Window::Window(GLFWwindow& glfw_window)
+    : glfw_window(&glfw_window) {
+    glfwSetWindowUserPointer(&glfw_window, this);
+    glfwSetKeyCallback(&glfw_window, &Window::key_callback_dispatcher);
+}
+
+std::expected<Window, Window::CreateError> Window::create(const char* title, int32_t width, int32_t height) {
     if (!glfwInit()) {
         VASSERT(false, "Failed to initialize GLFW");
-        return;
+        return std::unexpected(Window::CreateError());
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfw_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+    GLFWwindow* glfw_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!glfw_window) {
         VASSERT(false, "failed to create GLFW window");
-        return;
+        return std::unexpected(Window::CreateError());
     }
 
-    glfwSetWindowUserPointer(glfw_window, this);
-    glfwSetKeyCallback(glfw_window, &Window::key_callback_dispatcher);
+    return std::move(Window(*glfw_window));
 }
 
 Window::~Window() {
-    glfwTerminate();
+    if (glfw_window != nullptr) {
+        glfwDestroyWindow(glfw_window);
+        glfwTerminate();
+    }
 }
 
 void Window::poll_events() const {

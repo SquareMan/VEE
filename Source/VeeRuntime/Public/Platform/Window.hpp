@@ -13,13 +13,32 @@
 
 #include "GLFW/glfw3.h"
 
+#include <expected>
+#include <memory>
 #include <set>
 #include <tuple>
 
 namespace vee::platform {
+
 class Window {
 public:
-    Window(const char* title, int32_t width, int32_t height);
+    Window(Window& other) = delete;
+    Window& operator=(Window& other) = delete;
+
+    Window(Window&& other) {
+        *this = std::move(other);
+    };
+    Window& operator=(Window&& other) {
+        this->glfw_window = other.glfw_window;
+        other.glfw_window = nullptr;
+        return *this;
+    }
+
+
+    explicit Window(GLFWwindow& glfw_window);
+
+    struct CreateError {};
+    static std::expected<Window, CreateError> create(const char* title, int32_t width, int32_t height);
 
     ~Window();
 
