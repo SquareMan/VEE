@@ -16,6 +16,7 @@ target_link_libraries(VeeRuntime
         Boost::log
         Boost::log_setup
         magic_enum
+        stb
 )
 target_include_directories(VeeRuntime PRIVATE Private/)
 
@@ -74,6 +75,7 @@ target_sources(VeeRuntime
         Private/Engine/Engine.cpp
         Private/Engine/World.cpp
         Private/Engine/Entity.cpp
+        Private/stb_image_impl.cpp
         Private/Transform.cpp
         Private/Components/CameraComponent.cpp
         Private/Components/SpriteRendererComponent.cpp

@@ -49,6 +49,12 @@ CPMAddPackage(
         OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES log"
 )
 CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
+CPMAddPackage("gh:nothings/stb#f056911")
+
+if (stb_ADDED)
+    add_library(stb INTERFACE)
+    target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+endif ()
 
 if (imgui_ADDED)
     add_library(imgui STATIC

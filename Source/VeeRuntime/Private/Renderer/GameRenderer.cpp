@@ -25,6 +25,7 @@
 #include <Components/CameraComponent.hpp>
 #include <Components/SpriteRendererComponent.hpp>
 #include <imgui.h>
+#include <stb_image.h>
 
 
 namespace vee {
@@ -94,17 +95,28 @@ void GameRenderer::on_init() {
     );
 
     tex_image_ = std::make_shared<vee::Image>(
-        ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::Extent3D{16, 16, 1}, vk::Format::eB8G8R8A8Unorm, vk::ImageAspectFlagBits::eColor
+        ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::Extent3D{16, 16, 1}, vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor
     );
 
     {
         // checkerboard image
+        int32_t x, y, n;
+        uint8_t* data = stbi_load("Resources/cool.png", &x, &y, &n, STBI_rgb_alpha);
         const uint32_t black = glm::packUnorm4x8(glm::vec4(0, 0, 0, 1));
         const uint32_t magenta = glm::packUnorm4x8(glm::vec4(1, 0, 1, 1));
         std::array<uint32_t, 16 * 16> pixels; // for 16x16 checkerboard texture
         for (int x = 0; x < 16; x++) {
             for (int y = 0; y < 16; y++) {
-                pixels[y * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+                if (data == nullptr) {
+                    pixels[y * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+                } else {
+                    const uint8_t* b = &data[(y * 16 + x) * 4 + 2];
+                    const uint8_t* g = &data[(y * 16 + x) * 4 + 1];
+                    const uint8_t* r = &data[(y * 16 + x) * 4 + 0];
+                    const uint8_t* a = &data[(y * 16 + x) * 4 + 3];
+
+                    pixels[y * 16 + x] = glm::packUnorm4x8(glm::vec4(*b, *g, *r, *a) / 255.f);
+                }
             }
         }
 
@@ -123,10 +135,8 @@ void GameRenderer::on_init() {
     }
 
     // pipelines
-    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv"
-    );
-    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv"
-    );
+    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv");
+    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv");
 
     vee::vulkan::Shader texture_fragment_shader = {ctx.device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code};
     vee::vulkan::Shader entity_vertex_shader = {ctx.device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code};
