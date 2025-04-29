@@ -9,8 +9,8 @@ target_link_libraries(VeeRuntime
         glm::glm
         vk-bootstrap::vk-bootstrap
         glfw
-        imgui
         EnTT::EnTT
+        $<$<CONFIG:Debug>:VeeEditor;imgui>
 
         PRIVATE
         Boost::log
@@ -27,6 +27,8 @@ target_sources(VeeRuntime
         FILES
         Public/Logging.hpp
         Public/Assert.hpp
+        Public/Application.hpp
+        Public/IApplication.hpp
         Public/Keys.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
@@ -61,6 +63,7 @@ target_sources(VeeRuntime
 
         PRIVATE
         Private/Assert.cpp
+        Private/Application.cpp
         Private/Renderer.cpp
         Private/RingBuffer.cpp
         Private/Renderer/VkUtil.cpp
@@ -89,6 +92,7 @@ target_compile_definitions(VeeRuntime PUBLIC
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
         VMA_STATIC_VULKAN_FUNCTIONS=0
         VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+        $<$<CONFIG:Debug>:VEE_WITH_EDITOR>
 )
 if (WIN32)
     target_compile_definitions(VeeRuntime PUBLIC VK_USE_PLATFORM_WIN32_KHR)

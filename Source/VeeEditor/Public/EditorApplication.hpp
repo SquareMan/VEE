@@ -3,30 +3,14 @@
 //
 
 #pragma once
-#include "Engine/Engine.hpp"
-#include "Platform/Window.hpp"
-#include "Renderer.hpp"
-
-#include <Engine/Service.hpp>
+#include "Application.hpp"
 
 
 namespace vee {
-class EditorApplication : public Service<EditorApplication> {
+class EditorApplication : public Application {
 public:
-    EditorApplication(const ConstructionToken&, platform::Window&& window);
+    EditorApplication(platform::Window&& window);
 
-    void run();
-
-    Engine& get_engine();
-    Renderer& get_renderer();
-
-private:
-    EditorApplication(const EditorApplication&) = delete;
-    EditorApplication& operator=(const EditorApplication&) = delete;
-
-    Engine engine_;
-    platform::Window window_;
-    // TODO: this needs to be in the Engine
-    Renderer renderer_;
+    void run() override;
 };
 }; // namespace vee

@@ -74,7 +74,11 @@ void Renderer::Render() {
         for (std::shared_ptr<IRenderer>& r : renderers_) {
             r->on_render(cmd, image_index);
         }
+
+        // Get the swapchain image ready to present.
+        vulkan::transition_image(cmd, ctx.swapchain.images[image_index], vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
     });
+
 
     vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const vk::SubmitInfo submit_info(

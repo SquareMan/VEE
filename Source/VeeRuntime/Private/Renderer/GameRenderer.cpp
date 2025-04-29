@@ -4,7 +4,8 @@
 
 #include "Renderer/GameRenderer.hpp"
 
-#include "../../../VeeEditor/Public/EditorApplication.hpp"
+#include "Application.hpp"
+#include "Engine/Engine.hpp"
 #include "Engine/Entity.h"
 #include "Engine/World.h"
 #include "Platform/Filesystem.hpp"
@@ -24,7 +25,9 @@
 
 #include <Components/CameraComponent.hpp>
 #include <Components/SpriteRendererComponent.hpp>
+#ifdef VEE_WITH_EDITOR
 #include <imgui.h>
+#endif
 #include <stb_image.h>
 
 
@@ -170,18 +173,20 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     auto& ctx = RenderCtx::GetService();
 
     auto time = static_cast<float>(glfwGetTime());
-    Engine& engine = EditorApplication::GetService().get_engine();
+    Engine& engine = entt::locator<IApplication>::value().get_engine();
 
     // TODO: deal with multiple cameras
     auto cams = engine.get_world().entt_registry.view<vee::CameraComponent, vee::Transform>();
     auto [e, cam, cam_transform] = *cams.each().begin();
 
+#ifdef VEE_WITH_EDITOR
     if (ImGui::Begin("Debug")) {
         ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_transform.position));
         ImGui::DragFloat("Cam Rot", &cam_transform.rotation);
         ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_transform.scale));
     }
     ImGui::End();
+#endif
 
     const glm::mat4x4 proj = cam.calculate_view_projection(cam_transform);
 

@@ -5,24 +5,13 @@
 #include "EditorApplication.hpp"
 
 #include "ImguiRenderer.hpp"
-#include "Renderer/GameRenderer.hpp"
-#include "Renderer/RenderCtx.hpp"
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
-#include <iostream>
 
-
-vee::EditorApplication::EditorApplication(const ConstructionToken&, platform::Window&& window)
-    : window_(std::move(window)) {
-    RenderCtx::InitService(window_);
-
-    renderer_.push_renderer<GameRenderer>();
-    renderer_.push_renderer<ImguiRenderer>();
-    renderer_.init();
-    engine_.init();
-}
+vee::EditorApplication::EditorApplication(platform::Window&& window)
+    : Application(std::move(window), {std::make_shared<ImguiRenderer>()}) {}
 
 void vee::EditorApplication::run() {
     while (!window_.should_close()) {
@@ -40,13 +29,5 @@ void vee::EditorApplication::run() {
 
     engine_.shutdown();
 
-    std::cout << "Goodbye\n";
-}
-
-vee::Engine& vee::EditorApplication::get_engine() {
-    return engine_;
-}
-
-vee::Renderer& vee::EditorApplication::get_renderer() {
-    return renderer_;
+    vee::log_info("Goodbye");
 }

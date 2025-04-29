@@ -22,10 +22,8 @@ public:
 
     void Render();
 
-    template <class T>
-    void push_renderer() {
-        static_assert(std::is_base_of_v<IRenderer, T>, "T must derive from IRenderer");
-        auto v = renderers_.emplace_back(std::make_shared<T>());
+    void push_renderer(std::shared_ptr<IRenderer>&& renderer) {
+        renderers_.emplace_back(std::move(renderer));
     }
 
 private:

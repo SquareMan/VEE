@@ -73,9 +73,6 @@ void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     cmd.beginRendering(render_info);
     { ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd); }
     cmd.endRendering();
-
-    // swapchain image transition
-    vulkan::transition_image(cmd, ctx.swapchain.images[swapchain_idx], vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 }
 
 void ImguiRenderer::on_destroy() {

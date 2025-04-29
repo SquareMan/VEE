@@ -6,7 +6,7 @@ set(SOURCES
 
 add_executable(HelloTriangle ${SOURCES})
 target_include_directories(HelloTriangle PUBLIC Public/ PRIVATE Private/)
-target_link_libraries(HelloTriangle PRIVATE VeeRuntime VeeEditor glfw EnTT::EnTT)
+target_link_libraries(HelloTriangle PRIVATE VeeRuntime glfw EnTT::EnTT)
 
 # Compile Shaders to spv
 set(SHADER_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Resources)
