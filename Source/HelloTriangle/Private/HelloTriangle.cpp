@@ -21,7 +21,6 @@ int main(int argc, char* argv[]) {
 #endif
     entt::locator<IApplication>::value().run();
     entt::locator<IApplication>::reset();
-    RenderCtx::ShutdownService();
 
     return 0;
 }

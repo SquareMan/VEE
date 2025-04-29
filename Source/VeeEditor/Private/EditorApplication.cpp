@@ -14,6 +14,8 @@ vee::EditorApplication::EditorApplication(platform::Window&& window)
     : Application(std::move(window), {std::make_shared<ImguiRenderer>()}) {}
 
 void vee::EditorApplication::run() {
+    renderer_.init();
+    engine_.init();
     while (!window_.should_close()) {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();

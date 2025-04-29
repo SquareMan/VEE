@@ -5,7 +5,9 @@
 #include "Components/SpriteRendererComponent.hpp"
 
 #include "Assert.hpp"
+#include "IApplication.hpp"
 #include "Platform/Filesystem.hpp"
+#include "Renderer.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Renderer/Shader.hpp"
 
@@ -13,7 +15,7 @@
 
 vee::SpriteRendererComponent::SpriteRendererComponent(const Sprite& sprite)
     : sprite_(sprite) {
-    auto& ctx = RenderCtx::GetService();
+    auto& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
 
     // TODO: Reuse these resources when appropriate
     std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv"

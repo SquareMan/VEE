@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "Engine/Service.hpp"
 #include "RingBuffer.hpp"
 #include "Swapchain.hpp"
 #include "VkUtil.hpp"
@@ -24,9 +23,9 @@ namespace platform {
 class Window;
 }
 
-class RenderCtx : public Service<RenderCtx> {
+class RenderCtx {
 public:
-    RenderCtx(ConstructionToken, const platform::Window& window);
+    explicit RenderCtx(const platform::Window& window);
 
     void recreate_swapchain();
     void immediate_submit(const std::function<void(vk::CommandBuffer cmd)>& func) const;

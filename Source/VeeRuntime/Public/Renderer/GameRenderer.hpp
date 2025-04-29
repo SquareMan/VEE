@@ -13,7 +13,7 @@ namespace vee {
 
 class GameRenderer : public vee::IRenderer {
 public:
-    void on_init() override;
+    void on_init(RenderCtx& ctx) override;
     void on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) override;
     void on_destroy() override {}
 

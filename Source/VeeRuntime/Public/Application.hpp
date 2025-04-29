@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Engine/Engine.hpp"
-#include "Engine/Service.hpp"
 #include "IApplication.hpp"
 #include "Platform/Window.hpp"
 #include "Renderer.hpp"
@@ -22,9 +21,6 @@ public:
     Renderer& get_renderer() override;
 
 protected:
-    // Application(const Application&) = delete;
-    // Application& operator=(const Application&) = delete;
-
     Engine engine_;
     platform::Window window_;
     // TODO: this needs to be in the Engine

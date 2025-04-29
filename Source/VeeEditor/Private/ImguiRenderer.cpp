@@ -4,16 +4,17 @@
 
 #include "ImguiRenderer.hpp"
 
+#include "IApplication.hpp"
 #include "Platform/Window.hpp"
+#include "Renderer.hpp"
 #include "Renderer/RenderCtx.hpp"
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+#include <entt/locator/locator.hpp>
 
 namespace vee {
-void ImguiRenderer::on_init() {
-    auto& ctx = RenderCtx::GetService();
-
+void ImguiRenderer::on_init(RenderCtx& ctx) {
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForVulkan(ctx.window->glfw_window, true);
 
@@ -52,7 +53,7 @@ void ImguiRenderer::on_init() {
 }
 
 void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
-    auto& ctx = RenderCtx::GetService();
+    auto& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
 
     ImGui::Render();
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {

@@ -32,9 +32,7 @@
 
 
 namespace vee {
-void GameRenderer::on_init() {
-    auto& ctx = RenderCtx::GetService();
-
+void GameRenderer::on_init(RenderCtx& ctx) {
     // vertex and staging buffers
     float a = 4.0f * std::numbers::pi_v<float> / 3.0f;
     float b = 2.0f * std::numbers::pi_v<float> / 3.0f;
@@ -170,7 +168,7 @@ void GameRenderer::on_init() {
 }
 
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
-    auto& ctx = RenderCtx::GetService();
+    auto& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
 
     auto time = static_cast<float>(glfwGetTime());
     Engine& engine = entt::locator<IApplication>::value().get_engine();

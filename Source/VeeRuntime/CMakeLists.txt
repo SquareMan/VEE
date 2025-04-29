@@ -53,7 +53,6 @@ target_sources(VeeRuntime
         Public/Components/SpriteRendererComponent.hpp
         Public/Engine/Sprite.hpp
         Public/Renderer/GameRenderer.hpp
-        Public/Engine/Service.hpp
 
         PRIVATE
         FILE_SET private_headers TYPE HEADERS

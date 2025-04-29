@@ -8,25 +8,24 @@
 #include "Renderer/RenderCtx.hpp"
 
 vee::Application::Application(platform::Window&& window)
-    : window_(std::move(window)) {
-    RenderCtx::InitService(window_);
-
+    : window_(std::move(window))
+    , renderer_(window_) {
     renderer_.push_renderer(std::make_shared<GameRenderer>());
     renderer_.init();
     engine_.init();
 }
 vee::Application::Application(platform::Window&& window, std::vector<std::shared_ptr<IRenderer>> extra_renderers)
-    : window_(std::move(window)) {
-    RenderCtx::InitService(window_);
+    : window_(std::move(window))
+    , renderer_(window_) {
     renderer_.push_renderer(std::make_shared<GameRenderer>());
     for (std::shared_ptr<IRenderer>& renderer : extra_renderers) {
         renderer_.push_renderer(std::move(renderer));
     }
-    renderer_.init();
-    engine_.init();
 }
 
 void vee::Application::run() {
+    renderer_.init();
+    engine_.init();
     while (!window_.should_close()) {
         engine_.tick();
         renderer_.Render();

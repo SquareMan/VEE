@@ -11,7 +11,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 namespace vee {
-RenderCtx::RenderCtx(ConstructionToken, const platform::Window& window)
+RenderCtx::RenderCtx(const platform::Window& window)
     : window(&window) {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 

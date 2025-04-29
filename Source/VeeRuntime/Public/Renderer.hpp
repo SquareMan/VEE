@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include "Renderer/Buffer.hpp"
-#include "Renderer/Image.hpp"
 #include "Renderer/IRenderer.hpp"
 #include "Renderer/Pipeline.hpp"
+#include "Renderer/RenderCtx.hpp"
 
 #include <functional>
 
@@ -16,9 +15,11 @@ class RenderCtx;
 struct Vertex;
 class Renderer final {
 public:
-    explicit Renderer();
+    explicit Renderer(const platform::Window& window);
     ~Renderer();
     void init();
+
+    RenderCtx& get_ctx();
 
     void Render();
 
@@ -29,6 +30,7 @@ public:
 private:
     void record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
 
+    RenderCtx render_ctx_;
     std::vector<std::shared_ptr<IRenderer>> renderers_;
 };
 } // namespace vee
