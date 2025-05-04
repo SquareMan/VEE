@@ -21,20 +21,28 @@ void Engine::init() {
     camera.add_component<Transform>();
     camera.add_component<CameraComponent>(640.f, 640.f);
 
-    Entity sprite = world.spawn_entity();
-    sprite.add_component<Transform>(glm::vec2{}, 0.f, glm::vec2{100.f, 100.f});
+    {
+        Entity sprite = world.spawn_entity();
+        sprite.add_component<Transform>(glm::vec2{0.0f, 150.f}, 0.f, glm::vec2{50.f, 50.f});
 
-    std::shared_ptr<Texture> sprite_texture = Texture::create("Resources/cool.png").value_or(nullptr);
-    VASSERT(sprite_texture != nullptr);
-    std::shared_ptr<Material> sprite_material = Material::create(sprite_texture).value_or(nullptr);
-    VASSERT(sprite_material != nullptr);
+        std::shared_ptr<Texture> sprite_texture = Texture::create("Resources/cool2.png").value_or(nullptr);
+        VASSERT(sprite_texture != nullptr);
+        std::shared_ptr<Material> sprite_material = Material::create(sprite_texture).value_or(nullptr);
+        VASSERT(sprite_material != nullptr);
 
-    Sprite spr(sprite_material);
-    sprite.add_component<SpriteRendererComponent>(spr);
+        sprite.add_component<SpriteRendererComponent>(Sprite(sprite_material));
+    }
+    {
+        Entity sprite = world.spawn_entity();
+        sprite.add_component<Transform>(glm::vec2{}, 0.f, glm::vec2{100.f, 100.f});
 
-    sprite = world.spawn_entity();
-    sprite.add_component<Transform>(glm::vec2{}, 30.f, glm::vec2{100.f, 100.f});
-    sprite.add_component<SpriteRendererComponent>(spr);
+        std::shared_ptr<Texture> sprite_texture = Texture::create("Resources/cool.png").value_or(nullptr);
+        VASSERT(sprite_texture != nullptr);
+        std::shared_ptr<Material> sprite_material = Material::create(sprite_texture).value_or(nullptr);
+        VASSERT(sprite_material != nullptr);
+
+        sprite.add_component<SpriteRendererComponent>(Sprite(sprite_material));
+    }
 }
 
 void Engine::shutdown() {}

@@ -37,6 +37,7 @@ set(TEXTURE_BINARY_PATH ${CMAKE_CURRENT_BINARY_DIR}/Resources)
 file(MAKE_DIRECTORY ${TEXTURE_BINARY_PATH})
 set(TEXTURES
         cool.png
+        cool2.png
 )
 foreach(TEXTURE IN LISTS TEXTURES)
     add_custom_command(
