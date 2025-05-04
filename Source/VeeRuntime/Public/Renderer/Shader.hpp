@@ -13,7 +13,7 @@ namespace vee::vulkan {
 
 class Shader final {
 public:
-    Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vector<char>& code);
+    Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::vector<std::byte>& code);
     ~Shader();
 
     [[nodiscard]] const char* entrypoint() const;

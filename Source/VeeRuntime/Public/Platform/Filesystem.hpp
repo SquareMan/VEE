@@ -8,5 +8,5 @@
 #include <vector>
 
 namespace vee::platform::filesystem {
-[[nodiscard]] std::vector<char> read_binary_file(const char* filename);
+[[nodiscard]] std::vector<std::byte> read_binary_file(const char* filename);
 }
