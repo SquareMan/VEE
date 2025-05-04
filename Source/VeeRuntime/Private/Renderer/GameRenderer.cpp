@@ -5,34 +5,26 @@
 #include "Renderer/GameRenderer.hpp"
 
 #include "Application.hpp"
+#include "Components/CameraComponent.hpp"
+#include "Components/SpriteRendererComponent.hpp"
 #include "Engine/Engine.hpp"
 #include "Engine/Entity.h"
+#include "Engine/Material.hpp"
+#include "Engine/Texture.hpp"
 #include "Engine/World.h"
-#include "Platform/Filesystem.hpp"
-#include "Platform/Window.hpp"
 #include "Renderer/Buffer.hpp"
 #include "Renderer/Image.hpp"
 #include "Renderer/Pipeline.hpp"
 #include "Renderer/RenderCtx.hpp"
-#include "Renderer/Shader.hpp"
 #include "Transform.h"
 #include "Vertex.hpp"
 
-#include <GLFW/glfw3.h>
-#include <glm/ext.hpp>
-#include <glm/glm.hpp>
 #include <numbers>
+#include <stb_image.h>
 
-#include <Components/CameraComponent.hpp>
-#include <Components/SpriteRendererComponent.hpp>
 #ifdef VEE_WITH_EDITOR
 #include <imgui.h>
 #endif
-#include "Engine/Material.hpp"
-#include "Engine/Texture.hpp"
-
-
-#include <stb_image.h>
 
 
 namespace vee {
@@ -94,8 +86,6 @@ void GameRenderer::on_init(RenderCtx& ctx) {
 
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
     auto& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
-
-    auto time = static_cast<float>(glfwGetTime());
     Engine& engine = entt::locator<IApplication>::value().get_engine();
 
     // TODO: deal with multiple cameras
