@@ -6,10 +6,11 @@
 #include "Renderer/Image.hpp"
 
 namespace vee {
+class Material;
 
 class Sprite {
 public:
-    std::shared_ptr<vee::Image> image_;
+    std::shared_ptr<Material> material_;
 };
 
 } // namespace vee

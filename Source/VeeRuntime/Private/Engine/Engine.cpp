@@ -5,6 +5,8 @@
 #include "Engine/Engine.hpp"
 #include "Components/CameraComponent.hpp"
 #include "Components/SpriteRendererComponent.hpp"
+#include "Engine/Material.hpp"
+#include "Engine/Texture.hpp"
 #include "Transform.h"
 
 #include <glfw/glfw3.h>
@@ -21,8 +23,13 @@ void Engine::init() {
 
     Entity sprite = world.spawn_entity();
     sprite.add_component<Transform>(glm::vec2{}, 0.f, glm::vec2{100.f, 100.f});
-    std::shared_ptr<vee::Image>& checkerboard = entt::locator<std::shared_ptr<vee::Image>>::value();
-    Sprite spr(checkerboard);
+
+    std::shared_ptr<Texture> sprite_texture = Texture::create("Resources/cool.png").value_or(nullptr);
+    VASSERT(sprite_texture != nullptr);
+    std::shared_ptr<Material> sprite_material = Material::create(sprite_texture).value_or(nullptr);
+    VASSERT(sprite_material != nullptr);
+
+    Sprite spr(sprite_material);
     sprite.add_component<SpriteRendererComponent>(spr);
 
     sprite = world.spawn_entity();

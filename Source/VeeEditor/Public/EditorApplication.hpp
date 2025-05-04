@@ -9,7 +9,7 @@
 namespace vee {
 class EditorApplication : public Application {
 public:
-    EditorApplication(platform::Window&& window);
+    explicit EditorApplication(platform::Window&& window);
 
     void run() override;
 };

@@ -15,7 +15,5 @@ public:
 
 public:
     Sprite sprite_;
-    vulkan::Pipeline pipeline_;
-    vk::DescriptorSet descriptor_set_;
 };
 }; // namespace vee

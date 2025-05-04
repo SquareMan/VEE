@@ -10,6 +10,7 @@
 #include "Renderer/Pipeline.hpp"
 
 namespace vee {
+class Material;
 
 class GameRenderer : public vee::IRenderer {
 public:
@@ -18,17 +19,10 @@ public:
     void on_destroy() override {}
 
 private:
-    vee::vulkan::Pipeline sprite_pipeline_;
-
-    vee::Buffer staging_buffer_;
     vee::Buffer vertex_buffer_;
     vee::Buffer index_buffer_;
 
     vee::Image game_image_;
-    std::shared_ptr<vee::Image> tex_image_;
-
-    vk::DescriptorPool descriptor_pool_;
-    vk::DescriptorSet tex_descriptor_;
 };
 
 } // namespace vee

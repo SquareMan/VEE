@@ -25,34 +25,36 @@ target_sources(VeeRuntime
         FILE_SET headers TYPE HEADERS
         BASE_DIRS Public/
         FILES
-        Public/Logging.hpp
-        Public/Assert.hpp
         Public/Application.hpp
+        Public/Assert.hpp
         Public/IApplication.hpp
         Public/Keys.hpp
+        Public/Logging.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
-        Public/Vertex.hpp
-        Public/Renderer/VkUtil.hpp
-        Public/Renderer/Pipeline.hpp
-        Public/Renderer/Shader.hpp
-        Public/Renderer/Swapchain.hpp
-        Public/Renderer/Buffer.hpp
-        Public/Renderer/Image.hpp
+        Public/Transform.h
         Public/VeeCore.hpp
+        Public/Vertex.hpp
+        Public/Components/CameraComponent.hpp
+        Public/Components/SpriteRendererComponent.hpp
+        Public/Engine/Engine.hpp
+        Public/Engine/Entity.h
+        Public/Engine/Material.hpp
+        Public/Engine/Texture.hpp
+        Public/Engine/Sprite.hpp
+        Public/Engine/World.h
         Public/Platform/Filesystem.hpp
         Public/Platform/Window.hpp
         Public/Platform/WindowHandle.hpp
-        Public/Renderer/IRenderer.hpp
-        Public/Renderer/RenderCtx.hpp
-        Public/Engine/Engine.hpp
-        Public/Engine/World.h
-        Public/Engine/Entity.h
-        Public/Transform.h
-        Public/Components/CameraComponent.hpp
-        Public/Components/SpriteRendererComponent.hpp
-        Public/Engine/Sprite.hpp
+        Public/Renderer/Buffer.hpp
         Public/Renderer/GameRenderer.hpp
+        Public/Renderer/Image.hpp
+        Public/Renderer/IRenderer.hpp
+        Public/Renderer/Pipeline.hpp
+        Public/Renderer/RenderCtx.hpp
+        Public/Renderer/Shader.hpp
+        Public/Renderer/Swapchain.hpp
+        Public/Renderer/VkUtil.hpp
 
         PRIVATE
         FILE_SET private_headers TYPE HEADERS
@@ -61,29 +63,31 @@ target_sources(VeeRuntime
         Private/LogUtil.hpp
 
         PRIVATE
-        Private/Assert.cpp
         Private/Application.cpp
+        Private/Assert.cpp
+        Private/Logging.cpp
         Private/Renderer.cpp
         Private/RingBuffer.cpp
-        Private/Renderer/VkUtil.cpp
-        Private/Renderer/Pipeline.cpp
-        Private/Renderer/Swapchain.cpp
-        Private/Renderer/Shader.cpp
-        Private/Renderer/Buffer.cpp
-        Private/Renderer/Image.cpp
-        Private/Platform/Filesystem.cpp
-        Private/Platform/Window.cpp
-        Private/Renderer/RenderCtx.cpp
-        Private/Engine/Engine.cpp
-        Private/Engine/World.cpp
-        Private/Engine/Entity.cpp
         Private/stb_image_impl.cpp
         Private/Transform.cpp
         Private/Components/CameraComponent.cpp
         Private/Components/SpriteRendererComponent.cpp
+        Private/Engine/Engine.cpp
+        Private/Engine/Entity.cpp
+        Private/Engine/Material.cpp
+        Private/Engine/Texture.cpp
         Private/Engine/Sprite.cpp
+        Private/Engine/World.cpp
+        Private/Platform/Filesystem.cpp
+        Private/Platform/Window.cpp
+        Private/Renderer/Buffer.cpp
         Private/Renderer/GameRenderer.cpp
-        Private/Logging.cpp
+        Private/Renderer/Image.cpp
+        Private/Renderer/Pipeline.cpp
+        Private/Renderer/RenderCtx.cpp
+        Private/Renderer/Swapchain.cpp
+        Private/Renderer/Shader.cpp
+        Private/Renderer/VkUtil.cpp
 )
 
 target_compile_definitions(VeeRuntime PUBLIC

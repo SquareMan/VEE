@@ -139,6 +139,16 @@ RenderCtx::RenderCtx(const platform::Window& window)
         device
             .createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, pool_sizes})
             .value;
+
+    {
+        // 1MB staging buffer
+        vk::BufferCreateInfo buffer_info({}, 1024 * 1024, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+        auto [buf, alloc] =
+            allocator
+                .createBuffer(buffer_info, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
+                .value;
+        new (&staging_buffer) vee::Buffer(buf, alloc, allocator);
+    }
 }
 
 void RenderCtx::recreate_swapchain() {

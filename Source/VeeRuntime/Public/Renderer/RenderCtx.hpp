@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Buffer.hpp"
 #include "RingBuffer.hpp"
 #include "Swapchain.hpp"
 #include "VkUtil.hpp"
@@ -51,5 +52,7 @@ public:
 
     vk::PipelineCache pipeline_cache;
     vk::DescriptorPool descriptor_pool;
+
+    Buffer staging_buffer;
 };
 }; // namespace vee

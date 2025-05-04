@@ -28,6 +28,10 @@
 #ifdef VEE_WITH_EDITOR
 #include <imgui.h>
 #endif
+#include "Engine/Material.hpp"
+#include "Engine/Texture.hpp"
+
+
 #include <stb_image.h>
 
 
@@ -48,16 +52,8 @@ void GameRenderer::on_init(RenderCtx& ctx) {
     };
     const uint16_t indices[] = {0, 1, 2, 3, 4, 5, 6};
     {
-        // 1MB staging buffer
-        vk::BufferCreateInfo buffer_info({}, 1024 * 1024, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
-        auto [buf, alloc] =
-            ctx.allocator
-                .createBuffer(buffer_info, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
-                .value;
-        new (&staging_buffer_) vee::Buffer(buf, alloc, ctx.allocator);
-
-        std::ignore = ctx.allocator.copyMemoryToAllocation(vertices, staging_buffer_.allocation, 0, sizeof(vertices));
-        std::ignore = ctx.allocator.copyMemoryToAllocation(indices, staging_buffer_.allocation, sizeof(vertices), sizeof(indices));
+        std::ignore = ctx.allocator.copyMemoryToAllocation(vertices, ctx.staging_buffer.allocation, 0, sizeof(vertices));
+        std::ignore = ctx.allocator.copyMemoryToAllocation(indices, ctx.staging_buffer.allocation, sizeof(vertices), sizeof(indices));
     }
 
     {
@@ -84,8 +80,8 @@ void GameRenderer::on_init(RenderCtx& ctx) {
 
     // Copy from staging to final buffers
     ctx.immediate_submit([&](vk::CommandBuffer cmd) {
-        cmd.copyBuffer(staging_buffer_.buffer, vertex_buffer_.buffer, {{0, 0, sizeof(vertices)}});
-        cmd.copyBuffer(staging_buffer_.buffer, index_buffer_.buffer, {{sizeof(vertices), 0, sizeof(indices)}});
+        cmd.copyBuffer(ctx.staging_buffer.buffer, vertex_buffer_.buffer, {{0, 0, sizeof(vertices)}});
+        cmd.copyBuffer(ctx.staging_buffer.buffer, index_buffer_.buffer, {{sizeof(vertices), 0, sizeof(indices)}});
     });
 
 
@@ -94,77 +90,6 @@ void GameRenderer::on_init(RenderCtx& ctx) {
     new (&game_image_) vee::Image(
         ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc, {width, height, 1}, vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor
     );
-
-    tex_image_ = std::make_shared<vee::Image>(
-        ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::Extent3D{16, 16, 1}, vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor
-    );
-
-    {
-        // checkerboard image
-        int32_t x, y, n;
-        uint8_t* data = stbi_load("Resources/cool.png", &x, &y, &n, STBI_rgb_alpha);
-        const uint32_t black = glm::packUnorm4x8(glm::vec4(0, 0, 0, 1));
-        const uint32_t magenta = glm::packUnorm4x8(glm::vec4(1, 0, 1, 1));
-        std::array<uint32_t, 16 * 16> pixels; // for 16x16 checkerboard texture
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < 16; y++) {
-                if (data == nullptr) {
-                    pixels[y * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
-                } else {
-                    const uint8_t* b = &data[(y * 16 + x) * 4 + 2];
-                    const uint8_t* g = &data[(y * 16 + x) * 4 + 1];
-                    const uint8_t* r = &data[(y * 16 + x) * 4 + 0];
-                    const uint8_t* a = &data[(y * 16 + x) * 4 + 3];
-
-                    pixels[y * 16 + x] = glm::packUnorm4x8(glm::vec4(*b, *g, *r, *a) / 255.f);
-                }
-            }
-        }
-
-        std::ignore = ctx.allocator.copyMemoryToAllocation(pixels.data(), staging_buffer_.allocation, 0, pixels.size() * sizeof(uint32_t));
-
-        ctx.immediate_submit([&](vk::CommandBuffer cmd) {
-            vee::vulkan::transition_image(cmd, tex_image_->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-
-            vk::BufferImageCopy region = {{}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {16, 16, 1}};
-            cmd.copyBufferToImage(staging_buffer_.buffer, tex_image_->image, vk::ImageLayout::eTransferDstOptimal, region);
-
-            vee::vulkan::transition_image(cmd, tex_image_->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-        });
-
-        entt::locator<std::shared_ptr<vee::Image>>::emplace(tex_image_);
-    }
-
-    // pipelines
-    std::vector<char> entity_vertex_shader_code = vee::platform::filesystem::read_binary_file("Resources/entity.vert.spv");
-    std::vector<char> tex_frag_shader_code = vee::platform::filesystem::read_binary_file("Resources/texture.frag.spv");
-
-    vee::vulkan::Shader texture_fragment_shader = {ctx.device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code};
-    vee::vulkan::Shader entity_vertex_shader = {ctx.device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code};
-
-    vk::Sampler tex_sampler = ctx.device.createSampler({}).value;
-    vk::DescriptorSetLayoutBinding tex_binding = {0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler};
-    // clang-format off
-    sprite_pipeline_ = vee::vulkan::PipelineBuilder()
-        .with_cache(ctx.pipeline_cache)
-        .with_shader(texture_fragment_shader)
-        .with_shader(entity_vertex_shader)
-        .with_binding(tex_binding)
-        .build(ctx.device);
-    // clang-format on
-
-
-    // descriptor pool
-    {
-        vk::DescriptorSetAllocateInfo allocate_info = {ctx.descriptor_pool, sprite_pipeline_.descriptor_set_layout};
-        std::vector<vk::DescriptorSet> sets = ctx.device.allocateDescriptorSets(allocate_info).value;
-        tex_descriptor_ = sets[0];
-
-        vk::DescriptorImageInfo image_info = {tex_sampler, tex_image_->view, vk::ImageLayout::eShaderReadOnlyOptimal};
-
-        vk::WriteDescriptorSet descriptor_write = {tex_descriptor_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}};
-        ctx.device.updateDescriptorSets(descriptor_write, {});
-    }
 }
 
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
@@ -188,10 +113,6 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
 
     const glm::mat4x4 proj = cam.calculate_view_projection(cam_transform);
 
-    // Push view projection matrix
-    // TODO: this should go in a buffer
-    cmd.pushConstants(sprite_pipeline_.layout, vk::ShaderStageFlagBits::eVertex, sizeof(glm::mat4x4), sizeof(glm::mat4x4), &proj);
-
     vee::vulkan::transition_image(cmd, game_image_.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
     {
         vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});
@@ -213,24 +134,21 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
             auto view = engine.get_world().entt_registry.view<vee::Transform, vee::SpriteRendererComponent>(
             );
             for (const auto [ent, trans, spr] : view.each()) {
-                cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, spr.pipeline_.pipeline);
+                std::shared_ptr<Material>& mat = spr.sprite_.material_;
+
+                // Push view projection matrix
+                // TODO: this should go in a buffer
+                cmd.pushConstants(mat->pipeline_.layout, vk::ShaderStageFlagBits::eVertex, sizeof(glm::mat4x4), sizeof(glm::mat4x4), &proj);
+
+                cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, mat->pipeline_.pipeline);
 
                 glm::mat4x4 local_to_world = trans.to_mat();
-                cmd.pushConstants(spr.pipeline_.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4x4), &local_to_world);
-                cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, spr.pipeline_.layout, 0, spr.descriptor_set_, {});
+                cmd.pushConstants(mat->pipeline_.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4x4), &local_to_world);
+                cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mat->pipeline_.layout, 0, mat->descriptor_set_, {});
                 cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
                 cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
                 cmd.drawIndexed(4, 1, 3, 0, 0);
             }
-
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, sprite_pipeline_.pipeline);
-            vee::Transform({320.f, 320.f}, time, {100.f, 100.f});
-            glm::mat4x4 triangle_transform = vee::Transform({320.f, 320.f}, time, {100.f, 100.f}).to_mat();
-            cmd.pushConstants(sprite_pipeline_.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4x4), &triangle_transform);
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, sprite_pipeline_.layout, 0, tex_descriptor_, {});
-            cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
-            cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
-            cmd.drawIndexed(3, 1, 0, 0, 0);
         }
         cmd.endRendering();
     }
