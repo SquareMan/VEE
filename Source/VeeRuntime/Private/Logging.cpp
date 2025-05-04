@@ -70,12 +70,15 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(gLogger, sources::severity_logger_mt<Severit
                 expr::stream << colored_expression(expr::stream << expr::attr<Severity>("Severity"), Color::Red)
             ]
         ]
-        << " " << colored_expression(
-            expr::stream
-            << boost::phoenix::bind(&last_n_chars, expr::attr<std::string>("File"), 30)
-            << ":" << expr::attr<uint32_t>("Line")
-            << " (" << expr::attr<std::string>("Function") << ")",
-            Color::Cyan)
+        << expr::if_(is_in_range(severity, Severity::Error, Severity::Assert))[
+            expr::stream << " " << colored_expression(
+                expr::stream
+                << boost::phoenix::bind(&last_n_chars, expr::attr<std::string>("File"), 30)
+                << ":" << expr::attr<uint32_t>("Line")
+                << " (" << expr::attr<std::string>("Function") << ")",
+                Color::Cyan
+            )
+        ]
         << colored_expression(
             expr::stream
             << " : ", Color::Faint)
