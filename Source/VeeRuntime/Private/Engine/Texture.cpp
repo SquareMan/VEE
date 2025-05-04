@@ -38,12 +38,12 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
     std::vector<uint32_t> pixels(width * height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            const uint8_t* b = &data[(y * 16 + x) * 4 + 2];
-            const uint8_t* g = &data[(y * 16 + x) * 4 + 1];
-            const uint8_t* r = &data[(y * 16 + x) * 4 + 0];
-            const uint8_t* a = &data[(y * 16 + x) * 4 + 3];
+            const uint8_t* b = &data[(y * width + x) * 4 + 2];
+            const uint8_t* g = &data[(y * width + x) * 4 + 1];
+            const uint8_t* r = &data[(y * width + x) * 4 + 0];
+            const uint8_t* a = &data[(y * width + x) * 4 + 3];
 
-            pixels[y * 16 + x] = glm::packUnorm4x8(glm::vec4(*b, *g, *r, *a) / 255.f);
+            pixels[y * width + x] = glm::packUnorm4x8(glm::vec4(*b, *g, *r, *a) / 255.f);
         }
     }
 
@@ -52,7 +52,9 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
     ctx.immediate_submit([&](vk::CommandBuffer cmd) {
         vee::vulkan::transition_image(cmd, new_texture->image_->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
-        vk::BufferImageCopy region = {{}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {16, 16, 1}};
+        vk::BufferImageCopy region = {
+            {}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}
+        };
         cmd.copyBufferToImage(ctx.staging_buffer.buffer, new_texture->image_->image, vk::ImageLayout::eTransferDstOptimal, region);
 
         vee::vulkan::transition_image(cmd, new_texture->image_->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
