@@ -11,8 +11,6 @@ vee::Application::Application(platform::Window&& window)
     : window_(std::move(window))
     , renderer_(window_) {
     renderer_.push_renderer(std::make_shared<GameRenderer>());
-    renderer_.init();
-    engine_.init();
 }
 vee::Application::Application(platform::Window&& window, std::vector<std::shared_ptr<IRenderer>> extra_renderers)
     : window_(std::move(window))
