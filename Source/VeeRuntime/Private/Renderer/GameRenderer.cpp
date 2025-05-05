@@ -21,6 +21,7 @@
 
 #include <numbers>
 #include <stb_image.h>
+#include <tracy/Tracy.hpp>
 
 #ifdef VEE_WITH_EDITOR
 #include <imgui.h>
@@ -85,6 +86,8 @@ void GameRenderer::on_init(RenderCtx& ctx) {
 }
 
 void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+    ZoneScoped;
+
     auto& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
     Engine& engine = entt::locator<IApplication>::value().get_engine();
 

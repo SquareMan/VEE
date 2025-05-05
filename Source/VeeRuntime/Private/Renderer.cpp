@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <entt/locator/locator.hpp>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace vee {
@@ -46,11 +47,15 @@ RenderCtx& Renderer::get_ctx() {
 }
 
 void Renderer::Render() {
+    FrameMark;
+    ZoneScoped;
     CmdBuffer& command_buffer = render_ctx_.command_buffers.get_next();
 
-    std::ignore = render_ctx_.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
     uint32_t image_index = UINT32_MAX;
     {
+        ZoneScopedN("acquire swapchain");
+        std::ignore = render_ctx_.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
+
         // Opt out of return value transformation to avoid asserting on
         // vk::Result::eErrorOutOfDateKHR
         const vk::Result result = render_ctx_.device.acquireNextImageKHR(

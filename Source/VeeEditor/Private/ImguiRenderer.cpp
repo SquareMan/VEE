@@ -12,6 +12,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <entt/locator/locator.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace vee {
 void ImguiRenderer::on_init(RenderCtx& ctx) {
@@ -53,6 +54,7 @@ void ImguiRenderer::on_init(RenderCtx& ctx) {
 }
 
 void ImguiRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
+    ZoneScoped;
     auto& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
 
     ImGui::Render();

@@ -10,6 +10,7 @@
 #include "Transform.h"
 
 #include <glfw/glfw3.h>
+#include <tracy/Tracy.hpp>
 
 namespace vee {
 
@@ -49,6 +50,7 @@ void Engine::shutdown() {}
 
 
 void Engine::tick() {
+    ZoneScoped;
     const double new_time = glfwGetTime();
     delta_time_ = new_time - game_time_;
     game_time_ = new_time;

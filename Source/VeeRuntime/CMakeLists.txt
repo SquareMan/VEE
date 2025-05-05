@@ -17,6 +17,7 @@ target_link_libraries(VeeRuntime
         Boost::log_setup
         magic_enum
         stb
+        Tracy::TracyClient
 )
 target_include_directories(VeeRuntime PRIVATE Private/)
 

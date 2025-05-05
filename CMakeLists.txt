@@ -8,9 +8,9 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 # download CPM.cmake
 file(
         DOWNLOAD
-        https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.40.5/CPM.cmake
+        https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.41.0/CPM.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
-        EXPECTED_HASH SHA256=c46b876ae3b9f994b4f05a4c15553e0485636862064f1fcc9d8b4f832086bc5d
+        EXPECTED_HASH SHA256=e570f03806b9aae2082ca5b950a9e6b3b41ad56972a78a876aedcaad16653116
 )
 include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 
@@ -27,9 +27,9 @@ CPMAddPackage(
         GITHUB_REPOSITORY glfw/glfw
         GIT_TAG 3.3.8
         OPTIONS
-        "GLFW_BUILD_DOCS OFF CACHE BOOL \"\" FORCE"
-        "GLFW_BUILD_TESTS OFF CACHE BOOL \"\" FORCE"
-        "GLFW_BUILD_EXAMPLES OFF CACHE BOOL \"\" FORCE"
+        "GLFW_BUILD_DOCS OFF"
+        "GLFW_BUILD_TESTS OFF"
+        "GLFW_BUILD_EXAMPLES OFF"
 )
 CPMAddPackage("gh:g-truc/glm#1.0.1")
 CPMAddPackage("gh:ocornut/imgui@1.91.4-docking")
@@ -43,6 +43,12 @@ CPMAddPackage(
 )
 CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
 CPMAddPackage("gh:nothings/stb#f056911")
+
+set(TRACY_ENABLE OFF)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(TRACY_ENABLE ON)
+endif()
+CPMAddPackage("gh:wolfpld/tracy@0.11.1")
 
 if (stb_ADDED)
     add_library(stb INTERFACE)
