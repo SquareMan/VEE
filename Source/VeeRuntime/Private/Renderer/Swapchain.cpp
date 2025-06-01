@@ -17,6 +17,9 @@ Swapchain::Swapchain(vk::PhysicalDevice gpu, vk::Device device, vk::SurfaceKHR s
             .set_desired_present_mode(VK_PRESENT_MODE_FIFO_RELAXED_KHR)
             .set_desired_min_image_count(vkb::SwapchainBuilder::TRIPLE_BUFFERING)
             .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+            .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+#endif
             .build()
             .value();
 

@@ -131,6 +131,7 @@ RenderCtx::RenderCtx(const platform::Window& window)
 
     auto [width, height] = window.get_size();
     new (&swapchain) Swapchain(gpu, device, surface, format, width, height);
+    log_info("Created swapchain with size {}x{}", width, height);
 
     pipeline_cache = device.createPipelineCache({}).value;
 

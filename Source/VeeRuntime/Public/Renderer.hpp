@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Renderer/Image.hpp"
 #include "Renderer/IRenderer.hpp"
 #include "Renderer/Pipeline.hpp"
 #include "Renderer/RenderCtx.hpp"
@@ -32,5 +33,18 @@ private:
 
     RenderCtx render_ctx_;
     std::vector<std::shared_ptr<IRenderer>> renderers_;
+
+#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+    struct DebugScreen {
+        static constexpr uint32_t WIDTH = 92;
+        static constexpr uint32_t HEIGHT = 92;
+
+        vk::Image image;
+        vma::Allocation alloc;
+        Buffer buf;
+        void* mem;
+    };
+    std::array<DebugScreen, 3> debug_screens_;
+#endif
 };
 } // namespace vee

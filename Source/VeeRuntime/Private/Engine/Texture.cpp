@@ -60,5 +60,9 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
         vee::vulkan::transition_image(cmd, new_texture->image_->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     });
 
+    // FIXME: we need to free the image data AFTER the transfer completes, but this will require
+    // passing some kind of fence to the immediate submit function and then asynchronously waiting
+    // on it.
+    // stbi_image_free((void*)data);
     return new_texture;
 }

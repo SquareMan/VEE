@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <entt/locator/locator.hpp>
+#include <stb_image_write.h>
 #include <tracy/Tracy.hpp>
 #include <vector>
 
@@ -25,6 +26,15 @@ Renderer::~Renderer() {
         renderer->on_destroy();
     }
 
+#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+    for (DebugScreen& debug : debug_screens_) {
+        render_ctx_.allocator.unmapMemory(debug.buf.allocation);
+        render_ctx_.allocator.destroyBuffer(debug.buf.buffer, debug.buf.allocation);
+        render_ctx_.allocator.destroyImage(debug.image, debug.alloc);
+        debug.mem = nullptr;
+    }
+#endif
+
 #if _DEBUG
     static_cast<vk::Instance>(render_ctx_.instance).destroyDebugUtilsMessengerEXT(render_ctx_.debug_messenger_);
 #endif
@@ -38,6 +48,28 @@ Renderer::~Renderer() {
 }
 
 void Renderer::init() {
+#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+    for (DebugScreen& debug : debug_screens_) {
+        constexpr auto FMT = vk::Format::eR8G8B8A8Srgb;
+        constexpr vk::ImageCreateInfo image_info = {
+            {}, vk::ImageType::e2D, FMT, {DebugScreen::WIDTH, DebugScreen::HEIGHT, 1}, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc
+        };
+        constexpr vma::AllocationCreateInfo allocation_info = {{}, vma::MemoryUsage::eAuto, {}, vk::MemoryPropertyFlagBits::eDeviceLocal};
+
+        const auto image_alloc = render_ctx_.allocator.createImage(image_info, allocation_info).value;
+        debug.image = image_alloc.first;
+        debug.alloc = image_alloc.second;
+
+        vk::BufferCreateInfo buffer_info({}, DebugScreen::WIDTH * DebugScreen::HEIGHT * 4, vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+        auto [buf, alloc] =
+            render_ctx_.allocator
+                .createBuffer(buffer_info, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
+                .value;
+        new (&debug.buf) Buffer(buf, alloc, render_ctx_.allocator);
+        debug.mem = render_ctx_.allocator.mapMemory(debug.buf.allocation).value;
+    }
+#endif
+
     for (std::shared_ptr<IRenderer>& r : renderers_) {
         r->on_init(render_ctx_);
     }
@@ -82,8 +114,41 @@ void Renderer::Render() {
             r->on_render(cmd, image_index);
         }
 
+#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+        // For Tracy, we need to save a copy of the framebuffer to the CPU. However, it needs to be
+        // downscaled for better transfer performance, so we will need to blit to an intermediate
+        // image to copy from
+        const DebugScreen& debug = debug_screens_[image_index];
+        vulkan::transition_image(cmd, debug.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        vulkan::transition_image(cmd, render_ctx_.swapchain.images[image_index], vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
+        const auto blit = vk::ImageBlit2(
+            vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
+            {vk::Offset3D{0, 0, 0},
+             vk::Offset3D{
+                 static_cast<int32_t>(render_ctx_.swapchain.width),
+                 static_cast<int32_t>(render_ctx_.swapchain.height),
+                 1
+             }},
+            {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+            {vk::Offset3D{0, 0, 0}, vk::Offset3D{DebugScreen::WIDTH, DebugScreen::HEIGHT, 1}}
+        );
+        auto info = vk::BlitImageInfo2(
+            render_ctx_.swapchain.images[image_index], vk::ImageLayout::eTransferSrcOptimal, debug.image, vk::ImageLayout::eTransferDstOptimal, blit, vk::Filter::eNearest
+        );
+        cmd.blitImage2(info);
+        vulkan::transition_image(cmd, debug.image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eTransferSrcOptimal);
+        cmd.copyImageToBuffer(
+            debug.image,
+            vk::ImageLayout::eTransferSrcOptimal,
+            debug.buf.buffer,
+            vk::BufferImageCopy(0, DebugScreen::WIDTH, DebugScreen::HEIGHT, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {DebugScreen::WIDTH, DebugScreen::HEIGHT, 1})
+        );
+
+        vulkan::transition_image(cmd, render_ctx_.swapchain.images[image_index], vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::ePresentSrcKHR);
+#else
         // Get the swapchain image ready to present.
         vulkan::transition_image(cmd, render_ctx_.swapchain.images[image_index], vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
+#endif
     });
 
 
@@ -104,11 +169,19 @@ void Renderer::Render() {
         case vk::Result::eSuboptimalKHR:
         case vk::Result::eErrorOutOfDateKHR:
             render_ctx_.recreate_swapchain();
-            break;
+            return;
         default:
             VASSERT(false);
         }
     }
+#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+    // FIXME: Currently this prevents us from having multiple frames in flight.
+    // This needs to be done asynchronously so as not to block the render loop. Tracy provides an
+    // offset parameter here for signaling how many frames behind the data is once it's ready
+    const DebugScreen& debug = debug_screens_[image_index];
+    std::ignore = render_ctx_.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
+    FrameImage(debug.mem, DebugScreen::WIDTH, DebugScreen::HEIGHT, 0, false);
+#endif
 }
 
 void Renderer::record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func) {

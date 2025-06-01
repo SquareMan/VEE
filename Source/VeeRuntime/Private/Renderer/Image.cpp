@@ -8,10 +8,10 @@ namespace vee {
 Image::Image(vk::Device device, vma::Allocator allocator, vk::ImageUsageFlags usage_flags, vk::Extent3D extent, vk::Format format, vk::ImageAspectFlags aspect_flags)
     : extent(extent)
     , format(format)
-    , device_(device)
-    , allocator_(allocator)
     , usage(usage_flags)
-    , aspect(aspect_flags) {
+    , aspect(aspect_flags)
+    , device_(device)
+    , allocator_(allocator) {
     create_image();
 }
 
