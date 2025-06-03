@@ -26,7 +26,7 @@ Renderer::~Renderer() {
         renderer->on_destroy();
     }
 
-#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+#if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
     for (DebugScreen& debug : debug_screens_) {
         render_ctx_.allocator.unmapMemory(debug.buf.allocation);
         render_ctx_.allocator.destroyBuffer(debug.buf.buffer, debug.buf.allocation);
@@ -48,7 +48,7 @@ Renderer::~Renderer() {
 }
 
 void Renderer::init() {
-#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+#if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
     for (DebugScreen& debug : debug_screens_) {
         constexpr auto FMT = vk::Format::eR8G8B8A8Srgb;
         constexpr vk::ImageCreateInfo image_info = {
@@ -114,7 +114,7 @@ void Renderer::Render() {
             r->on_render(cmd, image_index);
         }
 
-#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+#if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
         // For Tracy, we need to save a copy of the framebuffer to the CPU. However, it needs to be
         // downscaled for better transfer performance, so we will need to blit to an intermediate
         // image to copy from
@@ -174,7 +174,7 @@ void Renderer::Render() {
             VASSERT(false);
         }
     }
-#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+#if defined(TRACY_ENABLE) && !(TRACY_NO_FRAME_IMAGE)
     // FIXME: Currently this prevents us from having multiple frames in flight.
     // This needs to be done asynchronously so as not to block the render loop. Tracy provides an
     // offset parameter here for signaling how many frames behind the data is once it's ready

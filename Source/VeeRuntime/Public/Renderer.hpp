@@ -34,7 +34,7 @@ private:
     RenderCtx render_ctx_;
     std::vector<std::shared_ptr<IRenderer>> renderers_;
 
-#ifdef TRACY_ENABLE && !TRACY_NO_FRAME_IMAGE
+#if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
     struct DebugScreen {
         static constexpr uint32_t WIDTH = 92;
         static constexpr uint32_t HEIGHT = 92;
