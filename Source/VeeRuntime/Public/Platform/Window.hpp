@@ -6,7 +6,7 @@
 
 #include "Keys.hpp"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "WindowHandle.hpp"
 #endif
 #include "VeeCore.hpp"

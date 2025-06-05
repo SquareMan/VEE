@@ -20,7 +20,6 @@ enum class Severity {
     Fatal,
 };
 }
-
 void _log_msg(log::Severity severity, std::string_view msg, const std::source_location& location);
 
 template <const log::Severity severity, typename... Args>
@@ -35,23 +34,56 @@ struct _log_fmt {
     }
 };
 
-template <const log::Severity severity, typename... Args>
-_log_fmt(std::format_string<Args...> fmt, Args&&... args) -> _log_fmt<severity, Args...>;
+template <typename... Args>
+struct log_trace : _log_fmt<log::Severity::Trace, Args...> {
+    explicit log_trace(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Trace, Args...>(fmt, std::forward<Args>(param)..., loc) {}
+    log_trace(const char* msg, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Trace, Args...>(msg, loc) {}
+};
+template <typename... Args>
+log_trace(std::format_string<Args...> fmt, Args&&... args) -> log_trace<Args...>;
 
 template <typename... Args>
-using log_trace = _log_fmt<log::Severity::Trace, Args...>;
+struct log_info : _log_fmt<log::Severity::Info, Args...> {
+    explicit log_info(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Info, Args...>(fmt, std::forward<Args>(param)..., loc) {}
+    log_info(const char* msg, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Info, Args...>(msg, loc) {}
+};
+template <typename... Args>
+log_info(std::format_string<Args...> fmt, Args&&... args) -> log_info<Args...>;
 
 template <typename... Args>
-using log_debug = _log_fmt<log::Severity::Debug, Args...>;
+struct log_debug : _log_fmt<log::Severity::Debug, Args...> {
+    explicit log_debug(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Debug, Args...>(fmt, std::forward<Args>(param)..., loc) {}
+    log_debug(const char* msg, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Debug, Args...>(msg, loc) {}
+};
+template <typename... Args>
+log_debug(std::format_string<Args...> fmt, Args&&... args) -> log_debug<Args...>;
 
 template <typename... Args>
-using log_info = _log_fmt<log::Severity::Info, Args...>;
+struct log_warning : _log_fmt<log::Severity::Warning, Args...> {
+    explicit log_warning(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Warning, Args...>(fmt, std::forward<Args>(param)..., loc) {}
+    log_warning(const char* msg, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Warning, Args...>(msg, loc) {}
+};
+template <typename... Args>
+log_warning(std::format_string<Args...> fmt, Args&&... args) -> log_warning<Args...>;
 
 template <typename... Args>
-using log_warning = _log_fmt<log::Severity::Warning, Args...>;
-
+struct log_error : _log_fmt<log::Severity::Error, Args...> {
+    explicit log_error(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Error, Args...>(fmt, std::forward<Args>(param)..., loc) {}
+    log_error(const char* msg, const std::source_location& loc = std::source_location::current())
+        : _log_fmt<log::Severity::Error, Args...>(msg, loc) {}
+};
 template <typename... Args>
-using log_error = _log_fmt<log::Severity::Error, Args...>;
+log_error(std::format_string<Args...> fmt, Args&&... args) -> log_error<Args...>;
+
 
 template <typename... Args>
 struct log_fatal {

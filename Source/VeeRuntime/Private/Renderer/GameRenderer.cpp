@@ -116,7 +116,7 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
 
         cmd.beginRendering(render_info);
         {
-            const vk::Rect2D scissor({{}, {game_image_.width(), game_image_.height()}});
+            const vk::Rect2D scissor({}, {game_image_.width(), game_image_.height()});
             const vk::Viewport viewport(
                 0, 0, static_cast<float>(game_image_.width()), static_cast<float>(game_image_.height()), 1.0f
             );
