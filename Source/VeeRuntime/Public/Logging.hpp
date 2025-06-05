@@ -20,87 +20,82 @@ enum class Severity {
     Fatal,
 };
 }
-void _log_msg(log::Severity severity, std::string_view msg, const std::source_location& location);
+void _log_impl(log::Severity severity, std::string_view msg, const std::source_location& location);
 
-template <const log::Severity severity, typename... Args>
-struct _log_fmt {
-    explicit _log_fmt(std::format_string<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current()) {
-        const std::string msg = std::format(fmt, std::forward<Args>(args)...);
-        _log_msg(severity, msg, loc);
-    }
+// (Ab)use implicit constructor to allow us to provide the default value for the source_location,
+// while still accepting variadic arguments in our actual logging functions. When a log function is
+// called, the format string will be coerced to this type.
+template <typename... Args>
+struct fmt_string_with_location {
+    std::format_string<Args...> str;
+    std::source_location location;
 
-    explicit _log_fmt(const char* msg, const std::source_location& loc = std::source_location::current()) {
-        _log_msg(severity, msg, loc);
-    }
+    template <typename T>
+        requires std::constructible_from<std::format_string<Args...>, const T&>
+    consteval fmt_string_with_location(const T& str, const std::source_location loc = std::source_location::current())
+        : str(str)
+        , location(loc) {}
 };
 
 template <typename... Args>
-struct log_trace : _log_fmt<log::Severity::Trace, Args...> {
-    explicit log_trace(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Trace, Args...>(fmt, std::forward<Args>(param)..., loc) {}
-    log_trace(const char* msg, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Trace, Args...>(msg, loc) {}
-};
-template <typename... Args>
-log_trace(std::format_string<Args...> fmt, Args&&... args) -> log_trace<Args...>;
-
-template <typename... Args>
-struct log_info : _log_fmt<log::Severity::Info, Args...> {
-    explicit log_info(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Info, Args...>(fmt, std::forward<Args>(param)..., loc) {}
-    log_info(const char* msg, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Info, Args...>(msg, loc) {}
-};
-template <typename... Args>
-log_info(std::format_string<Args...> fmt, Args&&... args) -> log_info<Args...>;
-
-template <typename... Args>
-struct log_debug : _log_fmt<log::Severity::Debug, Args...> {
-    explicit log_debug(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Debug, Args...>(fmt, std::forward<Args>(param)..., loc) {}
-    log_debug(const char* msg, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Debug, Args...>(msg, loc) {}
-};
-template <typename... Args>
-log_debug(std::format_string<Args...> fmt, Args&&... args) -> log_debug<Args...>;
-
-template <typename... Args>
-struct log_warning : _log_fmt<log::Severity::Warning, Args...> {
-    explicit log_warning(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Warning, Args...>(fmt, std::forward<Args>(param)..., loc) {}
-    log_warning(const char* msg, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Warning, Args...>(msg, loc) {}
-};
-template <typename... Args>
-log_warning(std::format_string<Args...> fmt, Args&&... args) -> log_warning<Args...>;
-
-template <typename... Args>
-struct log_error : _log_fmt<log::Severity::Error, Args...> {
-    explicit log_error(const std::format_string<Args...>& fmt, Args&&... param, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Error, Args...>(fmt, std::forward<Args>(param)..., loc) {}
-    log_error(const char* msg, const std::source_location& loc = std::source_location::current())
-        : _log_fmt<log::Severity::Error, Args...>(msg, loc) {}
-};
-template <typename... Args>
-log_error(std::format_string<Args...> fmt, Args&&... args) -> log_error<Args...>;
+void log_trace(fmt_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    _log_impl(log::Severity::Trace, std::format(fmt.str, std::forward<Args>(args)...), fmt.location);
+}
+// We need a specific const char* version of each log function because a non-literal char* can't be
+// used to construct a std::format_string
+// TODO: It may be possible to handle this by creating a second version of fmt_string_with_location
+// that takes and stores just a const char*, and then select the appropriate one with
+// concepts/SFINAE
+inline void log_trace(const char* str, const std::source_location& loc = std::source_location::current()) {
+    _log_impl(log::Severity::Trace, str, loc);
+}
 
 
 template <typename... Args>
-struct log_fatal {
-    [[noreturn]] explicit log_fatal(std::format_string<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current()) {
-        _log_fmt<log::Severity::Fatal, Args...>(fmt, std::forward<Args>(args)..., loc);
-        VEE_DEBUGBREAK();
-        std::abort();
-    }
+void log_debug(fmt_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    _log_impl(log::Severity::Debug, std::format(fmt.str, std::forward<Args>(args)...), fmt.location);
+}
+inline void log_debug(const char* str, const std::source_location& loc = std::source_location::current()) {
+    _log_impl(log::Severity::Debug, str, loc);
+}
 
-    [[noreturn]] explicit log_fatal(const char* msg, const std::source_location& loc = std::source_location::current()) {
-        _log_fmt<log::Severity::Fatal>(msg, loc);
-        VEE_DEBUGBREAK();
-        std::abort();
-    }
-};
 template <typename... Args>
-log_fatal(std::format_string<Args...> fmt, Args&&... args) -> log_fatal<Args...>;
+void log_info(fmt_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    _log_impl(log::Severity::Info, std::format(fmt.str, std::forward<Args>(args)...), fmt.location);
+}
+inline void log_info(const char* str, const std::source_location& loc = std::source_location::current()) {
+    _log_impl(log::Severity::Info, str, loc);
+}
+
+template <typename... Args>
+void log_warning(fmt_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    _log_impl(log::Severity::Warning, std::format(fmt.str, std::forward<Args>(args)...), fmt.location);
+}
+inline void log_warning(const char* str, const std::source_location& loc = std::source_location::current()) {
+    _log_impl(log::Severity::Warning, str, loc);
+}
+
+
+template <typename... Args>
+void log_error(fmt_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    _log_impl(log::Severity::Error, std::format(fmt.str, std::forward<Args>(args)...), fmt.location);
+}
+inline void log_error(const char* str, const std::source_location& loc = std::source_location::current()) {
+    _log_impl(log::Severity::Error, str, loc);
+}
+
+template <typename... Args>
+[[noreturn]] void log_fatal(fmt_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    _log_impl(log::Severity::Fatal, std::format(fmt.str, std::forward<Args>(args)...), fmt.location);
+    VEE_DEBUGBREAK();
+    std::abort();
+}
+[[noreturn]] inline void log_fatal(const char* msg, const std::source_location& loc = std::source_location::current()) {
+    _log_impl(log::Severity::Fatal, msg, loc);
+    VEE_DEBUGBREAK();
+    std::abort();
+}
+
 
 template <typename... Args>
 struct log_dynamic {

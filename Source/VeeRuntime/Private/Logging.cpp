@@ -9,7 +9,7 @@
 
 
 
-void vee::_log_msg(log::Severity severity, std::string_view msg, const std::source_location& location) {
+void vee::_log_impl(log::Severity severity, std::string_view msg, const std::source_location& location) {
     using namespace vee::log;
     auto time = ColoredExpr(std::format("[{:%H:%M:%S}]", std::chrono::system_clock::now()), Color::Faint);
     auto colored_severity = ColoredExpr(severity, severity >= Severity::Error ? Color::Red : Color::Faint);
