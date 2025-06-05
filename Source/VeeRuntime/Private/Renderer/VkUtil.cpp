@@ -5,7 +5,6 @@
 #define VMA_IMPLEMENTATION
 #include "Renderer/VkUtil.hpp"
 
-#include "../../../../out/Release-Visual Studio/_deps/boost-src/libs/log/include/boost/log/expressions/message.hpp"
 #include "Logging.hpp"
 #include "VeeCore.hpp"
 

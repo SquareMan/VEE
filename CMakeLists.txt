@@ -34,13 +34,6 @@ CPMAddPackage(
 CPMAddPackage("gh:g-truc/glm#1.0.1")
 CPMAddPackage("gh:ocornut/imgui@1.91.4-docking")
 CPMAddPackage("gh:skypjack/entt@3.14.0")
-CPMAddPackage(
-        NAME Boost
-        VERSION 1.87.0
-        URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.7z # downloading a zip release speeds up the download
-        URL_HASH SHA256=61d61a3f33283bab8f3736745a4e47c37141f07e413986cd05d1f942c69d529a
-        OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES log"
-)
 CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
 CPMAddPackage("gh:nothings/stb#f056911")
 

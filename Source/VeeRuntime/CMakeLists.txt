@@ -13,8 +13,6 @@ target_link_libraries(VeeRuntime
         $<$<CONFIG:Debug>:VeeEditor;imgui>
 
         PRIVATE
-        Boost::log
-        Boost::log_setup
         magic_enum
         stb
         Tracy::TracyClient

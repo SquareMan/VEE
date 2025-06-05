@@ -4,16 +4,59 @@
 
 #pragma once
 
+#include "Assert.hpp"
+#include "Logging.hpp"
+
 #include <array>
-#include <boost/log/expressions.hpp>
+#include <format>
+#include <magic_enum/magic_enum.hpp>
+
+template <>
+struct std::formatter<vee::log::Severity> {
+    static constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    static auto format(vee::log::Severity severity, format_context& ctx) {
+        return std::format_to(ctx.out(), "{}", magic_enum::enum_name(severity));
+    }
+};
+
+struct LastN {
+    std::string_view view;
+    uint32_t n;
+};
+
+template <>
+struct std::formatter<LastN> {
+    static constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    static auto format(LastN str, format_context& ctx) {
+        if (str.view.size() > str.n) {
+            return std::format_to(ctx.out(), "...{}", string_view(str.view.data() + str.view.size() - str.n));
+        }
+        return std::formatter<string_view>().format(str.view, ctx);
+    }
+};
 
 namespace vee::log {
-BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", Severity)
-
 enum class Color { Blue, Cyan, Faint, Green, Magenta, Red, Yellow, SIZE };
-auto colored_expression(auto fmt, Color color) {
-    namespace expr = boost::log::expressions;
-    return expr::wrap_formatter([fmt, color](const boost::log::record_view& record_view, boost::log::formatting_ostream& stream) {
+template <typename T>
+struct ColoredExpr {
+    T t;
+    Color color;
+};
+} // namespace vee::log
+
+template <typename T>
+struct std::formatter<vee::log::ColoredExpr<T>> {
+    static constexpr auto parse(format_parse_context& ctx) {
+        return std::formatter<T>().parse(ctx);
+    }
+
+    static auto format(vee::log::ColoredExpr<T>& expr, format_context& ctx) {
+        VASSERT(expr.color != vee::log::Color::SIZE, "SIZE is not a valid color.");
         static constexpr auto color_codes = std::array{
             "\033[34m",
             "\033[36m",
@@ -23,13 +66,10 @@ auto colored_expression(auto fmt, Color color) {
             "\033[31m",
             "\033[33m",
         };
-        static_assert(color_codes.size() == static_cast<uint32_t>(Color::SIZE));
+        static_assert(color_codes.size() == static_cast<uint32_t>(vee::log::Color::SIZE));
 
-        stream << color_codes[static_cast<uint32_t>(color)];
-        fmt(record_view, stream);
-        stream << "\033[0;10m";
-    });
-}
-
-std::string_view last_n_chars(const boost::log::value_ref<std::string>& value_ref, size_t n);
-} // namespace vee::log
+        const char* code = color_codes[static_cast<uint32_t>(expr.color)];
+        return std::format_to(ctx.out(), "{}{}\033[0;10m", code, expr.t);
+    }
+};
+// } // namespace vee::log
