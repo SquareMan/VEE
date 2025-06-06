@@ -48,7 +48,7 @@ struct DefaultHandler {
     constexpr static auto FilterLevel = Level::VEE_ASSERT_FILTER_LEVEL;
     constexpr static auto DefaultLevel = Level::Debug;
     template <typename... FmtArgs>
-    [[noreturn]] constexpr static void Handle(
+    constexpr static void Handle(
         const char* expr_str, const std::source_location& loc, std::format_string<FmtArgs...> fmt, FmtArgs&&... args
     ) {
         detail::_log_assert(expr_str, loc, std::format<FmtArgs...>(fmt, std::forward<FmtArgs>(args)...));

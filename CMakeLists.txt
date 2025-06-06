@@ -21,7 +21,10 @@ find_package(Vulkan REQUIRED SPIRV-Tools)
 
 #CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@3.2.1")
 CPMAddPackage("gh:YaaZ/VulkanMemoryAllocator-Hpp@3.2.1")
-CPMAddPackage("gh:charles-lunarg/vk-bootstrap@1.3.296")
+CPMAddPackage(
+        URI "gh:charles-lunarg/vk-bootstrap@1.3.296"
+        OPTIONS "VK_BOOTSTRAP_DISABLE_WARNINGS ON"
+)
 CPMAddPackage(
         NAME glfw
         GITHUB_REPOSITORY glfw/glfw
@@ -38,9 +41,9 @@ CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
 CPMAddPackage("gh:nothings/stb#f056911")
 
 set(TRACY_ENABLE OFF)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(TRACY_ENABLE ON)
-endif()
+endif ()
 CPMAddPackage("gh:wolfpld/tracy@0.11.1")
 
 if (stb_ADDED)
@@ -58,10 +61,15 @@ if (imgui_ADDED)
             ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
             ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp)
     target_link_libraries(imgui PRIVATE glfw)
-    target_include_directories(imgui PRIVATE ${Vulkan_INCLUDE_DIR})
-    target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
+    target_include_directories(imgui PRIVATE ${Vulkan_INCLUDE_DIR} ${imgui_SOURCE_DIR})
+    target_include_directories(imgui SYSTEM INTERFACE ${imgui_SOURCE_DIR})
     target_compile_definitions(imgui PUBLIC IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+    target_compile_options(imgui PRIVATE
+            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+                -Wno-nontrivial-memcall>
+    )
 endif ()
+
 
 add_subdirectory(Source/HelloTriangle)
 add_subdirectory(Source/VeeEditor)

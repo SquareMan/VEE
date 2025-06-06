@@ -138,7 +138,7 @@ void GameRenderer::on_render(vk::CommandBuffer cmd, uint32_t swapchain_idx) {
                 glm::mat4x4 local_to_world = trans.to_mat();
                 cmd.pushConstants(mat->pipeline_.layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4x4), &local_to_world);
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mat->pipeline_.layout, 0, mat->descriptor_set_, {});
-                cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {{0}});
+                cmd.bindVertexBuffers(0, vertex_buffer_.buffer, {0});
                 cmd.bindIndexBuffer(index_buffer_.buffer, 0, vk::IndexType::eUint16);
                 cmd.drawIndexed(4, 1, 3, 0, 0);
             }
