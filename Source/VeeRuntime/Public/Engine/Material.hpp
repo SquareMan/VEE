@@ -3,13 +3,16 @@
 //
 
 #pragma once
-#include "Renderer/Pipeline.hpp"
 
+#include "Renderer/Pipeline.hpp"
 
 #include <expected>
 #include <memory>
 
 namespace vee {
+namespace rdg {
+class SceneRenderPass;
+}
 class Texture;
 class Material {
 public:
@@ -22,5 +25,6 @@ protected:
     vk::DescriptorSet descriptor_set_;
 
     friend class GameRenderer;
+    friend class rdg::SceneRenderPass;
 };
 } // namespace vee

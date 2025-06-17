@@ -5,23 +5,20 @@
 #include "Engine/Material.hpp"
 
 #include "Engine/Texture.hpp"
-#include "entt/locator/locator.hpp"
 #include "IApplication.hpp"
+#include "MakeSharedEnabler.hpp"
 #include "Platform/Filesystem.hpp"
 #include "Renderer.hpp"
 #include "Renderer/Image.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "Renderer/Shader.hpp"
 
+#include <entt/locator/locator.hpp>
 #include <vector>
 
 
 std::expected<std::shared_ptr<vee::Material>, vee::Material::CreateError> vee::Material::create(const std::shared_ptr<Texture>& texture) {
-    struct MakeSharedEnabler : Material {
-        MakeSharedEnabler()
-            : Material() {}
-    };
-    std::shared_ptr<Material> material = std::make_shared<MakeSharedEnabler>();
+    std::shared_ptr<Material> material = std::make_shared<MakeSharedEnabler<Material>>();
     material->texture_ = texture;
 
     RenderCtx& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();

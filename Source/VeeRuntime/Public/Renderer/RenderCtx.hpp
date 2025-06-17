@@ -54,5 +54,7 @@ public:
     vk::DescriptorPool descriptor_pool;
 
     Buffer staging_buffer;
+    Buffer vertex_buffer;
+    Buffer index_buffer;
 };
 }; // namespace vee

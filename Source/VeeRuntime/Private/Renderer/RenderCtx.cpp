@@ -6,9 +6,11 @@
 
 #include "Assert.hpp"
 #include "Platform/Window.hpp"
+#include "Vertex.hpp"
 
 #include <functional>
 #include <magic_enum/magic_enum.hpp>
+#include <numbers>
 
 namespace vee {
 RenderCtx::RenderCtx(const platform::Window& window)
@@ -148,8 +150,53 @@ RenderCtx::RenderCtx(const platform::Window& window)
             allocator
                 .createBuffer(buffer_info, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
                 .value;
-        new (&staging_buffer) vee::Buffer(buf, alloc, allocator);
+        new (&staging_buffer) Buffer(buf, alloc, allocator);
     }
+
+    float a = 4.0f * std::numbers::pi_v<float> / 3.0f;
+    float b = 2.0f * std::numbers::pi_v<float> / 3.0f;
+    float c = 0;
+    const Vertex vertices[] = {
+        {{std::cos(a), std::sin(a)}, {1.0f, 0.0f, 0.0f}, {std::cos(a), std::sin(a)}},
+        {{std::cos(c), std::sin(c)}, {0, 1.0f, 0.0f}, {std::cos(c), std::sin(c)}},
+        {{std::cos(b), std::sin(b)}, {0.0f, 0.0f, 1.0f}, {std::cos(b), std::sin(b)}},
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+    };
+    const uint16_t indices[] = {0, 1, 2, 3, 4, 5, 6};
+    {
+        std::ignore = allocator.copyMemoryToAllocation(vertices, staging_buffer.allocation, 0, sizeof(vertices));
+        std::ignore = allocator.copyMemoryToAllocation(indices, staging_buffer.allocation, sizeof(vertices), sizeof(indices));
+    }
+
+    {
+        vk::BufferCreateInfo buffer_info = {
+            {}, sizeof(vertices) + sizeof(indices), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive
+        };
+        {
+            auto [buf, alloc] =
+                allocator
+                    .createBuffer(buffer_info, {vma::AllocationCreateFlagBits::eDedicatedMemory, vma::MemoryUsage::eAuto})
+                    .value;
+            new (&vertex_buffer) Buffer(buf, alloc, allocator);
+        }
+
+        buffer_info.setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer);
+        {
+            auto [buf, alloc] =
+                allocator
+                    .createBuffer(buffer_info, {vma::AllocationCreateFlagBits::eDedicatedMemory, vma::MemoryUsage::eGpuOnly})
+                    .value;
+            new (&index_buffer) Buffer(buf, alloc, allocator);
+        }
+    }
+    // Copy from staging to final buffers
+    immediate_submit([&](vk::CommandBuffer cmd) {
+        cmd.copyBuffer(staging_buffer.buffer, vertex_buffer.buffer, {{0, 0, sizeof(vertices)}});
+        cmd.copyBuffer(staging_buffer.buffer, index_buffer.buffer, {{sizeof(vertices), 0, sizeof(indices)}});
+    });
 }
 
 void RenderCtx::recreate_swapchain() {

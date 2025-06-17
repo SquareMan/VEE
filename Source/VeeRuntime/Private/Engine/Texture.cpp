@@ -4,14 +4,15 @@
 
 #include "Engine/Texture.hpp"
 
-#include "entt/locator/locator.hpp"
-#include "glm/packing.hpp"
 #include "IApplication.hpp"
 #include "Logging.hpp"
+#include "MakeSharedEnabler.hpp"
 #include "Renderer.hpp"
 #include "Renderer/Image.hpp"
 #include "Renderer/RenderCtx.hpp"
 
+#include <entt/locator/locator.hpp>
+#include <glm/packing.hpp>
 #include <stb_image.h>
 
 std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Texture::create(const char* path, vk::Format format) {
@@ -26,11 +27,7 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
     Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
     RenderCtx& ctx = renderer.get_ctx();
 
-    struct MakeSharedEnabler : Texture {
-        MakeSharedEnabler()
-            : Texture() {}
-    };
-    std::shared_ptr<Texture> new_texture = std::make_shared<MakeSharedEnabler>();
+    std::shared_ptr<Texture> new_texture = std::make_shared<MakeSharedEnabler<Texture>>();
     new_texture->image_ = std::make_shared<Image>(
         ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::Extent3D(width, height, 1), format, vk::ImageAspectFlagBits::eColor
     );

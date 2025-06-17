@@ -29,6 +29,7 @@ target_sources(VeeRuntime
         Public/IApplication.hpp
         Public/Keys.hpp
         Public/Logging.hpp
+        Public/MakeSharedEnabler.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Transform.h
@@ -39,6 +40,15 @@ target_sources(VeeRuntime
         Public/Engine/Engine.hpp
         Public/Engine/Entity.h
         Public/Engine/Material.hpp
+        Public/Engine/FrameImagePass.hpp
+        Public/RenderGraph/DirectSource.hpp
+        Public/RenderGraph/Handles.hpp
+        Public/RenderGraph/ImageResource.hpp
+        Public/RenderGraph/Pass.hpp
+        Public/RenderGraph/RenderGraph.hpp
+        Public/RenderGraph/Sink.hpp
+        Public/RenderGraph/Source.hpp
+        Public/Engine/SceneRenderPass.hpp
         Public/Engine/Texture.hpp
         Public/Engine/Sprite.hpp
         Public/Engine/World.h
@@ -46,9 +56,7 @@ target_sources(VeeRuntime
         Public/Platform/Window.hpp
         Public/Platform/WindowHandle.hpp
         Public/Renderer/Buffer.hpp
-        Public/Renderer/GameRenderer.hpp
         Public/Renderer/Image.hpp
-        Public/Renderer/IRenderer.hpp
         Public/Renderer/Pipeline.hpp
         Public/Renderer/RenderCtx.hpp
         Public/Renderer/Shader.hpp
@@ -74,13 +82,18 @@ target_sources(VeeRuntime
         Private/Engine/Engine.cpp
         Private/Engine/Entity.cpp
         Private/Engine/Material.cpp
+        Private/Engine/FrameImagePass.cpp
+        Private/RenderGraph/Pass.cpp
+        Private/RenderGraph/RenderGraph.cpp
+        Private/RenderGraph/Sink.cpp
+        Private/RenderGraph/Source.cpp
+        Private/Engine/SceneRenderPass.cpp
         Private/Engine/Texture.cpp
         Private/Engine/Sprite.cpp
         Private/Engine/World.cpp
         Private/Platform/Filesystem.cpp
         Private/Platform/Window.cpp
         Private/Renderer/Buffer.cpp
-        Private/Renderer/GameRenderer.cpp
         Private/Renderer/Image.cpp
         Private/Renderer/Pipeline.cpp
         Private/Renderer/RenderCtx.cpp

@@ -14,7 +14,6 @@ namespace vee {
 class Application : public IApplication {
 public:
     explicit Application(platform::Window&& window);
-    Application(platform::Window&& window, std::vector<std::shared_ptr<IRenderer>> extra_renderers);
 
     void run() override;
     Engine& get_engine() override;
