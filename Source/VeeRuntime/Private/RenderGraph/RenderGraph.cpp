@@ -105,15 +105,19 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
     vulkan::transition_image(cmd, framebuffer_->image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
     std::ignore = cmd.end();
 
-    vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    const vk::SubmitInfo submit_info(
-        command_buffer.acquire_semaphore, wait_stage, command_buffer.cmd, command_buffer.submit_semaphore
-    );
-    std::ignore = render_ctx.graphics_queue.submit(submit_info, command_buffer.fence);
+    {
+        ZoneScopedN("Submit");
+        vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        const vk::SubmitInfo submit_info(
+            command_buffer.acquire_semaphore, wait_stage, command_buffer.cmd, command_buffer.submit_semaphore
+        );
+        std::ignore = render_ctx.graphics_queue.submit(submit_info, command_buffer.fence);
+    }
 
 
     const vk::PresentInfoKHR pi(command_buffer.submit_semaphore, render_ctx.swapchain.handle, image_index);
     {
+        ZoneScopedN("Present");
         // Opt out of return value transformation to avoid asserting on
         // vk::Result::eErrorOutOfDateKHR
         switch (render_ctx.presentation_queue.presentKHR(&pi)) {
@@ -128,14 +132,17 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
         }
     }
 #if defined(TRACY_ENABLE) && !(TRACY_NO_FRAME_IMAGE)
-    // FIXME: Currently this prevents us from having multiple frames in flight.
-    // This needs to be done asynchronously so as not to block the render loop. Tracy  provides an
-    // offset parameter here for signaling how many frames behind the data is once it's ready
-    // FIXME: This also needs to be controlled from the Debug/FrameImagePass somehow
-    Sink* debug_sink = find_sink({"frame_image", "copy_buffer"});
-    void* image_data = dynamic_cast<CopyBufferSink*>(debug_sink)->target->mem;
-    std::ignore = render_ctx.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
-    FrameImage(image_data, DebugScreen::WIDTH, DebugScreen::HEIGHT, 0, false);
+    {
+        ZoneScopedN("Upload Frame Image");
+        // FIXME: Currently this prevents us from having multiple frames in flight.
+        // This needs to be done asynchronously so as not to block the render loop. Tracy  provides an
+        // offset parameter here for signaling how many frames behind the data is once it's ready
+        // FIXME: This also needs to be controlled from the Debug/FrameImagePass somehow
+        Sink* debug_sink = find_sink({"frame_image", "copy_buffer"});
+        void* image_data = dynamic_cast<CopyBufferSink*>(debug_sink)->target->mem;
+        std::ignore = render_ctx.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
+        FrameImage(image_data, DebugScreen::WIDTH, DebugScreen::HEIGHT, 0, false);
+    }
 #endif
 }
 

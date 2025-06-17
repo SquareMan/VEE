@@ -10,6 +10,8 @@
 #include "RenderGraph/ImageResource.hpp"
 #include "RenderGraph/Sink.hpp"
 
+#include <tracy/Tracy.hpp>
+
 
 vee::rdg::DebugBuffer::~DebugBuffer() {
     allocator.unmapMemory(buf.allocation);
@@ -22,6 +24,8 @@ vee::rdg::FrameImageRenderPass::FrameImageRenderPass() {
 }
 
 void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
+    ZoneScoped;
+
     vulkan::transition_image(cmd, copy_source_->image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
     vulkan::transition_image(cmd, copy_dest_->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
