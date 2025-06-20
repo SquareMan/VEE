@@ -47,10 +47,4 @@ void Renderer::render() {
 void Renderer::set_render_graph(std::unique_ptr<rdg::RenderGraph>&& render_graph) {
     render_graph_ = std::move(render_graph);
 }
-
-void Renderer::record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func) {
-    std::ignore = cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-    func(cmd);
-    std::ignore = cmd.end();
-}
 } // namespace vee

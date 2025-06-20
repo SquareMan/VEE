@@ -31,8 +31,6 @@ public:
     void render();
 
 private:
-    void record_commands(vk::CommandBuffer cmd, const std::function<void(vk::CommandBuffer cmd)>& func);
-
     RenderCtx render_ctx_;
     std::unique_ptr<rdg::RenderGraph> render_graph_;
 };
