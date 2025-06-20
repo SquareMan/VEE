@@ -5,7 +5,6 @@
 #pragma once
 
 #include <bit>
-#include <functional>
 #include <string>
 
 // Simple FNNv-1a implementation

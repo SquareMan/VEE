@@ -6,6 +6,7 @@
 
 #include "Renderer/Buffer.hpp"
 #include "RenderGraph/Pass.hpp"
+#include "RenderGraph/Sink.hpp"
 
 #include <vk_mem_alloc.hpp>
 #include <vulkan/vulkan.hpp>

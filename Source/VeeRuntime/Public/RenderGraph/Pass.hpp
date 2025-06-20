@@ -5,8 +5,6 @@
 #pragma once
 
 #include "Handles.hpp"
-#include "RenderGraph/Sink.hpp"
-#include "RenderGraph/Source.hpp"
 
 
 #include <memory>
@@ -15,20 +13,12 @@
 #include <vulkan/vulkan.hpp>
 
 namespace vee::rdg {
-enum class ResourceUsage {
-    Read,
-    Write,
-    ReadWrite,
-};
-
-struct PassDependency {
-    ResourceHandle resource;
-    ResourceUsage usage;
-};
+class Source;
+class Sink;
 
 class Pass {
 public:
-    virtual ~Pass() = default;
+    virtual ~Pass();
 
     /**
      * Called by the RenderGraph every frame. Record rendering commands here.

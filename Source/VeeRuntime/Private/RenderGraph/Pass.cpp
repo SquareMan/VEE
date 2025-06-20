@@ -10,6 +10,8 @@
 
 namespace vee::rdg {
 
+Pass::~Pass() = default;
+
 Pass& Pass::link_sink(SinkRef sink, SourceHandle source) {
     VASSERT(sources_.contains(source), "Cannot link a sink to a source not contained by this Pass!");
     sources_.at(source)->sink_ref = sink;

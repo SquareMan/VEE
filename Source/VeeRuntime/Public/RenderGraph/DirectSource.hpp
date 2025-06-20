@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include "Logging.hpp"
 #include "RenderGraph/DirectSink.hpp"
 #include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/Source.hpp"
 
 namespace vee::rdg {
 template <typename T>

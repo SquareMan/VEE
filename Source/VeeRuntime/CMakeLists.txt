@@ -46,6 +46,7 @@ target_sources(VeeRuntime
         Public/RenderGraph/ImageResource.hpp
         Public/RenderGraph/Pass.hpp
         Public/RenderGraph/RenderGraph.hpp
+        Public/RenderGraph/RenderGraphBuilder.hpp
         Public/RenderGraph/Sink.hpp
         Public/RenderGraph/Source.hpp
         Public/Engine/SceneRenderPass.hpp
@@ -85,6 +86,7 @@ target_sources(VeeRuntime
         Private/Engine/FrameImagePass.cpp
         Private/RenderGraph/Pass.cpp
         Private/RenderGraph/RenderGraph.cpp
+        Private/RenderGraph/RenderGraphBuilder.cpp
         Private/RenderGraph/Sink.cpp
         Private/RenderGraph/Source.cpp
         Private/Engine/SceneRenderPass.cpp

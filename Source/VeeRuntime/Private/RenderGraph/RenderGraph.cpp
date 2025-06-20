@@ -9,6 +9,7 @@
 #include "RenderGraph/DirectSink.hpp"
 #include "RenderGraph/ImageResource.hpp"
 #include "RenderGraph/Pass.hpp"
+#include "RenderGraph/Source.hpp"
 #include "Vertex.hpp"
 
 // TODO: Remove this after refactoring Tracy Image upload into this pass
@@ -20,9 +21,6 @@
 
 namespace vee::rdg {
 
-RenderGraph RenderGraphBuilder::build(RenderCtx& render_ctx) {
-    return {std::move(passes_), std::move(pass_order_), render_ctx};
-}
 
 struct null_deleter {
     template <typename T>
@@ -53,6 +51,7 @@ RenderGraph::RenderGraph(std::unordered_map<PassHandle, std::unique_ptr<Pass>>&&
     }
 }
 
+RenderGraph::~RenderGraph() = default;
 void RenderGraph::execute(RenderCtx& render_ctx) const {
     ZoneScoped;
 

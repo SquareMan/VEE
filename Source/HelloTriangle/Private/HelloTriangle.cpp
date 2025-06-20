@@ -8,6 +8,7 @@
 
 #include <Engine/SceneRenderPass.hpp>
 #include <RenderGraph/RenderGraph.hpp>
+#include <RenderGraph/RenderGraphBuilder.hpp>
 
 #if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
 #include <Engine/FrameImagePass.hpp>
