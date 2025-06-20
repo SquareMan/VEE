@@ -5,6 +5,7 @@
 #include "Renderer/RenderCtx.hpp"
 
 #include "Assert.hpp"
+#include "Renderer/VkUtil.hpp"
 #include "Platform/Window.hpp"
 #include "Vertex.hpp"
 

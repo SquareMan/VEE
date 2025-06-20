@@ -4,11 +4,9 @@
 
 #include "Engine/FrameImagePass.hpp"
 
-#include "Renderer/Image.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "RenderGraph/DirectSource.hpp"
 #include "RenderGraph/ImageResource.hpp"
-#include "RenderGraph/Sink.hpp"
 
 #include <tracy/Tracy.hpp>
 
@@ -26,8 +24,34 @@ vee::rdg::FrameImageRenderPass::FrameImageRenderPass() {
 void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
     ZoneScoped;
 
-    vulkan::transition_image(cmd, copy_source_->image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
-    vulkan::transition_image(cmd, copy_dest_->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    {
+        const vk::ImageMemoryBarrier2 image_barrier[] = {
+            {vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+             vk::AccessFlagBits2::eColorAttachmentWrite,
+             vk::PipelineStageFlagBits2::eTransfer,
+             vk::AccessFlagBits2::eTransferRead,
+             vk::ImageLayout::eColorAttachmentOptimal,
+             vk::ImageLayout::eTransferSrcOptimal,
+             {},
+             {},
+             copy_source_->image,
+             {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}},
+            {vk::PipelineStageFlagBits2::eNone,
+             vk::AccessFlagBits2::eNone,
+             vk::PipelineStageFlagBits2::eTransfer,
+             vk::AccessFlagBits2::eTransferWrite,
+             vk::ImageLayout::eUndefined,
+             vk::ImageLayout::eTransferDstOptimal,
+             {},
+             {},
+             copy_dest_->image,
+             {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}}
+        };
+
+        vk::DependencyInfo dependency_info;
+        dependency_info.setImageMemoryBarriers(image_barrier);
+        cmd.pipelineBarrier2(dependency_info);
+    }
 
     // For Tracy, we need to save a copy of the framebuffer to the CPU. However, it needs to be
     // downscaled for better transfer performance, so we will need to blit to an intermediate
@@ -43,7 +67,35 @@ void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
         copy_source_->image, vk::ImageLayout::eTransferSrcOptimal, copy_dest_->image, vk::ImageLayout::eTransferDstOptimal, blit, vk::Filter::eNearest
     );
     cmd.blitImage2(info);
-    vulkan::transition_image(cmd, copy_dest_->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eTransferSrcOptimal);
+    {
+        const vk::ImageMemoryBarrier2 image_barrier[] = {
+            {vk::PipelineStageFlagBits2::eTransfer,
+             vk::AccessFlagBits2::eTransferRead,
+             vk::PipelineStageFlagBits2::eAllCommands,
+             vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead,
+             vk::ImageLayout::eTransferSrcOptimal,
+             vk::ImageLayout::eColorAttachmentOptimal,
+             {},
+             {},
+             copy_source_->image,
+             {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}},
+            {vk::PipelineStageFlagBits2::eTransfer,
+             vk::AccessFlagBits2::eTransferWrite,
+             vk::PipelineStageFlagBits2::eTransfer,
+             vk::AccessFlagBits2::eTransferRead,
+             vk::ImageLayout::eTransferDstOptimal,
+             vk::ImageLayout::eTransferSrcOptimal,
+             {},
+             {},
+             copy_dest_->image,
+             {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}}
+        };
+
+        vk::DependencyInfo dependency_info;
+        dependency_info.setImageMemoryBarriers(image_barrier);
+        cmd.pipelineBarrier2(dependency_info);
+    }
+
     cmd.copyImageToBuffer(
         copy_dest_->image,
         vk::ImageLayout::eTransferSrcOptimal,
@@ -51,5 +103,20 @@ void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
         vk::BufferImageCopy(0, DebugScreen::WIDTH, DebugScreen::HEIGHT, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {DebugScreen::WIDTH, DebugScreen::HEIGHT, 1})
     );
 
-    vulkan::transition_image(cmd, copy_source_->image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+    {
+        const vk::BufferMemoryBarrier2 buffer_barrier = {
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eHost,
+            vk::AccessFlagBits2::eHostRead,
+            {},
+            {},
+            copy_buffer_->buf.buffer,
+            {},
+            vk::WholeSize,
+        };
+        vk::DependencyInfo dependency_info;
+        dependency_info.setBufferMemoryBarriers(buffer_barrier);
+        cmd.pipelineBarrier2(dependency_info);
+    }
 }

@@ -5,7 +5,6 @@
 #include "Renderer/Pipeline.hpp"
 
 #include "Renderer/Shader.hpp"
-#include "Renderer/VkUtil.hpp"
 #include "Vertex.hpp"
 
 #include <glm/mat4x4.hpp>

@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "Renderer/VkUtil.hpp"
+#include <vulkan/vulkan.hpp>
+#include <vk_mem_alloc.hpp>
 
 namespace vee {
 

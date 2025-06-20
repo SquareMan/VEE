@@ -50,23 +50,4 @@ VkBool32 vk_debug_callback(
     return VK_FALSE;
 }
 
-void transition_image(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout from, vk::ImageLayout to) {
-    // FIXME: This is the most inefficient transition
-    vk::ImageMemoryBarrier2 image_barrier = {
-        vk::PipelineStageFlagBits2::eAllCommands,
-        vk::AccessFlagBits2::eMemoryWrite,
-        vk::PipelineStageFlagBits2::eAllCommands,
-        vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
-        from,
-        to,
-        {},
-        {},
-        image,
-        {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
-    };
-
-    vk::DependencyInfo dependency_info = {};
-    dependency_info.setImageMemoryBarriers(image_barrier);
-    cmd.pipelineBarrier2(dependency_info);
-}
 } // namespace vee::vulkan

@@ -47,14 +47,48 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
     std::ignore = ctx.allocator.copyMemoryToAllocation(pixels.data(), ctx.staging_buffer.allocation, 0, pixels.size() * sizeof(uint32_t));
 
     ctx.immediate_submit([&](vk::CommandBuffer cmd) {
-        vee::vulkan::transition_image(cmd, new_texture->image_->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        {
+            const vk::ImageMemoryBarrier2 image_barrier = {
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::PipelineStageFlagBits2::eTransfer,
+                vk::AccessFlagBits2::eTransferWrite,
+                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eTransferDstOptimal,
+                {},
+                {},
+                new_texture->image_->image,
+                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+            };
+
+            vk::DependencyInfo dependency_info;
+            dependency_info.setImageMemoryBarriers(image_barrier);
+            cmd.pipelineBarrier2(dependency_info);
+        }
 
         vk::BufferImageCopy region = {
             {}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}
         };
         cmd.copyBufferToImage(ctx.staging_buffer.buffer, new_texture->image_->image, vk::ImageLayout::eTransferDstOptimal, region);
 
-        vee::vulkan::transition_image(cmd, new_texture->image_->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+        {
+            const vk::ImageMemoryBarrier2 image_barrier = {
+                vk::PipelineStageFlagBits2::eTransfer,
+                vk::AccessFlagBits2::eTransferWrite,
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::ImageLayout::eTransferDstOptimal,
+                vk::ImageLayout::eShaderReadOnlyOptimal,
+                {},
+                {},
+                new_texture->image_->image,
+                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+            };
+
+            vk::DependencyInfo dependency_info;
+            dependency_info.setImageMemoryBarriers(image_barrier);
+            cmd.pipelineBarrier2(dependency_info);
+        }
     });
 
     // FIXME: we need to free the image data AFTER the transfer completes, but this will require

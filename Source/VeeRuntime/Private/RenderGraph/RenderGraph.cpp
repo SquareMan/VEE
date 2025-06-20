@@ -94,7 +94,24 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
     vk::CommandBuffer cmd = command_buffer.cmd;
     std::ignore = cmd.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     std::ignore = cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-    vulkan::transition_image(cmd, framebuffer_->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    {
+        const vk::ImageMemoryBarrier2 image_barrier = {
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::AccessFlagBits2::eNone,
+            vk::PipelineStageFlagBits2::eAllGraphics,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            {},
+            {},
+            framebuffer_->image,
+            {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+        };
+
+        vk::DependencyInfo dependency_info;
+        dependency_info.setImageMemoryBarriers(image_barrier);
+        cmd.pipelineBarrier2(dependency_info);
+    }
     for (const auto& pass_handle : pass_order_) {
         const auto& pass = passes_.at(pass_handle);
         // TODO: Insert image transitions based on Sink's current usage
@@ -102,7 +119,24 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
         // }
         pass->execute(cmd);
     }
-    vulkan::transition_image(cmd, framebuffer_->image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
+    {
+        const vk::ImageMemoryBarrier2 image_barrier[] = {
+            {vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+             vk::AccessFlagBits2::eColorAttachmentWrite,
+             vk::PipelineStageFlagBits2::eNone,
+             vk::AccessFlagBits2::eNone,
+             vk::ImageLayout::eColorAttachmentOptimal,
+             vk::ImageLayout::ePresentSrcKHR,
+             {},
+             {},
+             framebuffer_->image,
+             {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}},
+        };
+
+        vk::DependencyInfo dependency_info;
+        dependency_info.setImageMemoryBarriers(image_barrier);
+        cmd.pipelineBarrier2(dependency_info);
+    }
     std::ignore = cmd.end();
 
     {
@@ -135,8 +169,8 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
     {
         ZoneScopedN("Upload Frame Image");
         // FIXME: Currently this prevents us from having multiple frames in flight.
-        // This needs to be done asynchronously so as not to block the render loop. Tracy  provides an
-        // offset parameter here for signaling how many frames behind the data is once it's ready
+        // This needs to be done asynchronously so as not to block the render loop. Tracy  provides
+        // an offset parameter here for signaling how many frames behind the data is once it's ready
         // FIXME: This also needs to be controlled from the Debug/FrameImagePass somehow
         Sink* debug_sink = find_sink({"frame_image", "copy_buffer"});
         void* image_data = dynamic_cast<CopyBufferSink*>(debug_sink)->target->mem;

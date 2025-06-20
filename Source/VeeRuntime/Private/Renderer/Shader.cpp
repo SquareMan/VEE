@@ -4,7 +4,6 @@
 
 #include "Renderer/Shader.hpp"
 
-#include "Renderer/VkUtil.hpp"
 
 #include <vector>
 

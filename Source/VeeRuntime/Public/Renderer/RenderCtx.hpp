@@ -7,10 +7,10 @@
 #include "Buffer.hpp"
 #include "RingBuffer.hpp"
 #include "Swapchain.hpp"
-#include "VkUtil.hpp"
 
 #include <functional>
 #include <VkBootstrap.h>
+#include <vulkan/vulkan.hpp>
 
 struct CmdBuffer {
     vk::CommandBuffer cmd;
