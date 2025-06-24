@@ -65,7 +65,7 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
         // Opt out of return value transformation to avoid asserting on
         // vk::Result::eErrorOutOfDateKHR
         const vk::Result result = render_ctx.device.acquireNextImageKHR(
-            render_ctx.swapchain.handle, 0, command_buffer.acquire_semaphore, nullptr, &image_index
+            render_ctx.swapchain.handle, UINT32_MAX, command_buffer.acquire_semaphore, nullptr, &image_index
         );
         switch (result) {
         case vk::Result::eSuccess:
