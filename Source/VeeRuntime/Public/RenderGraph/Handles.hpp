@@ -5,6 +5,7 @@
 #pragma once
 
 #include <bit>
+#include <cstdint>
 #include <string>
 
 // Simple FNNv-1a implementation

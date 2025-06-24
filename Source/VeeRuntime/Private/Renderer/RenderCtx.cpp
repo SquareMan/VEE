@@ -5,10 +5,11 @@
 #include "Renderer/RenderCtx.hpp"
 
 #include "Assert.hpp"
-#include "Renderer/VkUtil.hpp"
 #include "Platform/Window.hpp"
+#include "Renderer/VkUtil.hpp"
 #include "Vertex.hpp"
 
+#include <cmath>
 #include <functional>
 #include <magic_enum/magic_enum.hpp>
 #include <numbers>

@@ -5,12 +5,13 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 
 namespace vee {
-template <typename T, size_t I>
+template <typename T, std::size_t I>
 class RingBuffer {
 public:
-    T& operator[](size_t idx) {
+    T& operator[](std::size_t idx) {
         return buffer[idx];
     }
 
@@ -21,11 +22,11 @@ public:
         return buffer[index++];
     }
 
-    [[nodiscard]] size_t size() {
+    [[nodiscard]] std::size_t size() {
         return I;
     }
 
     std::array<T, I> buffer;
-    uint32_t index = 0;
+    std::uint32_t index = 0;
 };
 } // namespace vee

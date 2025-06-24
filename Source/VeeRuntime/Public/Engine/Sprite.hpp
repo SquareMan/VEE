@@ -5,6 +5,8 @@
 #pragma once
 #include "Renderer/Image.hpp"
 
+#include <memory>
+
 namespace vee {
 class Material;
 

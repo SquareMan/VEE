@@ -104,5 +104,5 @@ void assert_impl(Expr expr, const char* expression_str, const std::source_locati
         },                                                                                         \
         #Expr,                                                                                     \
         std::source_location::current(),                                                           \
-        __VA_ARGS__                                                                                \
+        ##__VA_ARGS__                                                                                \
     )

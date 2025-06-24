@@ -6,7 +6,7 @@
 
 #include "Renderer/RenderCtx.hpp"
 
-#include <functional>
+#include <memory>
 
 namespace vee::rdg {
 class RenderGraph;
