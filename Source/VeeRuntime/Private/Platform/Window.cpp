@@ -8,8 +8,13 @@
 #include <functional>
 #include <GLFW/glfw3.h>
 
+#ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include "GLFW/glfw3native.h"
+#elif defined(__linux__)
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+#include <GLFW/glfw3native.h>
+
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -59,7 +64,11 @@ std::tuple<uint32_t, uint32_t> Window::get_size() const {
 WindowHandle Window::get_handle() const {
     VASSERT(glfw_window != nullptr, "GLFW window was not initialized");
     // TODO: not platform independent
+#if defined(_WIN32)
     return glfwGetWin32Window(glfw_window);
+#elif defined(__linux__)
+    return {glfwGetX11Display(), glfwGetX11Window(glfw_window)};
+#endif
 }
 
 bool Window::is_key_down(Key key) const {

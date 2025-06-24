@@ -6,9 +6,7 @@
 
 #include "Keys.hpp"
 
-#ifdef _WIN32
 #include "WindowHandle.hpp"
-#endif
 #include "VeeCore.hpp"
 
 #include "GLFW/glfw3.h"

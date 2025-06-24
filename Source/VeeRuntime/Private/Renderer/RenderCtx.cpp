@@ -32,7 +32,11 @@ RenderCtx::RenderCtx(const platform::Window& window)
                 .enable_validation_layers(enable_validation)
                 .enable_extensions({
                     VK_KHR_SURFACE_EXTENSION_NAME,
+#if defined(_WIN32)
                     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#elif defined(__linux__)
+                    VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#endif
                 })
                 .set_debug_callback(&vee::vulkan::vk_debug_callback)
                 .require_api_version(1, 3, 0)
@@ -42,8 +46,15 @@ RenderCtx::RenderCtx(const platform::Window& window)
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(instance.instance));
     }
 
+#if defined(_WIN32)
     const vk::Win32SurfaceCreateInfoKHR ci = {{}, GetModuleHandle(nullptr), window.get_handle()};
     surface = static_cast<vk::Instance>(instance).createWin32SurfaceKHR(ci).value;
+#elif defined(__linux__)
+    const auto [display, xwindow] = window.get_handle();
+    const vk::XlibSurfaceCreateInfoKHR ci = {{}, display, xwindow};
+    surface = static_cast<vk::Instance>(instance).createXlibSurfaceKHR(ci).value;
+#endif
+
 
     vk::PhysicalDeviceVulkan13Features v13_features;
     v13_features.synchronization2 = true;

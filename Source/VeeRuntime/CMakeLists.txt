@@ -113,4 +113,6 @@ target_compile_definitions(VeeRuntime PUBLIC
 )
 if (WIN32)
     target_compile_definitions(VeeRuntime PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+elseif (LINUX)
+    target_compile_definitions(VeeRuntime PUBLIC VK_USE_PLATFORM_XLIB_KHR)
 endif ()
