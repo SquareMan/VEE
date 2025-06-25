@@ -20,6 +20,7 @@
 
 #ifdef VEE_WITH_EDITOR
 #include <imgui.h>
+#include "Inspector.hpp"
 #endif
 
 namespace vee::rdg {
@@ -38,14 +39,13 @@ void SceneRenderPass::execute(vk::CommandBuffer cmd) {
     // TODO: deal with multiple cameras
     auto cams = engine.get_world().entt_registry.view<vee::CameraComponent, vee::Transform>();
     auto [e, cam, cam_transform] = *cams.each().begin();
+    Transform& c = cam_transform;
 
 #ifdef VEE_WITH_EDITOR
     // FIXME: This does not belong in rendering code. It depends on the EditorRenderPass not being
     // rendered before this one.
     if (ImGui::Begin("Debug")) {
-        ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_transform.position));
-        ImGui::DragFloat("Cam Rot", &cam_transform.rotation);
-        ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_transform.scale));
+        editor::create_inspector(cam_transform);
     }
     ImGui::End();
 #endif

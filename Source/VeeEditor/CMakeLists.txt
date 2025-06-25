@@ -11,6 +11,7 @@ target_sources(VeeEditor
         FILES
         Public/EditorApplication.hpp
         Public/EditorRenderPass.hpp
+        Public/Inspector.hpp
 
         PRIVATE
         FILE_SET private_headers TYPE HEADERS
@@ -20,6 +21,7 @@ target_sources(VeeEditor
         PRIVATE
         Private/EditorApplication.cpp
         Private/EditorRenderPass.cpp
+        Private/Inspector.cpp
 )
 target_include_directories(VeeEditor PUBLIC ${glfw_SOURCE_DIR}/include)
 target_link_libraries(VeeEditor VeeRuntime imgui glm Tracy::TracyClient)
