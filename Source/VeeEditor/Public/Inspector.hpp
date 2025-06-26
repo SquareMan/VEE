@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "Logging.hpp"
-
 #include <glm/vec2.hpp>
 #include <imgui.h>
 #include <meta>
