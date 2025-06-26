@@ -19,7 +19,6 @@
 #include <tracy/Tracy.hpp>
 
 #ifdef VEE_WITH_EDITOR
-#include <imgui.h>
 #include "Inspector.hpp"
 #endif
 
@@ -45,7 +44,7 @@ void SceneRenderPass::execute(vk::CommandBuffer cmd) {
     // FIXME: This does not belong in rendering code. It depends on the EditorRenderPass not being
     // rendered before this one.
     if (ImGui::Begin("Debug")) {
-        editor::create_inspector(cam_transform);
+        editor::create_inspector(cam_transform, "Camera Transform:");
     }
     ImGui::End();
 #endif
