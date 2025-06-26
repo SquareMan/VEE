@@ -10,6 +10,7 @@ out/
 .vs/
 .vscode/
 .idea/
+.cache
 
 *.spv
 build
