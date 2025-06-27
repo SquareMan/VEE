@@ -11,7 +11,7 @@ class RenderCtx;
 namespace vee::rdg {
 class Sink {
 public:
-    virtual ~Sink() = default;
+    virtual ~Sink();
 
     /**
      * Called by the RenderGraph before Sources and Sinks are wired up to give a chance to

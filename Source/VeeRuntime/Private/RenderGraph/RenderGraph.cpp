@@ -50,6 +50,7 @@ RenderGraph::RenderGraph(std::unordered_map<PassHandle, std::unique_ptr<Pass>>&&
         }
     }
 }
+RenderGraph::RenderGraph(RenderGraph&& other) = default;
 
 RenderGraph::~RenderGraph() = default;
 void RenderGraph::execute(RenderCtx& render_ctx) const {

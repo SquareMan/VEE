@@ -3,3 +3,7 @@
 //
 
 #include "RenderGraph/Sink.hpp"
+
+namespace vee::rdg {
+Sink::~Sink() = default;
+}

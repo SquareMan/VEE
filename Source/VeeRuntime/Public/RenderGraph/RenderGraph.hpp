@@ -31,7 +31,7 @@ static const PassHandle GLOBAL = "";
 class RenderGraph {
 public:
     RenderGraph(std::unordered_map<PassHandle, std::unique_ptr<Pass>>&& passes, std::vector<PassHandle>&& pass_order, RenderCtx& ctx);
-    RenderGraph(RenderGraph&& other) = default;
+    RenderGraph(RenderGraph&& other);
     ~RenderGraph();
     void execute(RenderCtx& render_ctx) const;
 
