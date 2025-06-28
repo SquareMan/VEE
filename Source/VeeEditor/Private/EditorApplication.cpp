@@ -63,6 +63,9 @@ void vee::EditorApplication::run() {
 
         ImGui::ShowDemoWindow();
         renderer_.render();
+        // We may bail out of rendering early (e.g. swapchain resizing)
+        // We need to make sure we always end the ImGui frame.
+        ImGui::EndFrame();
 
         window_.poll_events();
     }
