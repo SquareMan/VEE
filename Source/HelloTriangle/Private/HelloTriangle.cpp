@@ -25,9 +25,9 @@ int main() {
         .link_sink({rdg::GLOBAL, "index_buffer"}, "index_buffer");
 #ifdef VEE_WITH_EDITOR
     rg.add_pass<rdg::EditorRenderPass>("editor").link_sink({"scene", "render_target"}, "render_target");
-    constexpr PassHandle frame_image_prev = "editor";
+    constexpr rdg::PassHandle frame_image_prev = "editor";
 #else
-    constexpr PassHandle frame_image_prev = "scene";
+    constexpr rdg::PassHandle frame_image_prev = "scene";
 #endif
 #if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
     rg.add_pass<rdg::FrameImageRenderPass>("frame_image").link_sink({frame_image_prev, "render_target"}, "copy_source");

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "VeeCore.hpp"
 #include <vector>
 
 namespace vee::platform::filesystem {

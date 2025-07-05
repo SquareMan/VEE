@@ -6,12 +6,12 @@
 #include "Renderer/VkUtil.hpp"
 
 #include "Logging.hpp"
-#include "VeeCore.hpp"
+
+#include <VeeCore.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <iterator>
-
 #include <vulkan/vulkan.hpp>
 
 // Implement storage for Vulkan-hpp's dynamic loader

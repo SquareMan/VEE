@@ -5,6 +5,7 @@ add_library(VeeRuntime)
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/VulkanMemoryAllocator/include)
 target_link_libraries(VeeRuntime
         PUBLIC
+        VeeCore
         VulkanMemoryAllocator-Hpp
         glm::glm
         vk-bootstrap::vk-bootstrap
@@ -33,7 +34,6 @@ target_sources(VeeRuntime
         Public/Renderer.hpp
         Public/RingBuffer.hpp
         Public/Transform.h
-        Public/VeeCore.hpp
         Public/Vertex.hpp
         Public/Components/CameraComponent.hpp
         Public/Components/SpriteRendererComponent.hpp

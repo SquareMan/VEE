@@ -7,12 +7,10 @@
 #include "Keys.hpp"
 
 #include "WindowHandle.hpp"
-#include "VeeCore.hpp"
 
 #include "GLFW/glfw3.h"
 
 #include <expected>
-#include <memory>
 #include <set>
 #include <tuple>
 
