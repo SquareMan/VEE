@@ -14,6 +14,7 @@ target_sources(VeeCore
         BASE_DIRS Public/
         FILES
         Public/Assert.hpp
+        Public/Debugging.hpp
         Public/FNV-1a.hpp
         Public/Logging.hpp
         Public/Name.hpp
@@ -27,6 +28,7 @@ target_sources(VeeCore
 
         PRIVATE
         Private/Assert.cpp
+        Private/Debugging${VEE_PLATFORM_SUFFIX}.cpp
         Private/Logging.cpp
         Private/Name.cpp
 )

@@ -7,6 +7,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
+if (WIN32)
+    set(VEE_PLATFORM_SUFFIX _win32)
+elseif (LINUX)
+    set(VEE_PLATFORM_SUFFIX _linux)
+endif ()
+
 # download CPM.cmake
 file(
         DOWNLOAD
