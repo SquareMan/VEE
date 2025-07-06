@@ -26,10 +26,8 @@ target_sources(VeeRuntime
         BASE_DIRS Public/
         FILES
         Public/Application.hpp
-        Public/Assert.hpp
         Public/IApplication.hpp
         Public/Keys.hpp
-        Public/Logging.hpp
         Public/MakeSharedEnabler.hpp
         Public/Renderer.hpp
         Public/RingBuffer.hpp
@@ -68,12 +66,9 @@ target_sources(VeeRuntime
         FILE_SET private_headers TYPE HEADERS
         BASE_DIRS Private/
         FILES
-        Private/LogUtil.hpp
 
         PRIVATE
         Private/Application.cpp
-        Private/Assert.cpp
-        Private/Logging.cpp
         Private/Renderer.cpp
         Private/RingBuffer.cpp
         Private/stb_image_impl.cpp

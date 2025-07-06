@@ -4,9 +4,8 @@
 
 #include "Name.hpp"
 
-// FIXME: Move these to VeeCore
-#include "../../../Source/VeeRuntime/Public/Assert.hpp"
-#include "../../../Source/VeeRuntime/Public/Logging.hpp"
+#include "Logging.hpp"
+#include "Assert.hpp"
 
 #include <string>
 #include <unordered_map>
