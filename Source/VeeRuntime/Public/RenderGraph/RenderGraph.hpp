@@ -9,6 +9,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
 
 namespace vee {
@@ -51,6 +52,8 @@ protected:
     std::shared_ptr<ImageResource> framebuffer_;
     std::shared_ptr<Buffer> vertex_buffer_;
     std::shared_ptr<Buffer> index_buffer_;
+
+    vk::Semaphore buffer_semaphore_;
 };
 
 } // namespace vee::rdg

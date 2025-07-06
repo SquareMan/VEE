@@ -9,6 +9,7 @@ class RenderCtx;
 }
 
 namespace vee::rdg {
+class RenderGraph;
 class Sink {
 public:
     virtual ~Sink();
@@ -19,5 +20,11 @@ public:
      * @param ctx Engine global rendering context.
      */
     virtual void init(RenderCtx& ctx) {};
+
+    /**
+     * Called by the RenderGraph each frame before execution.
+     * @param ctx
+     */
+    virtual void prepare(const RenderGraph& ctx) {};
 };
 } // namespace vee::rdg

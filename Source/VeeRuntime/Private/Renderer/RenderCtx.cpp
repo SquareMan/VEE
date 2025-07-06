@@ -63,6 +63,7 @@ RenderCtx::RenderCtx(const platform::Window& window)
     vk::PhysicalDeviceVulkan12Features v12_features;
     v12_features.bufferDeviceAddress = true;
     v12_features.descriptorIndexing = true;
+    v12_features.timelineSemaphore = true;
 
     vkb::PhysicalDeviceSelector selector(instance, surface);
     vkb::PhysicalDevice vkb_gpu =

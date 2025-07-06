@@ -39,21 +39,15 @@ public:
     }
     std::shared_ptr<DebugBuffer>& target;
 
-    void init(RenderCtx& ctx) override {
-        auto [buf, alloc] =
-            ctx.allocator
-                .createBuffer({{}, DebugScreen::WIDTH * DebugScreen::HEIGHT * 4, vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive}, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
-                .value;
-        target = std::make_shared<DebugBuffer>();
-        new (&target->buf) Buffer(buf, alloc, ctx.allocator);
-        target->mem = ctx.allocator.mapMemory(alloc).value;
-        target->allocator = ctx.allocator;
-    }
+    void init(RenderCtx& ctx) override;
+    void prepare(const RenderGraph& ctx) override;
 
 protected:
     explicit CopyBufferSink(std::shared_ptr<DebugBuffer>& target)
         : Sink()
         , target(target) {}
+
+    std::array<std::shared_ptr<DebugBuffer>, 3> resource_;
 };
 
 class CopyDestSink : public Sink {
@@ -63,28 +57,16 @@ public:
     }
     std::shared_ptr<ImageResource>& target;
 
-    void init(RenderCtx& ctx) override {
-        resource = std::make_unique<Image>(
-            ctx.device,
-            ctx.allocator,
-            vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc,
-            vk::Extent3D(DebugScreen::WIDTH, DebugScreen::HEIGHT, 1),
-            vk::Format::eR8G8B8A8Srgb,
-            vk::ImageAspectFlagBits::eColor
-        );
-        target = std::make_shared<ImageResource>();
-        target->image = resource->image;
-        target->view = resource->view;
-        target->width = resource->width();
-        target->height = resource->height();
-    }
+    void init(RenderCtx& ctx) override;
+    void prepare(const RenderGraph& ctx) override;
+
 
 protected:
     explicit CopyDestSink(std::shared_ptr<ImageResource>& target)
         : Sink()
         , target(target) {}
 
-    std::unique_ptr<Image> resource;
+    std::array<std::unique_ptr<Image>, 3> resource_;
 };
 
 class ImageResource;

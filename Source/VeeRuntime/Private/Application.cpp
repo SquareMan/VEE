@@ -5,6 +5,7 @@
 #include "Application.hpp"
 
 #include "Renderer/RenderCtx.hpp"
+#include "tracy/Tracy.hpp"
 
 vee::Application::Application(platform::Window&& window)
     : window_(std::move(window))
@@ -13,6 +14,7 @@ vee::Application::Application(platform::Window&& window)
 void vee::Application::run() {
     engine_.init();
     while (!window_.should_close()) {
+        FrameMark;
         engine_.tick();
         renderer_.render();
 

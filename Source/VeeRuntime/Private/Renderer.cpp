@@ -31,13 +31,17 @@ Renderer::~Renderer() {
     render_ctx_.device.destroyCommandPool(render_ctx_.command_pool);
 }
 
+std::uint64_t Renderer::get_frame_number() const {
+    return frame_num_;
+}
+
 RenderCtx& Renderer::get_ctx() {
     return render_ctx_;
 }
 
 void Renderer::render() {
-    FrameMark;
     ZoneScoped;
+    frame_num_++;
 
     if (render_graph_) {
         render_graph_->execute(render_ctx_);

@@ -4,24 +4,71 @@
 
 #include "Engine/FrameImagePass.hpp"
 
+#include "IApplication.hpp"
+#include "Renderer.hpp"
 #include "Renderer/RenderCtx.hpp"
 #include "RenderGraph/DirectSource.hpp"
 #include "RenderGraph/ImageResource.hpp"
 
+#include <entt/locator/locator.hpp>
 #include <tracy/Tracy.hpp>
 
+
+namespace vee::rdg {
+
+void CopyBufferSink::init(RenderCtx& ctx) {
+    for (int i = 0; i < resource_.size(); i++) {
+        auto [buf, alloc] =
+            ctx.allocator
+                .createBuffer({{}, DebugScreen::WIDTH * DebugScreen::HEIGHT * 4, vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive}, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
+                .value;
+
+        void* mem = ctx.allocator.mapMemory(alloc).value;
+        resource_[i] = std::make_shared<DebugBuffer>(std::move(Buffer(buf, alloc, ctx.allocator)), ctx.allocator, mem);
+    }
+}
+void CopyBufferSink::prepare(const RenderGraph& ctx) {
+    const Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
+    const uint64_t idx = renderer.get_frame_number() % 3;
+
+    target = resource_[idx];
+}
+
+void CopyDestSink::init(RenderCtx& ctx) {
+    for (int i = 0; i < resource_.size(); i++) {
+        resource_[i] = std::make_unique<Image>(
+            ctx.device,
+            ctx.allocator,
+            vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc,
+            vk::Extent3D(DebugScreen::WIDTH, DebugScreen::HEIGHT, 1),
+            vk::Format::eR8G8B8A8Srgb,
+            vk::ImageAspectFlagBits::eColor
+        );
+    }
+    target = std::make_shared<ImageResource>();
+}
+
+void CopyDestSink::prepare(const RenderGraph& ctx) {
+    const Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
+    const uint64_t idx = renderer.get_frame_number() % 3;
+
+    target->image = resource_[idx]->image;
+    target->view = resource_[idx]->view;
+    target->width = resource_[idx]->width();
+    target->height = resource_[idx]->height();
+}
 
 vee::rdg::DebugBuffer::~DebugBuffer() {
     allocator.unmapMemory(buf.allocation);
 }
 
-vee::rdg::FrameImageRenderPass::FrameImageRenderPass() {
+FrameImageRenderPass::FrameImageRenderPass() {
     register_source("copy_source"_hash, DirectSource<ImageResource>::make(copy_source_));
     register_sink("copy_dest"_hash, CopyDestSink::make(copy_dest_));
     register_sink("copy_buffer"_hash, CopyBufferSink::make(copy_buffer_));
 }
 
-void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
+void FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
     ZoneScoped;
 
     {
@@ -120,3 +167,4 @@ void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {
         cmd.pipelineBarrier2(dependency_info);
     }
 }
+} // namespace vee::rdg

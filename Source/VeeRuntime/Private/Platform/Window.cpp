@@ -13,6 +13,9 @@
 #elif defined(__linux__)
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
+#include "tracy/Tracy.hpp"
+
+
 #include <GLFW/glfw3native.h>
 
 
@@ -49,6 +52,7 @@ Window::~Window() {
 }
 
 void Window::poll_events() {
+    ZoneScoped;
     glfwPollEvents();
 }
 

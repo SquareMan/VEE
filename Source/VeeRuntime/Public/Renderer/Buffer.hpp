@@ -11,7 +11,11 @@ namespace vee {
 
 class Buffer {
 public:
-    Buffer() = default;
+    Buffer();
+    Buffer(const Buffer&) = delete;
+    Buffer(Buffer&&);
+    Buffer& operator=(const Buffer&) = delete;
+    Buffer& operator=(Buffer&&);
     Buffer(vk::Buffer buffer, vma::Allocation allocation, vma::Allocator allocator)
         : buffer(buffer)
         , allocation(allocation)

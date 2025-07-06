@@ -20,6 +20,8 @@ public:
     explicit Renderer(const platform::Window& window);
     ~Renderer();
 
+    std::uint64_t get_frame_number() const;
+
     /**
      * Set the RenderGraph that will be executed every frame. A RenderGraph is always expected to
      * exist before beginning a frame.
@@ -31,6 +33,8 @@ public:
     void render();
 
 private:
+    std::size_t frame_num_ = 0;
+
     RenderCtx render_ctx_;
     std::unique_ptr<rdg::RenderGraph> render_graph_;
 };

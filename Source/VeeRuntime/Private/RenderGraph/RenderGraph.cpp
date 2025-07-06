@@ -14,7 +14,10 @@
 
 // TODO: Remove this after refactoring Tracy Image upload into this pass
 #include "Engine/FrameImagePass.hpp"
+#include "IApplication.hpp"
+#include "Renderer.hpp"
 
+#include <entt/locator/locator.hpp>
 #include <numbers>
 #include <ranges>
 #include <tracy/Tracy.hpp>
@@ -29,6 +32,12 @@ struct null_deleter {
 RenderGraph::RenderGraph(std::unordered_map<PassHandle, std::unique_ptr<Pass>>&& passes, std::vector<PassHandle>&& pass_order, RenderCtx& render_ctx)
     : passes_(std::move(passes))
     , pass_order_(std::move(pass_order)) {
+    {
+        const vk::SemaphoreTypeCreateInfo tci{vk::SemaphoreType::eTimeline, 0};
+        const vk::SemaphoreCreateInfo ci{{}, &tci};
+        buffer_semaphore_ = render_ctx.device.createSemaphore(ci).value;
+    }
+
     framebuffer_ = std::make_shared<ImageResource>();
 
     // FIXME: Ownership and/or reference strategy is weird here.
@@ -55,6 +64,30 @@ RenderGraph::RenderGraph(RenderGraph&& other) = default;
 RenderGraph::~RenderGraph() = default;
 void RenderGraph::execute(RenderCtx& render_ctx) const {
     ZoneScoped;
+    const Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
+    const uint64_t frame_num_ = renderer.get_frame_number();
+
+#if defined(TRACY_ENABLE) && !(TRACY_NO_FRAME_IMAGE)
+    // Let's upload the image now for the frame three frames ago.
+    // TODO: Jobify this, do it asynchronously.
+    const std::size_t frames_in_flight = render_ctx.swapchain.images.size();
+    if (frame_num_ > frames_in_flight) {
+        const std::size_t data_frame = frame_num_ - frames_in_flight;
+        {
+            ZoneScopedN("Wait for Frame Image");
+            const vk::SemaphoreWaitInfo wait_info = {{}, buffer_semaphore_, data_frame};
+            std::ignore = render_ctx.device.waitSemaphores(wait_info, UINT64_MAX);
+        }
+        {
+            ZoneScopedN("Upload Frame Image");
+            // FIXME: This also needs to be controlled from the Debug/FrameImagePass somehow
+            Sink* debug_sink = find_sink({"frame_image"_hash, "copy_buffer"_hash});
+            void* image_data = dynamic_cast<CopyBufferSink*>(debug_sink)->target->mem;
+            FrameImage(image_data, DebugScreen::WIDTH, DebugScreen::HEIGHT, -frames_in_flight, false);
+        }
+    }
+#endif
+
 
     CmdBuffer& command_buffer = render_ctx.command_buffers.get_next();
 
@@ -89,6 +122,13 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
     framebuffer_->view = swapchain.image_views[image_index];
     framebuffer_->width = swapchain.width;
     framebuffer_->height = swapchain.height;
+
+    for (auto& pass_handle : pass_order_) {
+        auto& pass = passes_.at(pass_handle);
+        for (const auto& sink : pass->iterate_sinks()) {
+            sink->prepare(*this);
+        }
+    }
 
 
     vk::CommandBuffer cmd = command_buffer.cmd;
@@ -141,11 +181,17 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
 
     {
         ZoneScopedN("Submit");
-        vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-        const vk::SubmitInfo submit_info(
-            command_buffer.acquire_semaphore, wait_stage, command_buffer.cmd, command_buffer.submit_semaphore
-        );
-        std::ignore = render_ctx.graphics_queue.submit(submit_info, command_buffer.fence);
+        const vk::SemaphoreSubmitInfo wait_info[] = {
+            {command_buffer.acquire_semaphore, {}, vk::PipelineStageFlagBits2::eAllGraphics, {}},
+            {buffer_semaphore_, frame_num_ > 3 ? frame_num_ - 3 : 0, vk::PipelineStageFlagBits2::eAllTransfer, {}},
+        };
+        const vk::SemaphoreSubmitInfo signal_info[] = {
+            {command_buffer.submit_semaphore, {}, vk::PipelineStageFlagBits2::eColorAttachmentOutput, {}},
+            {buffer_semaphore_, frame_num_, vk::PipelineStageFlagBits2::eTransfer, {}}
+        };
+        const vk::CommandBufferSubmitInfo cmd_info = {command_buffer.cmd};
+        const vk::SubmitInfo2 submit_info({}, wait_info, cmd_info, signal_info);
+        std::ignore = render_ctx.graphics_queue.submit2(submit_info, command_buffer.fence);
     }
 
 
@@ -165,19 +211,6 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
             VASSERT(false);
         }
     }
-#if defined(TRACY_ENABLE) && !(TRACY_NO_FRAME_IMAGE)
-    {
-        ZoneScopedN("Upload Frame Image");
-        // FIXME: Currently this prevents us from having multiple frames in flight.
-        // This needs to be done asynchronously so as not to block the render loop. Tracy  provides
-        // an offset parameter here for signaling how many frames behind the data is once it's ready
-        // FIXME: This also needs to be controlled from the Debug/FrameImagePass somehow
-        Sink* debug_sink = find_sink({"frame_image"_hash, "copy_buffer"_hash});
-        void* image_data = dynamic_cast<CopyBufferSink*>(debug_sink)->target->mem;
-        std::ignore = render_ctx.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
-        FrameImage(image_data, DebugScreen::WIDTH, DebugScreen::HEIGHT, 0, false);
-    }
-#endif
 }
 
 Sink* RenderGraph::find_sink(SinkRef ref) const {

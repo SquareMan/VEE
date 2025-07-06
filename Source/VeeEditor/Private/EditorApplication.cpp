@@ -4,6 +4,8 @@
 
 #include "EditorApplication.hpp"
 
+#include "tracy/Tracy.hpp"
+
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
@@ -55,6 +57,7 @@ vee::EditorApplication::EditorApplication(platform::Window&& window)
 void vee::EditorApplication::run() {
     engine_.init();
     while (!window_.should_close()) {
+        FrameMark;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -71,6 +74,7 @@ void vee::EditorApplication::run() {
     }
 
     engine_.shutdown();
+    std::ignore = renderer_.get_ctx().device.waitIdle();
 
     // TODO: This needs to be moved to the EditorRenderPass when the RenderGraph properly supports
     // resource initialization on a pass level.
