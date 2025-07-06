@@ -19,18 +19,18 @@ int main() {
 
     rdg::RenderGraphBuilder rg;
 
-    rg.add_pass<rdg::SceneRenderPass>("scene")
-        .link_sink({rdg::GLOBAL, "framebuffer"}, "render_target")
-        .link_sink({rdg::GLOBAL, "vertex_buffer"}, "vertex_buffer")
-        .link_sink({rdg::GLOBAL, "index_buffer"}, "index_buffer");
+    rg.add_pass<rdg::SceneRenderPass>("scene"_hash)
+        .link_sink({rdg::GLOBAL, "framebuffer"_hash}, "render_target"_hash)
+        .link_sink({rdg::GLOBAL, "vertex_buffer"_hash}, "vertex_buffer"_hash)
+        .link_sink({rdg::GLOBAL, "index_buffer"_hash}, "index_buffer"_hash);
 #ifdef VEE_WITH_EDITOR
-    rg.add_pass<rdg::EditorRenderPass>("editor").link_sink({"scene", "render_target"}, "render_target");
-    constexpr rdg::PassHandle frame_image_prev = "editor";
+    rg.add_pass<rdg::EditorRenderPass>("editor"_hash).link_sink({"scene"_hash, "render_target"_hash}, "render_target"_hash);
+    rdg::PassHandle frame_image_prev = "editor"_hash;
 #else
-    constexpr rdg::PassHandle frame_image_prev = "scene";
+    rdg::PassHandle frame_image_prev = "scene"_hash;
 #endif
 #if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
-    rg.add_pass<rdg::FrameImageRenderPass>("frame_image").link_sink({frame_image_prev, "render_target"}, "copy_source");
+    rg.add_pass<rdg::FrameImageRenderPass>("frame_image"_hash).link_sink({frame_image_prev, "render_target"_hash}, "copy_source"_hash);
 #endif
 
     auto window = platform::Window::create("Hello Triangle", 640, 640);

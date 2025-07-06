@@ -20,7 +20,7 @@ Pass& Pass::link_sink(SinkRef sink, SourceHandle source) {
 Source* Pass::find_source(SourceHandle handle) const {
     auto source_entry = sources_.find(handle);
     if (source_entry == sources_.end()) {
-        log_error("Source {} does not exist", handle.hash);
+        log_error("Source {} does not exist", handle.to_string());
         return nullptr;
     }
     return source_entry->second.get();
@@ -29,7 +29,7 @@ Source* Pass::find_source(SourceHandle handle) const {
 Sink* Pass::find_sink(SinkHandle handle) const {
     auto sink_entry = sinks_.find(handle);
     if (sink_entry == sinks_.end()) {
-        log_error("Sink {} does not exist", handle.hash);
+        log_error("Sink {} does not exist", handle.to_string());
         return nullptr;
     }
     return sink_entry->second.get();

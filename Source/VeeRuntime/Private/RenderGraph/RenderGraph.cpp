@@ -35,9 +35,9 @@ RenderGraph::RenderGraph(std::unordered_map<PassHandle, std::unique_ptr<Pass>>&&
     vertex_buffer_ = std::shared_ptr<Buffer>(&render_ctx.vertex_buffer, null_deleter());
     index_buffer_ = std::shared_ptr<Buffer>(&render_ctx.index_buffer, null_deleter());
 
-    global_sinks_.insert({"framebuffer", DirectSink<ImageResource>::make(framebuffer_)});
-    global_sinks_.insert({"vertex_buffer", DirectSink<Buffer>::make(vertex_buffer_)});
-    global_sinks_.insert({"index_buffer", DirectSink<Buffer>::make(index_buffer_)});
+    global_sinks_.insert({"framebuffer"_hash, DirectSink<ImageResource>::make(framebuffer_)});
+    global_sinks_.insert({"vertex_buffer"_hash, DirectSink<Buffer>::make(vertex_buffer_)});
+    global_sinks_.insert({"index_buffer"_hash, DirectSink<Buffer>::make(index_buffer_)});
 
     // TODO: Topological sort before this, validate topology, etc.
     for (auto& pass_handle : pass_order_) {
@@ -172,7 +172,7 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
         // This needs to be done asynchronously so as not to block the render loop. Tracy  provides
         // an offset parameter here for signaling how many frames behind the data is once it's ready
         // FIXME: This also needs to be controlled from the Debug/FrameImagePass somehow
-        Sink* debug_sink = find_sink({"frame_image", "copy_buffer"});
+        Sink* debug_sink = find_sink({"frame_image"_hash, "copy_buffer"_hash});
         void* image_data = dynamic_cast<CopyBufferSink*>(debug_sink)->target->mem;
         std::ignore = render_ctx.device.waitForFences(command_buffer.fence, true, UINT64_MAX);
         FrameImage(image_data, DebugScreen::WIDTH, DebugScreen::HEIGHT, 0, false);
@@ -184,7 +184,7 @@ Sink* RenderGraph::find_sink(SinkRef ref) const {
     if (ref.pass == GLOBAL) {
         auto sink_entry = global_sinks_.find(ref.sink);
         if (sink_entry == global_sinks_.end()) {
-            log_error("Global sink {} does not exist", ref.sink.hash);
+            log_error("Global sink {} does not exist", ref.sink.to_string());
             return nullptr;
         }
         return sink_entry->second.get();
@@ -192,7 +192,7 @@ Sink* RenderGraph::find_sink(SinkRef ref) const {
 
     auto pass_entry = passes_.find(ref.pass);
     if (pass_entry == passes_.end()) {
-        log_error("pass {} does not exist", ref.pass.hash);
+        log_error("pass {} does not exist", ref.pass.to_string());
         return nullptr;
     }
     return pass_entry->second->find_sink(ref.sink);

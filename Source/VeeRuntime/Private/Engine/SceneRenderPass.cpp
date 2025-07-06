@@ -24,10 +24,10 @@
 
 namespace vee::rdg {
 SceneRenderPass::SceneRenderPass() {
-    register_source("render_target", DirectSource<ImageResource>::make(render_target_));
-    register_source("vertex_buffer", DirectSource<Buffer>::make(vertex_buffer_));
-    register_source("index_buffer", DirectSource<Buffer>::make(index_buffer_));
-    register_sink("render_target", DirectSink<ImageResource>::make(render_target_));
+    register_source("render_target"_hash, DirectSource<ImageResource>::make(render_target_));
+    register_source("vertex_buffer"_hash, DirectSource<Buffer>::make(vertex_buffer_));
+    register_source("index_buffer"_hash, DirectSource<Buffer>::make(index_buffer_));
+    register_sink("render_target"_hash, DirectSink<ImageResource>::make(render_target_));
 }
 
 void SceneRenderPass::execute(vk::CommandBuffer cmd) {

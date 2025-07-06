@@ -16,9 +16,9 @@ vee::rdg::DebugBuffer::~DebugBuffer() {
 }
 
 vee::rdg::FrameImageRenderPass::FrameImageRenderPass() {
-    register_source("copy_source", DirectSource<ImageResource>::make(copy_source_));
-    register_sink("copy_dest", CopyDestSink::make(copy_dest_));
-    register_sink("copy_buffer", CopyBufferSink::make(copy_buffer_));
+    register_source("copy_source"_hash, DirectSource<ImageResource>::make(copy_source_));
+    register_sink("copy_dest"_hash, CopyDestSink::make(copy_dest_));
+    register_sink("copy_buffer"_hash, CopyBufferSink::make(copy_buffer_));
 }
 
 void vee::rdg::FrameImageRenderPass::execute(vk::CommandBuffer cmd) {

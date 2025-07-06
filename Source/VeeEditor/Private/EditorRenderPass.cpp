@@ -14,8 +14,8 @@
 #include <tracy/Tracy.hpp>
 
 vee::rdg::EditorRenderPass::EditorRenderPass() {
-    register_source("render_target", DirectSource<ImageResource>::make(render_target_));
-    register_sink("render_target", DirectSink<ImageResource>::make(render_target_));
+    register_source("render_target"_hash, DirectSource<ImageResource>::make(render_target_));
+    register_sink("render_target"_hash, DirectSink<ImageResource>::make(render_target_));
 }
 
 void vee::rdg::EditorRenderPass::execute(vk::CommandBuffer cmd) {
