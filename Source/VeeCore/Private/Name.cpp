@@ -11,7 +11,13 @@
 #include <unordered_map>
 
 
-static std::unordered_map<size_t, std::string> g_name_storage;
+/**
+ * We need to lazily construct the global name storage like this so that we can safely allow for static Names
+ */
+static std::unordered_map<size_t, std::string>& get_name_storage(){
+    static std::unordered_map<size_t, std::string> singleton;
+    return singleton;
+}
 
 namespace vee {
 
@@ -19,10 +25,12 @@ Name::Name()
     : Name(""_hash) {}
 Name::Name(StrHash str_hash)
     : hash(str_hash.hash) {
-    const auto entry = g_name_storage.find(hash);
-    if (entry == g_name_storage.end()) {
+
+    auto& storage = get_name_storage();
+    const auto entry = storage.find(hash);
+    if (entry == storage.end()) {
         log_trace("Storing {} in global Name table", str_hash.str);
-        g_name_storage[hash] = str_hash.str;
+        storage[hash] = str_hash.str;
         return;
     }
     VASSERT(
@@ -34,8 +42,9 @@ Name::Name(StrHash str_hash)
     );
 }
 std::string_view Name::to_string() const {
-    const auto entry = g_name_storage.find(hash);
-    if (entry != g_name_storage.end()) {
+    const auto& storage = get_name_storage();
+    const auto entry = storage.find(hash);
+    if (entry != storage.end()) {
         return entry->second;
     }
 

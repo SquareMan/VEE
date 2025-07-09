@@ -24,7 +24,7 @@ class Sink;
 /**
  * PassHandle for referring to Sinks/Sources owned by the RenderGraph itself.
  */
-static const StrHash GLOBAL = ""_hash;
+extern const Name GLOBAL;
 
 /**
  * A compiled/built RenderGraph
