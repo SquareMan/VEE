@@ -52,6 +52,7 @@ set(TRACY_ENABLE OFF)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(TRACY_ENABLE ON)
 endif ()
+set(TRACY_FIBERS ON)
 CPMAddPackage("gh:wolfpld/tracy@0.11.1")
 
 if (stb_ADDED)

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.28.0)
 
 add_library(VeeRuntime)
+enable_language(ASM)
 # I don't know why this isn't brought in from linking to the library
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/VulkanMemoryAllocator/include)
 target_link_libraries(VeeRuntime
@@ -26,6 +27,7 @@ target_sources(VeeRuntime
         BASE_DIRS Public/
         FILES
         Public/Application.hpp
+        Public/Fibers.hpp
         Public/IApplication.hpp
         Public/Keys.hpp
         Public/MakeSharedEnabler.hpp
@@ -69,6 +71,8 @@ target_sources(VeeRuntime
 
         PRIVATE
         Private/Application.cpp
+        Private/Fibers${VEE_PLATFORM_SUFFIX}_x64.s
+        Private/Fibers${VEE_PLATFORM_SUFFIX}.cpp
         Private/Renderer.cpp
         Private/RingBuffer.cpp
         Private/stb_image_impl.cpp
@@ -98,6 +102,7 @@ target_sources(VeeRuntime
         Private/Renderer/Shader.cpp
         Private/Renderer/VkUtil.cpp
 )
+set_property(SOURCE Private/Fibers_win32_x64.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp" "-DASSEMBLY")
 
 target_compile_definitions(VeeRuntime PUBLIC
         VULKAN_HPP_NO_EXCEPTIONS

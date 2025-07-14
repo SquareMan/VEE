@@ -6,6 +6,9 @@
 #include "Application.hpp"
 #endif
 
+#include "Fibers.hpp"
+
+
 #include <Engine/SceneRenderPass.hpp>
 #include <RenderGraph/RenderGraph.hpp>
 #include <RenderGraph/RenderGraphBuilder.hpp>
@@ -14,8 +17,40 @@
 #include <Engine/FrameImagePass.hpp>
 #endif
 
+#include <tracy/Tracy.hpp>
+
+static vee::Fiber fmain;
+static vee::Fiber f0;
+static vee::Fiber f1;
+
+void fiber0_main() {
+    ZoneScoped;
+
+    vee::log_trace("Step 1");
+    vee::switch_to_fiber(f1);
+    vee::log_trace("Step 3");
+    vee::switch_to_fiber(fmain);
+}
+
+void fiber1_main() {
+    ZoneScoped;
+    vee::log_trace("Step 2");
+    vee::switch_to_fiber(f0);
+}
+
 int main() {
     using namespace vee;
+    FrameMark;
+
+    f0 = create_fiber(fiber0_main, "fiber0"_hash);
+    f1 = create_fiber(fiber1_main, "fiber1"_hash);
+
+    convert_thread_to_fiber(fmain);
+    switch_to_fiber(f0);
+    destroy_fiber(fmain);
+    destroy_fiber(f0);
+    destroy_fiber(f1);
+
 
     rdg::RenderGraphBuilder rg;
 
