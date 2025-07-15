@@ -26,14 +26,24 @@
       "name": "Debug-Clang",
       "inherits": ["Clang"],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TRACY_ENABLE": "OFF"
       }
     },
     {
-      "name": "Release-Clang",
+      "name": "Development-Clang",
       "inherits": ["Clang"],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TRACY_ENABLE": "ON"
+      }
+    },
+    {
+      "name": "Shipping-Clang",
+      "inherits": ["Clang"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TRACY_ENABLE": "OFF"
       }
     }
   ],
@@ -48,8 +58,12 @@
       "configurePreset": "Debug-Clang"
     },
     {
+      "name": "Development",
+      "configurePreset": "Development-Clang"
+    },
+    {
       "name": "Release",
-      "configurePreset": "Release-Clang"
+      "configurePreset": "Shipping-Clang"
     }
   ]
 }

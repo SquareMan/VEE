@@ -20,11 +20,19 @@ cmake --build --preset=Debug
 cd build/build-Debug-Clang/Source/HelloTriangle
 ./HelloTriangle
 ```
-* Release Build
+* Development Build
+```
+cmake --preset=Development-Clang
+cmake --build --preset=Development
+cd build/biuld-Development-Clang/Source/HelloTriangle
+./HelloTriangle
+```
+* Shipping Build
 ```
 cmake --preset=Release-Clang
 cmake --build --preset=Release
 cd build/build-Release-Clang/Source/HelloTriangle 
+./HelloTriangle
 ```
 * *Note*: Currently only debug builds will contain the Editor. This will become more robust in the future.
 

@@ -48,10 +48,6 @@ CPMAddPackage("gh:skypjack/entt@3.14.0")
 CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
 CPMAddPackage("gh:nothings/stb#f056911")
 
-set(TRACY_ENABLE OFF)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(TRACY_ENABLE ON)
-endif ()
 set(TRACY_FIBERS ON)
 CPMAddPackage("gh:wolfpld/tracy@0.12.2")
 
