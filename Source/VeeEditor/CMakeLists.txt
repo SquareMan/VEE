@@ -22,5 +22,13 @@ target_sources(VeeEditor
         Private/EditorRenderPass.cpp
 )
 target_include_directories(VeeEditor PUBLIC ${glfw_SOURCE_DIR}/include)
-target_link_libraries(VeeEditor VeeRuntime imgui glm Tracy::TracyClient)
+target_link_libraries(VeeEditor
+        PUBLIC
+        VeeRuntime
+
+        PRIVATE
+        imgui
+        glm
+        Tracy::TracyClient
+)
 target_include_directories(VeeEditor PUBLIC Public/ PRIVATE Private/)
