@@ -8,18 +8,25 @@ Vulkan Experimental Engine
 
 
 #### System Dependencies
+* clang - other compilers may work, but are not supported out of the box.
 * cmake
 * Vulkan SDK
 
 #### Build Steps
+* Debug Build
 ```
-mkdir build
-cmake -B build -S . 
-cmake --build build
-cd build/Source/HelloTriangle
+cmake --preset=Debug-Clang
+cmake --build --preset=Debug
+cd build/build-Debug-Clang/Source/HelloTriangle
 ./HelloTriangle
 ```
-* Debug builds (`-DCMAKE_BUILD_TYPE=Debug`) will contain the Editor and Release builds (`-DCMAKE_BUILD_TYPE=Release`) will not. This will become more robust in the future.
+* Release Build
+```
+cmake --preset=Release-Clang
+cmake --build --preset=Release
+cd build/build-Release-Clang/Source/HelloTriangle 
+```
+* *Note*: Currently only debug builds will contain the Editor. This will become more robust in the future.
 
 ### Profiling
 

@@ -4,8 +4,10 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 
+CmakeUserPresets.json
+
 #Build directory
-out/
+build/
 
 .vs/
 .vscode/

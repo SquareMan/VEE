@@ -1,0 +1,55 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 31,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "Clang",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "environment": {},
+      "binaryDir": "build/build-${presetName}",
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "Clang"
+        }
+      }
+    },
+    {
+      "name": "Debug-Clang",
+      "inherits": ["Clang"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Release-Clang",
+      "inherits": ["Clang"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "workflowPresets": [],
+  "include": [],
+  "testPresets": [],
+  "packagePresets": [],
+  "vendor": {},
+  "buildPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "Debug-Clang"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release-Clang"
+    }
+  ]
+}
