@@ -27,6 +27,9 @@ target_sources(VeeRuntime
         BASE_DIRS Public/
         FILES
         Public/Application.hpp
+        Public/FiberContext.h
+        Public/FiberContext_linux_x64.h
+        Public/FiberContext_win32_x64.h
         Public/Fibers.hpp
         Public/IApplication.hpp
         Public/Keys.hpp
@@ -72,7 +75,7 @@ target_sources(VeeRuntime
         PRIVATE
         Private/Application.cpp
         Private/Fibers${VEE_PLATFORM_SUFFIX}_x64.s
-        Private/Fibers${VEE_PLATFORM_SUFFIX}.cpp
+        Private/Fibers.cpp
         Private/Renderer.cpp
         Private/RingBuffer.cpp
         Private/stb_image_impl.cpp

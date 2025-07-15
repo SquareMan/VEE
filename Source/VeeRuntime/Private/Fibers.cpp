@@ -26,7 +26,7 @@ void switch_to_fiber(Fiber& destination) {
     TracyFiberLeave;
 }
 
-Fiber create_fiber(void* entry, Name name) {
+Fiber create_fiber(void (*entry)(), Name name) {
     std::size_t size = 512 * 1024;
     void* stack = malloc(size);
 
