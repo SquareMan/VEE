@@ -18,7 +18,6 @@ target_sources(VeeCore
         Public/FNV-1a.hpp
         Public/Logging.hpp
         Public/Name.hpp
-        Public/VeeCore.hpp
 
         PRIVATE
         FILE_SET private_headers TYPE HEADERS

@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <VeeCore.hpp>
+#include <Debugging.hpp>
 
 #include <format>
 #include <source_location>

@@ -12,9 +12,6 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-//
-// Created by Square on 7/5/2025.
-
 #pragma once
 
 
@@ -25,3 +22,29 @@
  * @return True when game is being debugged.
  */
 bool is_debugger_attached();
+
+#ifdef NDEBUG
+
+/**
+ * Set a programmatic breakpoint. Breaks into the debugger if one is attached.
+ * @note These will be removed in non-debug builds
+ */
+#define VEE_DEBUGBREAK()
+
+#else
+
+#if defined(_MSC_VER)
+#define VEE_DEBUGBREAK()                                                                           \
+    if (is_debugger_attached()) {                                                                  \
+        __debugbreak();                                                                            \
+    } else {                                                                                       \
+    }
+#elif defined(__clang__)
+#define VEE_DEBUGBREAK()                                                                           \
+    if (is_debugger_attached()) {                                                                  \
+        __builtin_debugtrap();                                                                     \
+    } else {                                                                                       \
+    }
+#endif
+
+#endif

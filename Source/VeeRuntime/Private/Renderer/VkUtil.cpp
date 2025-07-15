@@ -18,7 +18,7 @@
 
 #include "Logging.hpp"
 
-#include <VeeCore.hpp>
+#include <Debugging.hpp>
 
 #include <algorithm>
 #include <iostream>
