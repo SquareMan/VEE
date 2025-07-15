@@ -39,12 +39,12 @@ set(TEXTURES
         cool.png
         cool2.png
 )
-foreach(TEXTURE IN LISTS TEXTURES)
+foreach (TEXTURE IN LISTS TEXTURES)
     add_custom_command(
             OUTPUT ${TEXTURE_BINARY_PATH}/${TEXTURE}
             COMMAND ${CMAKE_COMMAND} -E copy
-                ${TEXTURE_SOURCE_PATH}/${TEXTURE}
-                ${TEXTURE_BINARY_PATH}/${TEXTURE}
+            ${TEXTURE_SOURCE_PATH}/${TEXTURE}
+            ${TEXTURE_BINARY_PATH}/${TEXTURE}
             DEPENDS ${TEXTURE_SOURCE_PATH}/${TEXTURE}
     )
     list(APPEND OUT_TEXTURES ${TEXTURE_BINARY_PATH}/${TEXTURE})

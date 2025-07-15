@@ -1,6 +1,17 @@
+//    Copyright 2025 Steven Casper
 //
-// Created by Square on 1/19/2025.
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
 //
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+
 
 #pragma once
 
@@ -48,9 +59,7 @@ struct DefaultHandler {
     constexpr static auto FilterLevel = Level::VEE_ASSERT_FILTER_LEVEL;
     constexpr static auto DefaultLevel = Level::Debug;
     template <typename... FmtArgs>
-    constexpr static void Handle(
-        const char* expr_str, const std::source_location& loc, std::format_string<FmtArgs...> fmt, FmtArgs&&... args
-    ) {
+    constexpr static void Handle(const char* expr_str, const std::source_location& loc, std::format_string<FmtArgs...> fmt, FmtArgs&&... args) {
         detail::_log_assert(expr_str, loc, std::format<FmtArgs...>(fmt, std::forward<FmtArgs>(args)...));
     }
 };
@@ -104,5 +113,5 @@ void assert_impl(Expr expr, const char* expression_str, const std::source_locati
         },                                                                                         \
         #Expr,                                                                                     \
         std::source_location::current(),                                                           \
-        ##__VA_ARGS__                                                                                \
+        ##__VA_ARGS__                                                                              \
     )
