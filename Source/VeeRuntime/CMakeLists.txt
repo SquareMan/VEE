@@ -102,7 +102,7 @@ target_sources(VeeRuntime
         Private/Renderer/Shader.cpp
         Private/Renderer/VkUtil.cpp
 )
-set_property(SOURCE Private/Fibers_win32_x64.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp" "-DASSEMBLY")
+set_property(SOURCE Private/Fibers${VEE_PLATFORM_SUFFIX}_x64.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp" "-DASSEMBLY")
 
 target_compile_definitions(VeeRuntime PUBLIC
         VULKAN_HPP_NO_EXCEPTIONS

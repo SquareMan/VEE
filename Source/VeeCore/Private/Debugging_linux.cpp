@@ -16,7 +16,7 @@ bool is_debugger_attached() {
 
     for (std::string line; std::getline(file, line);) {
         if (const std::size_t split_point = line.find('\t'); split_point != std::string::npos && line.starts_with("TracerPid:")) {
-            const int pid = std::stoi(line.data + split_point + 1);
+            const int pid = std::stoi(line.data() + split_point + 1);
             return pid > 0;
         }
     }

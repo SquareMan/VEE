@@ -23,7 +23,7 @@
 #include <tracy/Tracy.hpp>
 
 namespace vee::rdg {
-static const Name GLOBAL = ""_hash;
+const Name GLOBAL = ""_hash;
 
 struct null_deleter {
     template <typename T>

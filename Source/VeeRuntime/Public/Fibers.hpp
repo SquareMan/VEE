@@ -43,7 +43,7 @@ void switch_to_fiber(Fiber& destination);
  * @param entry Pointer to the fiber's entry point to begin execution.
  * @param name A name to associate with the fiber. Used by the profiler.
  */
-Fiber create_fiber(void(*entry), Name name);
+Fiber create_fiber(void(*entry)(), Name name);
 /**
  * Destroy a Fiber. The fiber must not be currently executing.
  */
