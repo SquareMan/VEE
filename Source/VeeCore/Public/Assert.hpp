@@ -40,7 +40,8 @@ template <typename T, typename... FmtArgs>
 concept IsHandler = requires(const char* c, const std::source_location& loc, std::format_string<FmtArgs...> fmt, FmtArgs&&... args) {
     { T::FilterLevel };
     { T::DefaultLevel };
-    { T::Handle(c, loc, fmt, std::forward<FmtArgs>(args)...) };
+    { T::PreHandle(c, loc, fmt, std::forward<FmtArgs>(args)...) };
+    { T::Handle() };
 };
 
 #ifndef VEE_ASSERT_FILTER_LEVEL
@@ -59,59 +60,36 @@ struct DefaultHandler {
     constexpr static auto FilterLevel = Level::VEE_ASSERT_FILTER_LEVEL;
     constexpr static auto DefaultLevel = Level::Debug;
     template <typename... FmtArgs>
-    constexpr static void Handle(const char* expr_str, const std::source_location& loc, std::format_string<FmtArgs...> fmt, FmtArgs&&... args) {
-        detail::_log_assert(expr_str, loc, std::format<FmtArgs...>(fmt, std::forward<FmtArgs>(args)...));
+    constexpr static void PreHandle(const char* c, const std::source_location& loc, std::format_string<FmtArgs...> fmt = "", FmtArgs&&... args) {
+        detail::_log_assert(c, loc, std::format(fmt, std::forward<FmtArgs>(args)...));
+    }
+    constexpr static void Handle() {
+        std::abort();
     }
 };
 
 namespace detail {
-template <std::predicate<> Expr, IsHandler Handler, Level level, typename... Args>
-void assert_impl(
-    Expr expr, const char* expr_str, const std::source_location& loc, Handler, std::integral_constant<Level, level>, const std::format_string<Args...>& fmt = "", Args&&... args
-) {
+template <IsHandler Handler, Level level, std::predicate<> Expr>
+void assert_impl(Expr expr) {
     static_assert(level > Level::Off, "An assert should not be off by default.");
     if constexpr (Handler::FilterLevel >= level) {
         if (!expr()) {
-            Handler::Handle(expr_str, loc, fmt, std::forward<Args>(args)...);
-            std::abort();
+            Handler::Handle();
         }
     }
-}
-
-template <std::predicate<> Expr, Level level, typename... Args>
-void assert_impl(
-    Expr expr, const char* expr_str, const std::source_location& loc, std::integral_constant<Level, level> l, const std::format_string<Args...>& fmt = "", Args&&... args
-) {
-    assert_impl<Expr, DefaultHandler, level, Args...>(expr, expr_str, loc, DefaultHandler{}, l, fmt, std::forward<Args>(args)...);
-}
-
-template <std::predicate<> Expr, IsHandler Handler, typename... Args>
-void assert_impl(Expr expr, const char* expr_str, const std::source_location& loc, Handler handler, const std::format_string<Args...>& fmt = "", Args&&... args) {
-    assert_impl<Expr, Handler, Handler::DefaultLevel, Args...>(
-        expr, expr_str, loc, handler, std::integral_constant<Level, Handler::DefaultLevel>{}, fmt, std::forward<Args>(args)...
-    );
-}
-
-template <std::predicate<> Expr, typename... Args>
-void assert_impl(Expr expr, const char* expression_str, const std::source_location& loc, const std::format_string<Args...>& fmt = "", Args&&... args) {
-    assert_impl<Expr, DefaultHandler, Level::Debug, Args...>(
-        expr, expression_str, loc, DefaultHandler{}, std::integral_constant<Level, DefaultHandler::DefaultLevel>{}, fmt, std::forward<Args>(args)...
-    );
 }
 } // namespace detail
 }; // namespace vee::assert
 
 
-#define VASSERT(Expr, ...)                                                                         \
-    ::vee::assert::detail::assert_impl(                                                            \
-        [&] {                                                                                      \
-            if (!(Expr)) {                                                                         \
-                VEE_DEBUGBREAK();                                                                  \
-                return false;                                                                      \
-            }                                                                                      \
-            return true;                                                                           \
-        },                                                                                         \
-        #Expr,                                                                                     \
-        std::source_location::current(),                                                           \
-        ##__VA_ARGS__                                                                              \
-    )
+#define VASSERT(Expr, ...) VASSERT_WITH_HANDLER(::vee::assert::DefaultHandler, Expr, __VA_ARGS__)
+
+#define VASSERT_WITH_HANDLER(Handler, Expr, ...)                                                   \
+    ::vee::assert::detail::assert_impl<Handler, Handler::DefaultLevel>([&] {                       \
+        if (!(Expr)) {                                                                             \
+            Handler::PreHandle(#Expr, std::source_location::current() __VA_OPT__(, ) __VA_ARGS__); \
+            VEE_DEBUGBREAK();                                                                      \
+            return false;                                                                          \
+        }                                                                                          \
+        return true;                                                                               \
+    })
