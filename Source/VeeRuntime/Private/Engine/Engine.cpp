@@ -14,10 +14,12 @@
 
 
 #include "Engine/Engine.hpp"
+
 #include "Components/CameraComponent.hpp"
 #include "Components/SpriteRendererComponent.hpp"
 #include "Engine/Material.hpp"
 #include "Engine/Texture.hpp"
+#include "JobManager.hpp"
 #include "Transform.h"
 
 #include <GLFW/glfw3.h>
@@ -26,6 +28,8 @@
 namespace vee {
 
 void Engine::init() {
+    // JobManager::init();
+
     // TEMP: should be in game code
     World& world = get_world();
 
@@ -57,7 +61,9 @@ void Engine::init() {
     }
 }
 
-void Engine::shutdown() {}
+void Engine::shutdown() {
+    JobManager::shutdown();
+}
 
 
 void Engine::tick() {

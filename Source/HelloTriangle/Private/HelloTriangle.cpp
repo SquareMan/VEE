@@ -30,40 +30,30 @@
 #include <Engine/FrameImagePass.hpp>
 #endif
 
+#include "JobManager.hpp"
+
+
 #include <tracy/Tracy.hpp>
 
-static vee::Fiber fmain;
-static vee::Fiber f0;
-static vee::Fiber f1;
-
+std::atomic<uint32_t> job_counter = 0;
 void fiber0_main() {
     ZoneScoped;
 
-    vee::log_trace("Step 1");
-    vee::switch_to_fiber(f1);
-    vee::log_trace("Step 3");
-    vee::switch_to_fiber(fmain);
+    vee::log_trace("Step 1 on thread {}", std::this_thread::get_id());
+    vee::JobManager::yield();
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    vee::log_trace("Step 3 on thread {}", std::this_thread::get_id());
 }
 
 void fiber1_main() {
     ZoneScoped;
-    vee::log_trace("Step 2");
-    vee::switch_to_fiber(f0);
+    vee::JobManager::wait_for_counter(&job_counter);
+    vee::log_trace("Step 2 on thread {}", std::this_thread::get_id());
 }
 
 int main() {
     using namespace vee;
     FrameMark;
-
-    f0 = create_fiber(fiber0_main, "fiber0"_hash);
-    f1 = create_fiber(fiber1_main, "fiber1"_hash);
-
-    convert_thread_to_fiber(fmain);
-    switch_to_fiber(f0);
-    destroy_fiber(fmain);
-    destroy_fiber(f0);
-    destroy_fiber(f1);
-
 
     rdg::RenderGraphBuilder rg;
 
@@ -91,6 +81,13 @@ int main() {
 #else
     entt::locator<IApplication>::reset(new Application(std::move(w)));
 #endif
+
+    // FIXME: Init this in Engine init code
+    JobManager::init();
+
+    JobManager::get().queue_job({"job0"_hash, fiber0_main, &job_counter});
+    JobManager::get().queue_job({"job1"_hash, fiber1_main, nullptr});
+
 
     auto& renderer = entt::locator<IApplication>::value().get_renderer();
     auto graph = std::make_unique<rdg::RenderGraph>(std::move(rg.build(renderer.get_ctx())));

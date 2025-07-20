@@ -55,8 +55,11 @@
 
     # Restore stack pointer
     mov VFIBER_RSP_OFFSET(%rdx), %rsp
+
+    # Load fiber argument
+    mov VFIBER_ARG_OFFSET(%rdx), %rcx
     
     # Restore instruction pointer
-    mov VFIBER_RIP_OFFSET(%rdx), %rcx
-    jmp *%rcx
+    mov VFIBER_RIP_OFFSET(%rdx), %rdx
+    jmp *%rdx
     

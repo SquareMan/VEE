@@ -38,12 +38,13 @@
 #define VFIBER_XMM14_OFFSET 0x90
 #define VFIBER_XMM15_OFFSET 0x98
 
+#define VFIBER_ARG_OFFSET 0xa0
+
 
 #ifndef ASSEMBLY
 #include <cstddef>
 #include <cstdint>
 
-// TODO: Implement other platforms
 namespace vee {
 struct FiberContext {
     std::uintptr_t rip;
@@ -68,6 +69,8 @@ struct FiberContext {
     std::uintptr_t xmm13;
     std::uintptr_t xmm14;
     std::uintptr_t xmm15;
+
+    std::uintptr_t arg;
 };
 static_assert(offsetof(FiberContext, rip) == VFIBER_RIP_OFFSET);
 static_assert(offsetof(FiberContext, rsp) == VFIBER_RSP_OFFSET);
@@ -89,6 +92,7 @@ static_assert(offsetof(FiberContext, xmm12) == VFIBER_XMM12_OFFSET);
 static_assert(offsetof(FiberContext, xmm13) == VFIBER_XMM13_OFFSET);
 static_assert(offsetof(FiberContext, xmm14) == VFIBER_XMM14_OFFSET);
 static_assert(offsetof(FiberContext, xmm15) == VFIBER_XMM15_OFFSET);
+static_assert(offsetof(FiberContext, arg) == VFIBER_ARG_OFFSET);
 } // namespace vee
 
 
@@ -113,5 +117,6 @@ static_assert(offsetof(FiberContext, xmm15) == VFIBER_XMM15_OFFSET);
 #undef VFIBER_XMM13_OFFSET
 #undef VFIBER_XMM14_OFFSET
 #undef VFIBER_XMM15_OFFSET
+#undef VFIBER_ARG_OFFSET
 
 #endif

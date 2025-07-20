@@ -25,6 +25,8 @@
 #define VFIBER_R14_OFFSET 0x30
 #define VFIBER_R15_OFFSET 0x38
 
+#define VFIBER_ARG_OFFSET 0x40
+
 
 #ifndef ASSEMBLY
 #include <cstddef>
@@ -41,6 +43,8 @@ struct FiberContext {
     std::uintptr_t r13;
     std::uintptr_t r14;
     std::uintptr_t r15;
+
+    std::uintptr_t arg;
 };
 static_assert(offsetof(FiberContext, rip) == VFIBER_RIP_OFFSET);
 static_assert(offsetof(FiberContext, rsp) == VFIBER_RSP_OFFSET);
@@ -50,6 +54,7 @@ static_assert(offsetof(FiberContext, r12) == VFIBER_R12_OFFSET);
 static_assert(offsetof(FiberContext, r13) == VFIBER_R13_OFFSET);
 static_assert(offsetof(FiberContext, r14) == VFIBER_R14_OFFSET);
 static_assert(offsetof(FiberContext, r15) == VFIBER_R15_OFFSET);
+static_assert(offsetof(FiberContext, arg) == VFIBER_ARG_OFFSET);
 } // namespace vee
 
 
@@ -62,5 +67,6 @@ static_assert(offsetof(FiberContext, r15) == VFIBER_R15_OFFSET);
 #undef VFIBER_R13_OFFSET
 #undef VFIBER_R14_OFFSET
 #undef VFIBER_R15_OFFSET
+#undef VFIBER_ARG_OFFSET
 
 #endif

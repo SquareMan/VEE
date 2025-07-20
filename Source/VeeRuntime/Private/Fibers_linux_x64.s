@@ -31,7 +31,10 @@ _ZN3vee20fiber_context_switchEPNS_12FiberContextEPKS0_:
 
     # Restore stack pointer
     mov VFIBER_RSP_OFFSET(%rsi), %rsp
-    
+
+    # Load fiber argument
+    mov VFIBER_ARG_OFFSET(%rsi), %rdi
+
     # Restore instruction pointer
     mov VFIBER_RIP_OFFSET(%rsi), %rcx
     jmp *%rcx
