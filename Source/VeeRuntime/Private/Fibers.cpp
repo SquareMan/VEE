@@ -17,6 +17,8 @@
 #include "Assert.hpp"
 #include "Logging.hpp"
 
+#include <string>
+#include <thread>
 #include <tracy/Tracy.hpp>
 
 constexpr static std::size_t FIBER_STACK_SIZE = 1024 * 512;
@@ -54,11 +56,11 @@ Fiber* current_fiber() {
 }
 
 void switch_to_fiber(Fiber& destination) {
+    TracyFiberLeave;
     TracyFiberEnter(destination.name.to_string().data());
     Fiber* from = current_fiber();
     t_current_fiber = &destination;
     fiber_context_switch(&from->context, &destination.context);
-    TracyFiberLeave;
 }
 
 Fiber create_fiber(void (*entry)(), Name name) {
@@ -79,13 +81,14 @@ void convert_thread_to_fiber(Fiber& fiber) {
     VASSERT(current_fiber() == nullptr, "Thread has already been converted to a fiber");
     VASSERT(fiber.stack == nullptr, "A thread cannot be converted to an existing fiber");
     t_current_fiber = &fiber;
-    // TracyFiberEnter(fiber.name.to_string().data());
+    fiber.name = StrHash(std::to_string(std::this_thread::get_id()._Get_underlying_id()).c_str());
+    TracyFiberEnter(fiber.name.to_string().data());
 }
 
 void convert_fiber_to_thread() {
     VASSERT(current_fiber() != nullptr);
     // Note: this is owned externally
     t_current_fiber = nullptr;
-    // TracyFiberLeave;
+    TracyFiberLeave;
 }
 } // namespace vee

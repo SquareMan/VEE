@@ -51,6 +51,13 @@ void fiber1_main() {
     vee::log_trace("Step 2 on thread {}", std::this_thread::get_id());
 }
 
+void big_printer() {
+    ZoneScoped;
+    for (int i = 0; i < 256; i++) {
+        vee::log_trace("Step {} on thread {}", i, std::this_thread::get_id());
+    }
+}
+
 int main() {
     using namespace vee;
     FrameMark;
@@ -85,8 +92,10 @@ int main() {
     // FIXME: Init this in Engine init code
     JobManager::init();
 
-    JobManager::get().queue_job({"job0"_hash, fiber0_main, &job_counter});
-    JobManager::get().queue_job({"job1"_hash, fiber1_main, nullptr});
+    for (int i = 0; i < JobManager::get().num_workers(); i++) {
+        Name job_name = StrHash(("job"+std::to_string(i)).c_str());
+        JobManager::get().queue_job({job_name, big_printer});
+    }
 
 
     auto& renderer = entt::locator<IApplication>::value().get_renderer();

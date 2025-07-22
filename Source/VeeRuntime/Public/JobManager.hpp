@@ -48,14 +48,17 @@ public:
 
     static JobManager& get();
     void queue_job(JobDecl decl);
+    std::size_t num_workers() const;
     static void yield();
     static void terminate();
     static void wait_for_counter(std::atomic<uint32_t>* counter);
+
 private:
     inline static JobManager* instance = nullptr;
     JobManager();
 
     void worker_main();
+
 public:
     ~JobManager();
     JobManager(JobManager const&) = delete;
@@ -76,6 +79,12 @@ private:
     thread_local inline static Fiber worker_fiber_;
     thread_local inline static std::optional<Job> current_job_;
 
+    struct PostSchedulerAction {
+        enum class Type { Yield, Suspend, Terminate };
 
+        Type type;
+        std::atomic<uint32_t>* counter;
+    };
+    thread_local inline static std::optional<PostSchedulerAction> post_scheduler_action;
 };
 } // namespace vee

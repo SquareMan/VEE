@@ -34,6 +34,7 @@ void job_main(void (*job)()) {
 }
 
 void JobManager::worker_main() {
+    ZoneScoped;
     tracy::SetThreadName("Worker");
     convert_thread_to_fiber(worker_fiber_);
 
@@ -69,9 +70,23 @@ void JobManager::worker_main() {
         }
 
         switch_to_fiber(current_job_->fiber);
-        if (current_job_) {
-            std::lock_guard lock(queue_mutex_);
-            fibers_.push_back(*current_job_);
+        if (post_scheduler_action) {
+            switch (post_scheduler_action->type) {
+            case PostSchedulerAction::Type::Yield: {
+                std::lock_guard lock(queue_mutex_);
+                fibers_.push_back(*current_job_);
+                break;
+            }
+            case PostSchedulerAction::Type::Suspend: {
+                auto& instance = JobManager::get();
+                std::lock_guard lock(instance.wait_mutex);
+                instance.waiting_jobs.emplace_back(*current_job_, post_scheduler_action->counter);
+                break;
+            }
+            case PostSchedulerAction::Type::Terminate:
+                break;
+            }
+            post_scheduler_action = std::nullopt;
         }
         current_job_ = std::nullopt;
     }
@@ -82,6 +97,8 @@ void JobManager::worker_main() {
 
 
 void JobManager::yield() {
+    VASSERT(current_job_.has_value(), "Attempted to yield a job without a current job");
+    post_scheduler_action.emplace(PostSchedulerAction::Type::Yield, nullptr);
     switch_to_fiber(worker_fiber_);
 }
 
@@ -90,7 +107,7 @@ void JobManager::terminate() {
     if (current_job_->counter) {
         current_job_->counter->fetch_sub(1);
     }
-    current_job_ = std::nullopt;
+    post_scheduler_action.emplace(PostSchedulerAction::Type::Terminate, nullptr);
     switch_to_fiber(worker_fiber_);
 }
 
@@ -103,13 +120,7 @@ void JobManager::wait_for_counter(std::atomic<uint32_t>* counter) {
         _mm_pause();
     }
 
-
-    {
-        auto& instance = JobManager::get();
-        std::lock_guard lock(instance.wait_mutex);
-        instance.waiting_jobs.emplace_back(*current_job_, counter);
-    }
-    current_job_ = std::nullopt;
+    post_scheduler_action.emplace(PostSchedulerAction::Type::Suspend, counter);
     switch_to_fiber(worker_fiber_);
 }
 
@@ -169,5 +180,8 @@ void JobManager::queue_job(JobDecl decl) {
         std::lock_guard lock(queue_mutex_);
         fibers_.push_back(job);
     }
+}
+std::size_t JobManager::num_workers() const {
+    return workers_.size();
 }
 } // namespace vee
