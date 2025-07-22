@@ -44,6 +44,9 @@ constexpr StrHash operator""_hash(const char* str, std::size_t len) {
  * A Name is a lightweight string handle that facilitates efficient passing-by-value and O(1)
  * equality comparison. Names uphold the property that for any given Names A and B, A == B if and
  * only if the underlying string represented by A and B are equivalent (i.e. strcmp would return 0)
+ *
+ * Names are threadsafe. Access to the internal name storage is internally synchronized whenever
+ * it's required.
  */
 class Name {
 public:

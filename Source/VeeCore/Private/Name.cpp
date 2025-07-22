@@ -18,16 +18,22 @@
 #include "Assert.hpp"
 #include "Logging.hpp"
 
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
+
+struct Storage {
+    std::mutex data_mutex;
+    std::unordered_map<size_t, std::string> data;
+};
 
 /**
  * We need to lazily construct the global name storage like this so that we can safely allow for
  * static Names
  */
-static std::unordered_map<size_t, std::string>& get_name_storage() {
-    static std::unordered_map<size_t, std::string> singleton;
+static Storage& get_name_storage() {
+    static Storage singleton;
     return singleton;
 }
 
@@ -38,10 +44,11 @@ Name::Name()
 Name::Name(StrHash str_hash)
     : hash(str_hash.hash) {
     auto& storage = get_name_storage();
-    const auto entry = storage.find(hash);
-    if (entry == storage.end()) {
+    std::lock_guard lock(storage.data_mutex);
+    const auto entry = storage.data.find(hash);
+    if (entry == storage.data.end()) {
         log_trace("Storing {} in global Name table", str_hash.str);
-        storage[hash] = str_hash.str;
+        storage.data[hash] = str_hash.str;
         return;
     }
     VASSERT(
@@ -53,9 +60,10 @@ Name::Name(StrHash str_hash)
     );
 }
 std::string_view Name::to_string() const {
-    const auto& storage = get_name_storage();
-    const auto entry = storage.find(hash);
-    if (entry != storage.end()) {
+    auto& storage = get_name_storage();
+    std::lock_guard lock(storage.data_mutex);
+    const auto entry = storage.data.find(hash);
+    if (entry != storage.data.end()) {
         return entry->second;
     }
 
