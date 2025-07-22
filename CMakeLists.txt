@@ -13,6 +13,12 @@ elseif (LINUX)
     set(VEE_PLATFORM_SUFFIX _linux)
 endif ()
 
+if (MSVC)
+    set(VEE_WARNING_FLAGS /W4 /WX)
+else()
+    set(VEE_WARNING_FLAGS -Wall -Wextra -pedantic -pedantic-errors -Wconversion -Werror)
+endif()
+
 # download CPM.cmake
 file(
         DOWNLOAD
@@ -53,7 +59,7 @@ CPMAddPackage("gh:wolfpld/tracy@0.12.2")
 
 if (stb_ADDED)
     add_library(stb INTERFACE)
-    target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+    target_include_directories(stb SYSTEM INTERFACE ${stb_SOURCE_DIR})
 endif ()
 
 if (imgui_ADDED)

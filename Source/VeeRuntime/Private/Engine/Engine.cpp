@@ -76,7 +76,7 @@ void Engine::tick() {
     auto view = world.entt_registry.view<SpriteRendererComponent, Transform>();
     auto time = static_cast<float>(get_game_time());
     for (auto [ent, spr, trans] : view.each()) {
-        trans.position.x = ((time - static_cast<uint32_t>(time)) - 0.5f) * 2;
+        trans.position.x = ((time - static_cast<float>(static_cast<uint32_t>(time))) - 0.5f) * 2;
         trans.position.y = std::sin(time);
         trans.position *= 100.f;
     }

@@ -30,12 +30,12 @@ public:
      * initialize and required graphics resources
      * @param ctx Engine global rendering context.
      */
-    virtual void init(RenderCtx& ctx) {};
+    virtual void init([[maybe_unused]] RenderCtx& ctx) {};
 
     /**
      * Called by the RenderGraph each frame before execution.
      * @param ctx
      */
-    virtual void prepare(const RenderGraph& ctx) {};
+     virtual void prepare([[maybe_unused]] const RenderGraph& ctx) {};
 };
 } // namespace vee::rdg

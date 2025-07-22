@@ -5,6 +5,7 @@ set(SOURCES
 )
 
 add_executable(HelloTriangle ${SOURCES})
+target_compile_options(HelloTriangle PRIVATE ${VEE_WARNING_FLAGS})
 target_include_directories(HelloTriangle PUBLIC Public/ PRIVATE Private/)
 target_link_libraries(HelloTriangle
         PRIVATE

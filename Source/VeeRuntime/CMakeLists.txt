@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.28.0)
 
 add_library(VeeRuntime)
+target_compile_options(VeeRuntime PRIVATE ${VEE_WARNING_FLAGS})
 enable_language(ASM)
 # I don't know why this isn't brought in from linking to the library
 target_include_directories(VeeRuntime PUBLIC ${VulkanMemoryAllocator-Hpp_SOURCE_DIR}/VulkanMemoryAllocator/include)

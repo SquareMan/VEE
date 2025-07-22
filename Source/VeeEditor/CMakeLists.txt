@@ -4,6 +4,8 @@ set(SOURCES
 )
 
 add_library(VeeEditor STATIC ${SOURCES})
+target_compile_options(VeeEditor PRIVATE ${VEE_WARNING_FLAGS})
+
 target_sources(VeeEditor
         PUBLIC
         FILE_SET headers TYPE HEADERS

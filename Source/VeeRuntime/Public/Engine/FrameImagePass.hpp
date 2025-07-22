@@ -58,7 +58,7 @@ protected:
         : Sink()
         , target(target) {}
 
-    std::array<std::shared_ptr<DebugBuffer>, 3> resource_;
+    std::array<std::shared_ptr<DebugBuffer>, 3> resources_;
 };
 
 class CopyDestSink : public Sink {

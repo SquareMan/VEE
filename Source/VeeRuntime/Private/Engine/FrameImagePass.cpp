@@ -28,26 +28,26 @@
 namespace vee::rdg {
 
 void CopyBufferSink::init(RenderCtx& ctx) {
-    for (int i = 0; i < resource_.size(); i++) {
+    for (auto & resource : resources_) {
         auto [buf, alloc] =
             ctx.allocator
                 .createBuffer({{}, DebugScreen::WIDTH * DebugScreen::HEIGHT * 4, vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive}, {vma::AllocationCreateFlagBits::eHostAccessSequentialWrite, vma::MemoryUsage::eAuto})
                 .value;
 
         void* mem = ctx.allocator.mapMemory(alloc).value;
-        resource_[i] = std::make_shared<DebugBuffer>(std::move(Buffer(buf, alloc, ctx.allocator)), ctx.allocator, mem);
+        resource = std::make_shared<DebugBuffer>(Buffer(buf, alloc, ctx.allocator), ctx.allocator, mem);
     }
 }
-void CopyBufferSink::prepare(const RenderGraph& ctx) {
+void CopyBufferSink::prepare(const RenderGraph&) {
     const Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
     const uint64_t idx = renderer.get_frame_number() % 3;
 
-    target = resource_[idx];
+    target = resources_[idx];
 }
 
 void CopyDestSink::init(RenderCtx& ctx) {
-    for (int i = 0; i < resource_.size(); i++) {
-        resource_[i] = std::make_unique<Image>(
+    for (auto & resource : resource_) {
+        resource = std::make_unique<Image>(
             ctx.device,
             ctx.allocator,
             vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc,
@@ -59,7 +59,7 @@ void CopyDestSink::init(RenderCtx& ctx) {
     target = std::make_shared<ImageResource>();
 }
 
-void CopyDestSink::prepare(const RenderGraph& ctx) {
+void CopyDestSink::prepare(const RenderGraph&) {
     const Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
     const uint64_t idx = renderer.get_frame_number() % 3;
 

@@ -46,12 +46,20 @@ vee::EditorApplication::EditorApplication(platform::Window&& window)
             .Instance = ctx.instance,
             .PhysicalDevice = ctx.gpu,
             .Device = ctx.device,
+            .QueueFamily = 0,
             .Queue = ctx.graphics_queue,
             .DescriptorPool = pool,
+            .RenderPass = VK_NULL_HANDLE,
             .MinImageCount = 3,
             .ImageCount = 3,
+            .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+            .PipelineCache = VK_NULL_HANDLE,
+            .Subpass = 0,
             .UseDynamicRendering = true,
             .PipelineRenderingCreateInfo = pipeline_info,
+            .Allocator = nullptr, // TODO
+            .CheckVkResultFn = nullptr,
+            .MinAllocationSize = 0,
         };
 
         ImGui_ImplVulkan_LoadFunctions(

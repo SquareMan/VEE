@@ -32,7 +32,7 @@ constexpr std::size_t fnv1a_from_cstr(const char* str) {
 
     std::uint64_t hash = FNV_OFFSET_BASIS;
     for (; *str != '\0'; ++str) {
-        hash ^= *str;
+        hash ^= std::bit_cast<uint8_t>(*str);
         hash *= FNV_PRIME;
     }
 

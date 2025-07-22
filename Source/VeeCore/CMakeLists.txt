@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 3.28.0)
 
 add_library(VeeCore)
+target_compile_options(VeeCore PRIVATE ${VEE_WARNING_FLAGS})
 
 target_link_libraries(VeeCore
         PRIVATE

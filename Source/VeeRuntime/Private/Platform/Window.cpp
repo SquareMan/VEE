@@ -52,7 +52,7 @@ std::expected<Window, Window::CreateError> Window::create(const char* title, int
         return std::unexpected(Window::CreateError());
     }
 
-    return std::move(Window(*glfw_window));
+    return Window(*glfw_window);
 }
 
 Window::~Window() {

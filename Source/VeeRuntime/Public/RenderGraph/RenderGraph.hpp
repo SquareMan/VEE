@@ -43,8 +43,13 @@ extern const Name GLOBAL;
 class RenderGraph {
 public:
     RenderGraph(std::unordered_map<PassHandle, std::unique_ptr<Pass>>&& passes, std::vector<PassHandle>&& pass_order, RenderCtx& ctx);
-    RenderGraph(RenderGraph&& other);
     ~RenderGraph();
+
+    RenderGraph(RenderGraph&& other);
+    RenderGraph& operator=(RenderGraph&& other);
+    RenderGraph(const RenderGraph&) = delete;
+    RenderGraph& operator=(const RenderGraph&) = delete;
+
     void execute(RenderCtx& render_ctx) const;
 
     /**

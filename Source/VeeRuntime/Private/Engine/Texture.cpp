@@ -27,8 +27,8 @@
 #include <stb_image.h>
 
 std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Texture::create(const char* path, vk::Format format) {
-    int32_t width, height, channels;
-    const uint8_t* data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+    uint32_t width, height, channels;
+    const uint8_t* data = stbi_load(path, reinterpret_cast<int32_t*>(&width), reinterpret_cast<int32_t*>(&height), reinterpret_cast<int32_t*>(&channels), STBI_rgb_alpha);
 
     if (data == nullptr) {
         log_error("Failed to load texture from file \"{}\"\n{}", path, stbi_failure_reason());
@@ -44,8 +44,8 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
     );
 
     std::vector<uint32_t> pixels(width * height);
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+    for (std::uint32_t y = 0; y < height; y++) {
+        for (std::uint32_t x = 0; x < width; x++) {
             const uint8_t* b = &data[(y * width + x) * 4 + 2];
             const uint8_t* g = &data[(y * width + x) * 4 + 1];
             const uint8_t* r = &data[(y * width + x) * 4 + 0];

@@ -36,7 +36,7 @@ struct StrHash {
         , str(str) {}
 };
 
-constexpr StrHash operator""_hash(const char* str, std::size_t len) {
+constexpr StrHash operator""_hash(const char* str, std::size_t) {
     return StrHash{str};
 }
 

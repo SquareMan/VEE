@@ -92,14 +92,14 @@ int main() {
     // FIXME: Init this in Engine init code
     JobManager::init();
 
-    for (int i = 0; i < JobManager::get().num_workers(); i++) {
+    for (std::size_t i = 0; i < JobManager::get().num_workers(); i++) {
         Name job_name = StrHash(("job"+std::to_string(i)).c_str());
         JobManager::get().queue_job({job_name, big_printer});
     }
 
 
     auto& renderer = entt::locator<IApplication>::value().get_renderer();
-    auto graph = std::make_unique<rdg::RenderGraph>(std::move(rg.build(renderer.get_ctx())));
+    auto graph = std::make_unique<rdg::RenderGraph>(rg.build(renderer.get_ctx()));
     renderer.set_render_graph(std::move(graph));
     entt::locator<IApplication>::value().run();
     entt::locator<IApplication>::reset();
