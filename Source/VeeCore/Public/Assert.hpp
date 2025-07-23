@@ -45,11 +45,7 @@ concept IsHandler = requires(const char* c, const std::source_location& loc, std
 };
 
 #ifndef VEE_ASSERT_FILTER_LEVEL
-#if !defined(NDEBUG)
-#define VEE_ASSERT_FILTER_LEVEL Slow
-#else
 #define VEE_ASSERT_FILTER_LEVEL Release
-#endif
 #endif
 
 namespace detail {

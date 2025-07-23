@@ -24,26 +24,35 @@
     },
     {
       "name": "Debug-Clang",
-      "inherits": ["Clang"],
+      "inherits": [
+        "Clang"
+      ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "TRACY_ENABLE": "OFF"
+        "TRACY_ENABLE": "OFF",
+        "VEE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "Development-Clang",
-      "inherits": ["Clang"],
+      "inherits": [
+        "Clang"
+      ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "TRACY_ENABLE": "ON"
+        "TRACY_ENABLE": "ON",
+        "VEE_BUILD_TYPE": "Development"
       }
     },
     {
       "name": "Shipping-Clang",
-      "inherits": ["Clang"],
+      "inherits": [
+        "Clang"
+      ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "TRACY_ENABLE": "OFF"
+        "TRACY_ENABLE": "OFF",
+        "VEE_BUILD_TYPE": "Shipping"
       }
     }
   ],
