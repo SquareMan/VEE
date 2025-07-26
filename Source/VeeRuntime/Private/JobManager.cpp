@@ -39,23 +39,6 @@ void JobManager::worker_main() {
     convert_thread_to_fiber(worker_fiber_);
 
     while (running) {
-        {
-            std::lock_guard lock(wait_mutex);
-            for (auto job_it = waiting_jobs.begin(); job_it != waiting_jobs.end(); ++job_it) {
-                VASSERT(
-                    job_it->wait_counter != nullptr,
-                    "Job {} is suspended but has no associated counter",
-                    job_it->job.fiber.name.to_string()
-                );
-                if (job_it->wait_counter->load() == 0) {
-                    current_job_ = job_it->job;
-                    waiting_jobs.erase(job_it);
-                    break;
-                }
-            }
-        }
-
-
         if (!current_job_) {
             std::lock_guard lock(queue_mutex_);
             if (!fibers_.empty()) {
@@ -69,6 +52,7 @@ void JobManager::worker_main() {
             continue;
         }
 
+        log_trace("JobManager: Starting/Resuming {}", current_job_->fiber.name);
         switch_to_fiber(current_job_->fiber);
         if (post_scheduler_action) {
             switch (post_scheduler_action->type) {
@@ -83,8 +67,32 @@ void JobManager::worker_main() {
                 instance.waiting_jobs.emplace_back(*current_job_, post_scheduler_action->counter);
                 break;
             }
-            case PostSchedulerAction::Type::Terminate:
+            case PostSchedulerAction::Type::Terminate: {
+                // Kick jobs that are waiting on this one if we set the counter to 0
+                if (current_job_->counter && current_job_->counter->fetch_sub(1) == 1) {
+                    JobManager& instance = get();
+                    std::lock_guard wait_lock(instance.wait_mutex);
+                    for (auto wait_it = instance.waiting_jobs.begin();
+                         wait_it != instance.waiting_jobs.end();
+                         ++wait_it) {
+                        if (wait_it->wait_counter == current_job_->counter) {
+                            log_trace(
+                                "JobManager: Kicking {} due to completion of {}",
+                                wait_it->job.fiber.name,
+                                current_job_->fiber.name
+                            );
+
+                            std::lock_guard lock(instance.queue_mutex_);
+                            instance.fibers_.emplace_back(wait_it->job);
+                            wait_it = instance.waiting_jobs.erase(wait_it);
+                            if (wait_it == instance.waiting_jobs.end()) {
+                                break;
+                            }
+                        }
+                    }
+                }
                 break;
+            }
             }
             post_scheduler_action = std::nullopt;
         }
@@ -99,14 +107,13 @@ void JobManager::worker_main() {
 void JobManager::yield() {
     VASSERT(current_job_.has_value(), "Attempted to yield a job without a current job");
     post_scheduler_action.emplace(PostSchedulerAction::Type::Yield, nullptr);
+    log_trace("JobManager: Yielding from {}", current_job_->fiber.name);
     switch_to_fiber(worker_fiber_);
 }
 
 void JobManager::terminate() {
     VASSERT(current_job_.has_value(), "Attempted to terminate a job without a current job");
-    if (current_job_->counter) {
-        current_job_->counter->fetch_sub(1);
-    }
+    log_trace("JobManager: Terminating {}", current_job_->fiber.name);
     post_scheduler_action.emplace(PostSchedulerAction::Type::Terminate, nullptr);
     switch_to_fiber(worker_fiber_);
 }
@@ -120,6 +127,7 @@ void JobManager::wait_for_counter(std::atomic<uint32_t>* counter) {
         _mm_pause();
     }
 
+    log_trace("JobManager: Suspending {} on counter (0x{})", current_job_->fiber.name, static_cast<void*>(counter));
     post_scheduler_action.emplace(PostSchedulerAction::Type::Suspend, counter);
     switch_to_fiber(worker_fiber_);
 }
