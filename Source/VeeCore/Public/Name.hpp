@@ -17,6 +17,7 @@
 
 #include "FNV-1a.hpp"
 
+#include <format>
 #include <optional>
 #include <string_view>
 
@@ -97,16 +98,29 @@ private:
 };
 } // namespace vee
 
+namespace std {
 template <>
-struct std::hash<vee::StrHash> {
-    std::size_t operator()(const vee::StrHash& str_hash) const noexcept {
+struct hash<vee::StrHash> {
+    size_t operator()(const vee::StrHash& str_hash) const noexcept {
         return str_hash.hash;
     }
 };
 
 template <>
-struct std::hash<vee::Name> {
-    std::size_t operator()(const vee::Name& handle) const noexcept {
+struct hash<vee::Name> {
+    size_t operator()(const vee::Name& handle) const noexcept {
         return handle.hash;
     }
 };
+
+template <>
+struct formatter<vee::Name> {
+    template <class ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+    constexpr auto format(const vee::Name& name, format_context& ctx) const {
+        return format_to(ctx.out(), "{}", name.to_string());
+    }
+};
+} // namespace std
