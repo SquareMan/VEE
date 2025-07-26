@@ -28,11 +28,11 @@ namespace vee {
 struct JobDecl {
     Name name;
     void (*entry)();
-    std::atomic<uint32_t>* counter = nullptr;
+    std::atomic<uint32_t>* signal_counter = nullptr;
 };
 
 struct Job {
-    std::atomic<uint32_t>* counter = nullptr;
+    std::atomic<uint32_t>* signal_counter = nullptr;
     Fiber fiber;
 };
 
@@ -47,7 +47,7 @@ public:
     static void shutdown();
 
     static JobManager& get();
-    void queue_job(JobDecl decl);
+    void queue_job(JobDecl decl, std::atomic<uint32_t>* wait_counter = nullptr);
     std::size_t num_workers() const;
     static void yield();
     static void terminate();
@@ -83,7 +83,7 @@ private:
         enum class Type { Yield, Suspend, Terminate };
 
         Type type;
-        std::atomic<uint32_t>* counter;
+        std::atomic<uint32_t>* wait_counter;
     };
     thread_local inline static std::optional<PostSchedulerAction> post_scheduler_action;
 };

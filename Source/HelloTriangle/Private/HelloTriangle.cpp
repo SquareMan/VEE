@@ -92,9 +92,10 @@ int main() {
     // FIXME: Init this in Engine init code
     JobManager::init();
 
+        std::vector<std::atomic<uint32_t>> counters(JobManager::get().num_workers());
     for (std::size_t i = 0; i < JobManager::get().num_workers(); i++) {
         Name job_name = StrHash(("job"+std::to_string(i)).c_str());
-        JobManager::get().queue_job({job_name, big_printer});
+        JobManager::get().queue_job({job_name, big_printer, &counters[i]}, i > 0 ? &counters[i-1] : nullptr);
     }
 
 

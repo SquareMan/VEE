@@ -64,18 +64,18 @@ void JobManager::worker_main() {
             case PostSchedulerAction::Type::Suspend: {
                 auto& instance = JobManager::get();
                 std::lock_guard lock(instance.wait_mutex);
-                instance.waiting_jobs.emplace_back(*current_job_, post_scheduler_action->counter);
+                instance.waiting_jobs.emplace_back(*current_job_, post_scheduler_action->wait_counter);
                 break;
             }
             case PostSchedulerAction::Type::Terminate: {
                 // Kick jobs that are waiting on this one if we set the counter to 0
-                if (current_job_->counter && current_job_->counter->fetch_sub(1) == 1) {
+                if (current_job_->signal_counter && current_job_->signal_counter->fetch_sub(1) == 1) {
                     JobManager& instance = get();
                     std::lock_guard wait_lock(instance.wait_mutex);
                     for (auto wait_it = instance.waiting_jobs.begin();
                          wait_it != instance.waiting_jobs.end();
                          ++wait_it) {
-                        if (wait_it->wait_counter == current_job_->counter) {
+                        if (wait_it->wait_counter == current_job_->signal_counter) {
                             log_trace(
                                 "JobManager: Kicking {} due to completion of {}",
                                 wait_it->job.fiber.name,
@@ -174,19 +174,23 @@ JobManager::JobManager() {
 
 JobManager::~JobManager() = default;
 
-void JobManager::queue_job(JobDecl decl) {
+void JobManager::queue_job(JobDecl decl, std::atomic<uint32_t>* wait_counter) {
     Job job;
-    job.counter = decl.counter;
+    job.signal_counter = decl.signal_counter;
+    // TODO: Implement fiber pool and initialize job fibers in the scheduler for new jobs
     job.fiber = create_fiber(reinterpret_cast<void (*)()>(job_main), decl.name);
     job.fiber.context.arg = reinterpret_cast<uintptr_t>(decl.entry);
 
-    if (job.counter) {
-        job.counter->fetch_add(1);
+    if (job.signal_counter) {
+        job.signal_counter->fetch_add(1);
     }
 
-    {
+    if (wait_counter == nullptr || wait_counter->load() == 0) {
         std::lock_guard lock(queue_mutex_);
         fibers_.push_back(job);
+    } else {
+        std::lock_guard lock(wait_mutex);
+        waiting_jobs.emplace_back(job, wait_counter);
     }
 }
 std::size_t JobManager::num_workers() const {
