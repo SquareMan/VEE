@@ -13,14 +13,8 @@
 //    limitations under the License.
 
 #pragma once
-#include "Fibers.hpp"
+
 #include "Name.hpp"
-
-
-#include <deque>
-#include <mutex>
-#include <thread>
-#include <vector>
 
 
 namespace vee {
@@ -31,60 +25,15 @@ struct JobDecl {
     std::atomic<uint32_t>* signal_counter = nullptr;
 };
 
-struct Job {
-    std::atomic<uint32_t>* signal_counter = nullptr;
-    Fiber fiber;
-};
+namespace JobManager {
+    void init();
+    void shutdown();
 
-struct WaitingJob {
-    Job job;
-    std::atomic<uint32_t>* wait_counter = nullptr;
-};
-
-class JobManager {
-public:
-    static void init();
-    static void shutdown();
-
-    static JobManager& get();
     void queue_job(JobDecl decl, std::atomic<uint32_t>* wait_counter = nullptr);
-    std::size_t num_workers() const;
-    static void yield();
-    static void terminate();
-    static void wait_for_counter(std::atomic<uint32_t>* counter);
+    std::size_t num_workers();
 
-private:
-    inline static JobManager* instance = nullptr;
-    JobManager();
-
-    void worker_main();
-
-public:
-    ~JobManager();
-    JobManager(JobManager const&) = delete;
-    JobManager& operator=(JobManager const&) = delete;
-    JobManager(JobManager&&) = delete;
-    JobManager& operator=(JobManager&&) = delete;
-
-private:
-    std::atomic<bool> running = true;
-    std::vector<std::thread> workers_;
-
-    std::mutex queue_mutex_;
-    std::deque<Job> fibers_;
-
-    std::mutex wait_mutex;
-    std::vector<WaitingJob> waiting_jobs;
-
-    thread_local inline static Fiber worker_fiber_;
-    thread_local inline static std::optional<Job> current_job_;
-
-    struct PostSchedulerAction {
-        enum class Type { Yield, Suspend, Terminate };
-
-        Type type;
-        std::atomic<uint32_t>* wait_counter;
-    };
-    thread_local inline static std::optional<PostSchedulerAction> post_scheduler_action;
+    void yield();
+    void terminate();
+    void wait_for_counter(std::atomic<uint32_t>* counter);
 };
 } // namespace vee
