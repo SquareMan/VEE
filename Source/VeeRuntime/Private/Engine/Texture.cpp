@@ -28,34 +28,49 @@
 
 std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Texture::create(const char* path, vk::Format format) {
     uint32_t width, height, channels;
-    const uint8_t* data = stbi_load(path, reinterpret_cast<int32_t*>(&width), reinterpret_cast<int32_t*>(&height), reinterpret_cast<int32_t*>(&channels), STBI_rgb_alpha);
-
-    if (data == nullptr) {
-        log_error("Failed to load texture from file \"{}\"\n{}", path, stbi_failure_reason());
+    if (!stbi_info(path, reinterpret_cast<int32_t*>(&width), reinterpret_cast<int32_t*>(&height), reinterpret_cast<int32_t*>(&channels))) {
+        log_error("Unsupported texture format for \"{}\"\n{}", path, stbi_failure_reason());
+        return std::unexpected(CreateError());
+    }
+    if (channels != 4) {
+        log_error("Unsupported texture \"{}\" with < 4 channels", path);
         return std::unexpected(CreateError());
     }
 
-    Renderer& renderer = entt::locator<IApplication>::value().get_renderer();
-    RenderCtx& ctx = renderer.get_ctx();
-
-    std::shared_ptr<Texture> new_texture = std::make_shared<MakeSharedEnabler<Texture>>();
-    new_texture->image_ = std::make_shared<Image>(
-        ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::Extent3D(width, height, 1), format, vk::ImageAspectFlagBits::eColor
-    );
-
-    std::vector<uint32_t> pixels(width * height);
-    for (std::uint32_t y = 0; y < height; y++) {
-        for (std::uint32_t x = 0; x < width; x++) {
-            const uint8_t* b = &data[(y * width + x) * 4 + 2];
-            const uint8_t* g = &data[(y * width + x) * 4 + 1];
-            const uint8_t* r = &data[(y * width + x) * 4 + 0];
-            const uint8_t* a = &data[(y * width + x) * 4 + 3];
-
-            pixels[y * width + x] = glm::packUnorm4x8(glm::vec4(*b, *g, *r, *a) / 255.f);
+    RenderCtx& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
+    std::shared_ptr<Texture> new_texture = nullptr;
+    {
+        auto data = std::unique_ptr<uint8_t, void (*)(void*)>(
+            stbi_load(path, reinterpret_cast<int32_t*>(&width), reinterpret_cast<int32_t*>(&height), nullptr, STBI_rgb_alpha), stbi_image_free
+        );
+        if (data == nullptr) {
+            log_error("Failed to load texture from file \"{}\"\n{}", path, stbi_failure_reason());
+            return std::unexpected(CreateError());
         }
+
+        new_texture = std::make_shared<MakeSharedEnabler<Texture>>();
+        new_texture->image_ = std::make_shared<Image>(
+            ctx.device, ctx.allocator, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::Extent3D(width, height, 1), format, vk::ImageAspectFlagBits::eColor
+        );
+
+        // Copy loaded image data to VRAM and swap RGBA to BGRA to match expected GPU image format.
+        // Note: we can probably optimize this by loading the image data directly into the staging
+        // buffer.
+        auto img_mem = static_cast<uint32_t*>(ctx.allocator.mapMemory(ctx.staging_buffer.allocation).value
+        );
+        for (std::uint32_t pixel = 0; pixel < width * height; pixel++) {
+            const uint8_t* b = &data.get()[pixel * channels + 2];
+            const uint8_t* g = &data.get()[pixel * channels + 1];
+            const uint8_t* r = &data.get()[pixel * channels + 0];
+            const uint8_t* a = &data.get()[pixel * channels + 3];
+
+            img_mem[pixel] = glm::packUnorm4x8(glm::vec4(*b, *g, *r, *a) / 255.f);
+        }
+
+        ctx.allocator.unmapMemory(ctx.staging_buffer.allocation);
+        std::ignore = ctx.allocator.flushAllocation(ctx.staging_buffer.allocation, 0, width * height * channels);
     }
 
-    std::ignore = ctx.allocator.copyMemoryToAllocation(pixels.data(), ctx.staging_buffer.allocation, 0, pixels.size() * sizeof(uint32_t));
 
     ctx.immediate_submit([&](vk::CommandBuffer cmd) {
         {
@@ -77,9 +92,7 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
             cmd.pipelineBarrier2(dependency_info);
         }
 
-        vk::BufferImageCopy region = {
-            {}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}
-        };
+        vk::BufferImageCopy region = {{}, {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {}, {width, height, 1}};
         cmd.copyBufferToImage(ctx.staging_buffer.buffer, new_texture->image_->image, vk::ImageLayout::eTransferDstOptimal, region);
 
         {
@@ -102,9 +115,5 @@ std::expected<std::shared_ptr<vee::Texture>, vee::Texture::CreateError> vee::Tex
         }
     });
 
-    // FIXME: we need to free the image data AFTER the transfer completes, but this will require
-    // passing some kind of fence to the immediate submit function and then asynchronously waiting
-    // on it.
-    // stbi_image_free((void*)data);
     return new_texture;
 }
