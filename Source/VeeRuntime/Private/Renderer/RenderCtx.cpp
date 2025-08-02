@@ -31,11 +31,9 @@ RenderCtx::RenderCtx(const platform::Window& window)
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
     {
-#if _DEBUG
-        constexpr bool enable_validation = true;
-#else
-        constexpr bool enable_validation = false;
-#endif
+        // FIXME: Use a Renderer assert handler here once that's set up correctly.
+        constexpr bool enable_validation = assert::DefaultHandler::FilterLevel >= assert::Level::Slow;
+
         vkb::InstanceBuilder instance_builder;
         auto inst_res =
             instance_builder.set_app_name("HelloTriangle POC")
