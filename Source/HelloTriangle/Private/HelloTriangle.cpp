@@ -19,46 +19,15 @@
 #include "Application.hpp"
 #endif
 
-#include "Fibers.hpp"
-
-
 #include <Engine/SceneRenderPass.hpp>
 #include <RenderGraph/RenderGraph.hpp>
 #include <RenderGraph/RenderGraphBuilder.hpp>
+#include <tracy/Tracy.hpp>
 
 #if defined(TRACY_ENABLE) && !defined(TRACY_NO_FRAME_IMAGE)
 #include <Engine/FrameImagePass.hpp>
 #endif
 
-#include "JobManager.hpp"
-
-
-#include <tracy/Tracy.hpp>
-
-#include <thread>
-
-std::atomic<uint32_t> job_counter = 0;
-void fiber0_main() {
-    ZoneScoped;
-
-    vee::log_trace("Step 1 on thread {}", std::this_thread::get_id());
-    vee::JobManager::yield();
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    vee::log_trace("Step 3 on thread {}", std::this_thread::get_id());
-}
-
-void fiber1_main() {
-    ZoneScoped;
-    vee::JobManager::wait_for_counter(&job_counter);
-    vee::log_trace("Step 2 on thread {}", std::this_thread::get_id());
-}
-
-void big_printer() {
-    ZoneScoped;
-    for (int i = 0; i < 256; i++) {
-        vee::log_trace("Step {} on thread {}", i, std::this_thread::get_id());
-    }
-}
 
 int main() {
     using namespace vee;
@@ -90,15 +59,6 @@ int main() {
 #else
     entt::locator<IApplication>::reset(new Application(std::move(w)));
 #endif
-
-    // FIXME: Init this in Engine init code
-    JobManager::init();
-
-    std::vector<std::atomic<uint32_t>> counters(JobManager::num_workers());
-    for (std::size_t i = 0; i < JobManager::num_workers(); i++) {
-        Name job_name = StrHash(("job" + std::to_string(i)).c_str());
-        JobManager::queue_job({job_name, big_printer, &counters[i]}, i > 0 ? &counters[i - 1] : nullptr);
-    }
 
 
     auto& renderer = entt::locator<IApplication>::value().get_renderer();

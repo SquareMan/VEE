@@ -28,7 +28,7 @@
 namespace vee {
 
 void Engine::init() {
-    // JobManager::init();
+    JobManager::init();
 
     // TEMP: should be in game code
     World& world = get_world();
