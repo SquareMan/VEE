@@ -32,6 +32,7 @@ target_sources(VeeRuntime
         Public/FiberContext_linux_x64.h
         Public/FiberContext_win32_x64.h
         Public/Fibers.hpp
+        Public/GameConfig.hpp
         Public/IApplication.hpp
         Public/JobManager.hpp
         Public/Keys.hpp
@@ -78,6 +79,7 @@ target_sources(VeeRuntime
         Private/Application.cpp
         Private/Fibers${VEE_PLATFORM_SUFFIX}_x64.s
         Private/Fibers.cpp
+        Private/Main.cpp
         Private/JobManager.cpp
         Private/JobManager${VEE_PLATFORM_SUFFIX}.cpp
         Private/Renderer.cpp

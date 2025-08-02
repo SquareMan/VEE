@@ -16,6 +16,7 @@
 #include "Renderer/RenderCtx.hpp"
 
 #include "Assert.hpp"
+#include "GameConfig.hpp"
 #include "Platform/Window.hpp"
 #include "Renderer/VkUtil.hpp"
 #include "Vertex.hpp"
@@ -36,9 +37,16 @@ RenderCtx::RenderCtx(const platform::Window& window)
 
         vkb::InstanceBuilder instance_builder;
         auto inst_res =
-            instance_builder.set_app_name("HelloTriangle POC")
-                .set_app_version(0, 1, 0)
+            instance_builder.set_app_name(g_game_info.game_name)
+                .set_app_version(
+                    g_game_info.game_version.major,
+                    g_game_info.game_version.minor,
+                    g_game_info.game_version.patch
+                )
+                .set_engine_name("VEE")
+                .set_engine_version(0, 1, 0) // FIXME: Move this info definition someplace specific
                 .enable_validation_layers(enable_validation)
+                .enable_layer("VK_LAYER_KHRONOS_synchronization2")
                 .enable_extensions({
                     VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(_WIN32)

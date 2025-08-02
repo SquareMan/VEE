@@ -12,6 +12,20 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-#include <GameConfig.hpp>
+#pragma once
 
-vee::GameInfo vee::g_game_info = {.game_name = "Hello Triangle", .game_version = {0, 1, 0}};
+#include <cstdint>
+
+
+namespace vee {
+struct GameInfo {
+    const char* game_name;
+    struct {
+        std::uint32_t major;
+        std::uint32_t minor;
+        std::uint32_t patch;
+    } game_version;
+};
+
+extern GameInfo g_game_info;
+} // namespace vee
