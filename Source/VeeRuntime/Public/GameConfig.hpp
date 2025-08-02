@@ -19,12 +19,15 @@
 
 namespace vee {
 struct GameInfo {
-    const char* game_name;
+    const char* game_name = nullptr;
     struct {
-        std::uint32_t major;
-        std::uint32_t minor;
-        std::uint32_t patch;
+        std::uint32_t major = 0;
+        std::uint32_t minor = 0;
+        std::uint32_t patch = 0;
     } game_version;
+
+    void (*game_init)() = nullptr;
+    void (*game_tick)() = nullptr;
 };
 
 extern GameInfo g_game_info;

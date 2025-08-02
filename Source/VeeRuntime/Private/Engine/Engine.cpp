@@ -19,6 +19,7 @@
 #include "Components/SpriteRendererComponent.hpp"
 #include "Engine/Material.hpp"
 #include "Engine/Texture.hpp"
+#include "GameConfig.hpp"
 #include "JobManager.hpp"
 #include "Transform.h"
 
@@ -28,36 +29,11 @@
 namespace vee {
 
 void Engine::init() {
+    ZoneScoped;
     JobManager::init();
 
-    // TEMP: should be in game code
-    World& world = get_world();
-
-    Entity camera = world.spawn_entity();
-    camera.add_component<Transform>();
-    camera.add_component<CameraComponent>(640.f, 640.f);
-
-    {
-        Entity sprite = world.spawn_entity();
-        sprite.add_component<Transform>(glm::vec2{0.0f, 150.f}, 0.f, glm::vec2{50.f, 50.f});
-
-        std::shared_ptr<Texture> sprite_texture = Texture::create("Resources/cool2.png").value_or(nullptr);
-        VASSERT(sprite_texture != nullptr);
-        std::shared_ptr<Material> sprite_material = Material::create(sprite_texture).value_or(nullptr);
-        VASSERT(sprite_material != nullptr);
-
-        sprite.add_component<SpriteRendererComponent>(Sprite(sprite_material));
-    }
-    {
-        Entity sprite = world.spawn_entity();
-        sprite.add_component<Transform>(glm::vec2{}, 0.f, glm::vec2{100.f, 100.f});
-
-        std::shared_ptr<Texture> sprite_texture = Texture::create("Resources/cool.png").value_or(nullptr);
-        VASSERT(sprite_texture != nullptr);
-        std::shared_ptr<Material> sprite_material = Material::create(sprite_texture).value_or(nullptr);
-        VASSERT(sprite_material != nullptr);
-
-        sprite.add_component<SpriteRendererComponent>(Sprite(sprite_material));
+    if (g_game_info.game_init) {
+        g_game_info.game_init();
     }
 }
 
@@ -72,13 +48,8 @@ void Engine::tick() {
     delta_time_ = new_time - game_time_;
     game_time_ = new_time;
 
-    World& world = get_world();
-    auto view = world.entt_registry.view<SpriteRendererComponent, Transform>();
-    auto time = static_cast<float>(get_game_time());
-    for (auto [ent, spr, trans] : view.each()) {
-        trans.position.x = ((time - static_cast<float>(static_cast<uint32_t>(time))) - 0.5f) * 2;
-        trans.position.y = std::sin(time);
-        trans.position *= 100.f;
+    if (g_game_info.game_tick) {
+        g_game_info.game_tick();
     }
 }
 
