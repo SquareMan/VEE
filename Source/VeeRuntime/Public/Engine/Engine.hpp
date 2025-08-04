@@ -35,16 +35,15 @@ public:
         return world_;
     };
 
-    [[nodiscard]] double get_game_time() const {
-        return game_time_;
-    }
+    [[nodiscard]] double get_game_time() const;
 
     [[nodiscard]] double get_delta_time() const {
         return delta_time_;
     };
 
 private:
-    double game_time_ = 0.0;
+    uint64_t start_time_ = 0;
+    uint64_t game_time_ = 0;
     double delta_time_ = 0.0;
     World world_;
 };

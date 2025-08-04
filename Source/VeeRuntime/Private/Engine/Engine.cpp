@@ -26,11 +26,17 @@
 #include <GLFW/glfw3.h>
 #include <tracy/Tracy.hpp>
 
+// FIXME: Replace these with our own platform layer calls
+extern "C" uint64_t _glfwPlatformGetTimerValue(void);
+extern "C" uint64_t _glfwPlatformGetTimerFrequency(void);
+
 namespace vee {
 
 void Engine::init() {
     ZoneScoped;
     JobManager::init();
+
+    start_time_ = _glfwPlatformGetTimerValue();
 
     if (g_game_info.game_init) {
         g_game_info.game_init();
@@ -44,13 +50,17 @@ void Engine::shutdown() {
 
 void Engine::tick() {
     ZoneScoped;
-    const double new_time = glfwGetTime();
-    delta_time_ = new_time - game_time_;
-    game_time_ = new_time;
+    const uint64_t now = _glfwPlatformGetTimerValue() - start_time_;
+    delta_time_ = static_cast<double>(now - game_time_) / static_cast<double>(_glfwPlatformGetTimerFrequency());
+    game_time_ = now;
 
     if (g_game_info.game_tick) {
         g_game_info.game_tick();
     }
+}
+
+double Engine::get_game_time() const {
+    return static_cast<double>(game_time_) / static_cast<double>(_glfwPlatformGetTimerFrequency());
 }
 
 
