@@ -50,17 +50,6 @@ void SceneRenderPass::execute(vk::CommandBuffer cmd) {
     auto cams = engine.get_world().entt_registry.view<vee::CameraComponent, vee::Transform>();
     auto [e, cam, cam_transform] = *cams.each().begin();
 
-#ifdef VEE_WITH_EDITOR
-    // FIXME: This does not belong in rendering code. It depends on the EditorRenderPass not being
-    // rendered before this one.
-    if (ImGui::Begin("Debug")) {
-        ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_transform.position));
-        ImGui::DragFloat("Cam Rot", &cam_transform.rotation);
-        ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_transform.scale));
-    }
-    ImGui::End();
-#endif
-
     const glm::mat4x4 proj = cam.calculate_view_projection(cam_transform);
 
     vk::ClearValue clear_value({0.3f, 0.77f, 0.5f, 1.0f});

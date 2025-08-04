@@ -26,6 +26,10 @@
 #include <tracy/Tracy.hpp>
 #include <Transform.h>
 
+#ifdef VEE_WITH_EDITOR
+#include <imgui.h>
+#endif
+
 using namespace vee;
 
 void game_init();
@@ -75,4 +79,15 @@ void game_tick() {
         trans.position.y = std::sin(time);
         trans.position *= 100.f;
     }
+
+#ifdef VEE_WITH_EDITOR
+    auto cams = engine.get_world().entt_registry.view<CameraComponent, Transform>();
+    auto& cam_transform = std::get<2>(*cams.each().begin());
+    if (ImGui::Begin("Debug")) {
+        ImGui::DragFloat2("Cam Pos", reinterpret_cast<float*>(&cam_transform.position));
+        ImGui::DragFloat("Cam Rot", &cam_transform.rotation);
+        ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_transform.scale));
+    }
+    ImGui::End();
+#endif
 }
