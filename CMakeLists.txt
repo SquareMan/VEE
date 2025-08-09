@@ -31,7 +31,7 @@ include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 
 # ---------------- DEPENDENCIES ------------------------
 # Vulkan SDK should be installed on the system
-find_package(Vulkan REQUIRED SPIRV-Tools)
+find_package(Vulkan REQUIRED SPIRV-Tools shaderc_combined)
 
 #CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@3.2.1")
 CPMAddPackage("gh:YaaZ/VulkanMemoryAllocator-Hpp@3.2.1")

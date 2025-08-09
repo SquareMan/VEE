@@ -19,6 +19,7 @@ target_link_libraries(VeeRuntime
         magic_enum
         stb
         Tracy::TracyClient
+        Vulkan::shaderc_combined
 )
 target_include_directories(VeeRuntime PRIVATE Private/)
 
@@ -113,12 +114,17 @@ target_sources(VeeRuntime
 )
 set_property(SOURCE Private/Fibers${VEE_PLATFORM_SUFFIX}_x64.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp" "-DASSEMBLY")
 
+set(VEE_ENGINE_RESOURCES_PATH ${PROJECT_SOURCE_DIR}/Resources)
+cmake_path(RELATIVE_PATH VEE_ENGINE_RESOURCES_PATH BASE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} OUTPUT_VARIABLE VEE_ENGINE_RESOURCES_PATH)
+message(STATUS "VEE_ENGINE_RESOURCES_PATH: " ${VEE_ENGINE_RESOURCES_PATH})
+
 target_compile_definitions(VeeRuntime PUBLIC
         VULKAN_HPP_NO_EXCEPTIONS
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
         VMA_STATIC_VULKAN_FUNCTIONS=0
         VMA_DYNAMIC_VULKAN_FUNCTIONS=1
         $<$<CONFIG:Debug>:VEE_WITH_EDITOR>
+        VEE_ENGINE_RESOURCES_PATH=\"${VEE_ENGINE_RESOURCES_PATH}\"
 )
 if (WIN32)
     target_compile_definitions(VeeRuntime PUBLIC VK_USE_PLATFORM_WIN32_KHR)

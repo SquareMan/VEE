@@ -1,4 +1,5 @@
 #version 460
+#pragma shader_stage(vertex)
 
 layout (push_constant) uniform Mat {
     mat4 m;
