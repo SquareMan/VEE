@@ -128,6 +128,12 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
     VASSERT(image_index != UINT32_MAX, "failed to acquire image index");
     std::ignore = render_ctx.device.resetFences(command_buffer.fence);
 
+    // Submit semaphore needs to be moved out of the host-side resource ring buffer because it can't
+    // be determined which semaphore to use until after a swapchain image index has been acquired
+    // (image indices may be acquired out of order) HACK: Use the submit_semaphore at the image
+    // index even though we may not be using that index for the other resources.
+    vk::Semaphore submit_semaphore = render_ctx.command_buffers[image_index].submit_semaphore;
+
     // Update ring-buffered resources
     const Swapchain& swapchain = render_ctx.swapchain;
     framebuffer_->image = swapchain.images[image_index];
@@ -198,7 +204,7 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
             {buffer_semaphore_, frame_num_ > 3 ? frame_num_ - 3 : 0, vk::PipelineStageFlagBits2::eAllTransfer, {}},
         };
         const vk::SemaphoreSubmitInfo signal_info[] = {
-            {command_buffer.submit_semaphore, {}, vk::PipelineStageFlagBits2::eColorAttachmentOutput, {}},
+            {submit_semaphore, {}, vk::PipelineStageFlagBits2::eColorAttachmentOutput, {}},
             {buffer_semaphore_, frame_num_, vk::PipelineStageFlagBits2::eTransfer, {}}
         };
         const vk::CommandBufferSubmitInfo cmd_info = {command_buffer.cmd};
@@ -207,7 +213,7 @@ void RenderGraph::execute(RenderCtx& render_ctx) const {
     }
 
 
-    const vk::PresentInfoKHR pi(command_buffer.submit_semaphore, render_ctx.swapchain.handle, image_index);
+    const vk::PresentInfoKHR pi(submit_semaphore, render_ctx.swapchain.handle, image_index);
     {
         ZoneScopedN("Present");
         // Opt out of return value transformation to avoid asserting on
