@@ -140,7 +140,6 @@ static Compiler g_compiler;
 
 std::expected<std::shared_ptr<vee::Material>, vee::Material::CreateError> vee::Material::create(const std::shared_ptr<Texture>& texture) {
     std::shared_ptr<Material> material = std::make_shared<MakeSharedEnabler<Material>>();
-    material->texture_ = texture;
 
     RenderCtx& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
 
@@ -160,8 +159,8 @@ std::expected<std::shared_ptr<vee::Material>, vee::Material::CreateError> vee::M
         ctx.device, vk::ShaderStageFlagBits::eFragment, sprite_shader_code.value(), "fragmentMain"
     };
 
-    vk::Sampler tex_sampler = ctx.device.createSampler({}).value;
-    vk::DescriptorSetLayoutBinding tex_binding = {0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler};
+    material->tex_sampler_ = ctx.device.createSampler({}).value;
+    vk::DescriptorSetLayoutBinding tex_binding = {0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, material->tex_sampler_};
     // clang-format off
     material->pipeline_ = vulkan::PipelineBuilder()
         .with_cache(ctx.pipeline_cache)
@@ -177,10 +176,20 @@ std::expected<std::shared_ptr<vee::Material>, vee::Material::CreateError> vee::M
     std::vector<vk::DescriptorSet> sets = ctx.device.allocateDescriptorSets(allocate_info).value;
     material->descriptor_set_ = sets[0];
 
-    vk::DescriptorImageInfo image_info = {tex_sampler, material->texture_->image_->view, vk::ImageLayout::eShaderReadOnlyOptimal};
-
-    vk::WriteDescriptorSet descriptor_write = {material->descriptor_set_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}};
-    ctx.device.updateDescriptorSets(descriptor_write, {});
+    material->set_texture(texture);
 
     return material;
+}
+void vee::Material::set_texture(const std::shared_ptr<Texture>& texture) {
+    texture_ = texture;
+
+    RenderCtx& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
+    vk::DescriptorImageInfo image_info = {tex_sampler_, texture_->image_->view, vk::ImageLayout::eShaderReadOnlyOptimal};
+
+    vk::WriteDescriptorSet descriptor_write = {descriptor_set_, 0, 0, vk::DescriptorType::eCombinedImageSampler, image_info, {}, {}};
+    ctx.device.updateDescriptorSets(descriptor_write, {});
+}
+
+std::shared_ptr<vee::Texture>& vee::Material::get_texture() {
+    return texture_;
 }

@@ -30,12 +30,15 @@ public:
     struct CreateError {};
     static std::expected<std::shared_ptr<Material>, CreateError> create(const std::shared_ptr<Texture>& texture);
 
+    void set_texture(const std::shared_ptr<Texture>& texture);
+    std::shared_ptr<Texture>& get_texture();
+
 protected:
     std::shared_ptr<Texture> texture_;
+    vk::Sampler tex_sampler_;
     vulkan::Pipeline pipeline_;
     vk::DescriptorSet descriptor_set_;
 
-    friend class GameRenderer;
     friend class rdg::SceneRenderPass;
 };
 } // namespace vee

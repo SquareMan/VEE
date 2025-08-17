@@ -93,5 +93,20 @@ void game_tick() {
         ImGui::DragFloat2("Cam Scale", reinterpret_cast<float*>(&cam_transform.scale));
     }
     ImGui::End();
+
+    if (ImGui::Begin("Shaders")) {
+        if (ImGui::Button("Reload Shaders")) {
+            for (auto [ent, spr, trans] : world.entt_registry.view<SpriteRendererComponent, Transform>().each()) {
+                auto new_material = Material::create(spr.sprite_.material_->get_texture());
+                if (!new_material) {
+                    log_error("Could not reload shaders");
+                }
+                else {
+                    spr.sprite_.material_ = new_material.value();
+                }
+            }
+        }
+    }
+    ImGui::End();
 #endif
 }
