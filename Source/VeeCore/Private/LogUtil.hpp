@@ -22,28 +22,39 @@
 #include <format>
 #include <magic_enum/magic_enum.hpp>
 
+namespace vee {
+enum class Color { Blue, Cyan, Faint, Green, Magenta, Red, Yellow, SIZE };
+template <typename T>
+struct ColoredExpr {
+    T t;
+    Color color;
+};
+
+struct LastNExpr {
+    std::string_view view;
+    uint32_t n;
+};
+} // namespace vee
+
+namespace std {
 template <>
-struct std::formatter<vee::log::Severity> {
+struct formatter<vee::LogSeverity> {
     static constexpr auto parse(format_parse_context& ctx) {
         return ctx.begin();
     }
 
-    static auto format(vee::log::Severity severity, format_context& ctx) {
+    static auto format(vee::LogSeverity severity, format_context& ctx) {
         return std::format_to(ctx.out(), "{}", magic_enum::enum_name(severity));
     }
 };
 
-struct LastN {
-    std::string_view view;
-    uint32_t n;
-};
 
 template <>
-struct std::formatter<LastN> {
+struct formatter<vee::LastNExpr> {
     static constexpr auto parse(format_parse_context& ctx) {
         return ctx.begin();
     }
-    static auto format(LastN str, format_context& ctx) {
+    static auto format(vee::LastNExpr str, format_context& ctx) {
         if (str.view.size() > str.n) {
             return std::format_to(ctx.out(), "...{}", string_view(str.view.data() + str.view.size() - str.n));
         }
@@ -51,23 +62,15 @@ struct std::formatter<LastN> {
     }
 };
 
-namespace vee::log {
-enum class Color { Blue, Cyan, Faint, Green, Magenta, Red, Yellow, SIZE };
-template <typename T>
-struct ColoredExpr {
-    T t;
-    Color color;
-};
-} // namespace vee::log
 
 template <typename T>
-struct std::formatter<vee::log::ColoredExpr<T>> {
+struct formatter<vee::ColoredExpr<T>> {
     static constexpr auto parse(format_parse_context& ctx) {
         return std::formatter<T>().parse(ctx);
     }
 
-    static auto format(vee::log::ColoredExpr<T>& expr, format_context& ctx) {
-        VASSERT(expr.color != vee::log::Color::SIZE, "SIZE is not a valid color.");
+    static auto format(vee::ColoredExpr<T>& expr, format_context& ctx) {
+        VASSERT(expr.color != vee::Color::SIZE, "SIZE is not a valid color.");
         static constexpr auto color_codes = std::array{
             "\033[34m",
             "\033[36m",
@@ -77,10 +80,10 @@ struct std::formatter<vee::log::ColoredExpr<T>> {
             "\033[31m",
             "\033[33m",
         };
-        static_assert(color_codes.size() == static_cast<uint32_t>(vee::log::Color::SIZE));
+        static_assert(color_codes.size() == static_cast<uint32_t>(vee::Color::SIZE));
 
         const char* code = color_codes[static_cast<uint32_t>(expr.color)];
         return std::format_to(ctx.out(), "{}{}\033[0;10m", code, expr.t);
     }
 };
-// } // namespace vee::log
+}; // namespace std

@@ -19,23 +19,22 @@
 #include <chrono>
 #include <iostream>
 
-static vee::log::Color get_severity_color(vee::log::Severity severity) {
+static vee::Color get_severity_color(vee::LogSeverity severity) {
     switch (severity) {
     default:
-    case vee::log::Severity::Trace:
-    case vee::log::Severity::Debug:
-    case vee::log::Severity::Info:
-        return vee::log::Color::Faint;
-    case vee::log::Severity::Warning:
-        return vee::log::Color::Yellow;
-    case vee::log::Severity::Error:
-    case vee::log::Severity::Fatal:
-        return vee::log::Color::Red;
+    case vee::LogSeverity::Trace:
+    case vee::LogSeverity::Debug:
+    case vee::LogSeverity::Info:
+        return vee::Color::Faint;
+    case vee::LogSeverity::Warning:
+        return vee::Color::Yellow;
+    case vee::LogSeverity::Error:
+    case vee::LogSeverity::Fatal:
+        return vee::Color::Red;
     }
 }
 
-void vee::_log_impl(log::Severity severity, std::string_view msg, const std::source_location& location) {
-    using namespace vee::log;
+void vee::_log_impl(LogSeverity severity, std::string_view msg, const std::source_location& location) {
     auto time = ColoredExpr(std::format("[{:%H:%M:%S}]", std::chrono::system_clock::now()), Color::Faint);
     auto colored_severity = ColoredExpr(severity, get_severity_color(severity));
 
@@ -47,11 +46,11 @@ void vee::_log_impl(log::Severity severity, std::string_view msg, const std::sou
     default:
         std::print(std::clog, "{} {} {}", time, colored_severity, full_msg);
         break;
-    case Severity::Error:
-    case Severity::Fatal:
+    case LogSeverity::Error:
+    case LogSeverity::Fatal:
         // Errors and Fatals get source location
         auto colored_loc = ColoredExpr(
-            std::format("{}:{} ({})", location.file_name(), location.line(), LastN(location.function_name(), 30)), Color::Cyan
+            std::format("{}:{} ({})", location.file_name(), location.line(), LastNExpr(location.function_name(), 30)), Color::Cyan
         );
         std::print(std::clog, "{} {} {} {}", time, colored_severity, colored_loc, full_msg);
         break;

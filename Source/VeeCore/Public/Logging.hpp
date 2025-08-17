@@ -22,8 +22,7 @@
 
 namespace vee {
 
-namespace log {
-enum class Severity {
+enum class LogSeverity {
     Trace,
     Debug,
     Info,
@@ -31,8 +30,7 @@ enum class Severity {
     Error,
     Fatal,
 };
-}
-void _log_impl(log::Severity severity, std::string_view msg, const std::source_location& location);
+void _log_impl(LogSeverity severity, std::string_view msg, const std::source_location& location);
 
 // (Ab)use implicit constructor to allow us to provide the default value for the source_location,
 // while still accepting variadic arguments in our actual logging functions. When a log function is
@@ -48,7 +46,7 @@ struct format_string_with_location {
         : str(str)
         , location(loc) {}
 
-    void log(log::Severity severity, Args&&... args) const {
+    void log(LogSeverity severity, Args&&... args) const {
         _log_impl(severity, std::format(str, std::forward<Args>(args)...), location);
     }
 };
@@ -63,58 +61,58 @@ struct format_string_with_location<> {
         : str(str)
         , location(loc) {}
 
-    void log(log::Severity severity) {
+    void log(LogSeverity severity) {
         _log_impl(severity, str, location);
     }
 };
 
 template <typename... Args>
 void log_trace(format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
-    fmt.log(log::Severity::Trace, std::forward<Args>(args)...);
+    fmt.log(LogSeverity::Trace, std::forward<Args>(args)...);
 }
 template <typename... Args>
 void log_debug(format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
-    fmt.log(log::Severity::Debug, std::forward<Args>(args)...);
+    fmt.log(LogSeverity::Debug, std::forward<Args>(args)...);
 }
 template <typename... Args>
 void log_info(format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
-    fmt.log(log::Severity::Info, std::forward<Args>(args)...);
+    fmt.log(LogSeverity::Info, std::forward<Args>(args)...);
 }
 template <typename... Args>
 void log_warning(format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
-    fmt.log(log::Severity::Warning, std::forward<Args>(args)...);
+    fmt.log(LogSeverity::Warning, std::forward<Args>(args)...);
 }
 template <typename... Args>
 void log_error(format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
-    fmt.log(log::Severity::Error, std::forward<Args>(args)...);
+    fmt.log(LogSeverity::Error, std::forward<Args>(args)...);
 }
 template <typename... Args>
 [[noreturn]] void log_fatal(format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
-    fmt.log(log::Severity::Fatal, std::forward<Args>(args)...);
+    fmt.log(LogSeverity::Fatal, std::forward<Args>(args)...);
     VEE_DEBUGBREAK();
     std::abort();
 }
 
 
 template <typename... Args>
-void log_dynamic(log::Severity severity, format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+void log(LogSeverity severity, format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
     switch (severity) {
-    case log::Severity::Trace:
+    case LogSeverity::Trace:
         log_trace<Args...>(fmt, std::forward<Args>(args)...);
         break;
-    case log::Severity::Debug:
+    case LogSeverity::Debug:
         log_debug<Args...>(fmt, std::forward<Args>(args)...);
         break;
-    case log::Severity::Info:
+    case LogSeverity::Info:
         log_info<Args...>(fmt, std::forward<Args>(args)...);
         break;
-    case log::Severity::Warning:
+    case LogSeverity::Warning:
         log_warning<Args...>(fmt, std::forward<Args>(args)...);
         break;
-    case log::Severity::Error:
+    case LogSeverity::Error:
         log_error<Args...>(fmt, std::forward<Args>(args)...);
         break;
-    case log::Severity::Fatal:
+    case LogSeverity::Fatal:
         log_fatal<Args...>(fmt, std::forward<Args>(args)...);
         break;
     }
