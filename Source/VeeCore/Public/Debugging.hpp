@@ -23,7 +23,7 @@
  */
 bool is_debugger_attached();
 
-#ifdef NDEBUG
+#ifndef VEE_DEBUG
 
 /**
  * Set a programmatic breakpoint. Breaks into the debugger if one is attached.

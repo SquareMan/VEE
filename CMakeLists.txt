@@ -19,6 +19,10 @@ else()
     set(VEE_WARNING_FLAGS -Wall -Wextra -pedantic -pedantic-errors -Wconversion -Werror)
 endif()
 
+if (VEE_BUILD_TYPE STREQUAL "Debug" OR VEE_BUILD_TYPE STREQUAL "Development")
+    add_compile_definitions(VEE_DEBUG)
+endif ()
+
 # download CPM.cmake
 file(
         DOWNLOAD

@@ -30,7 +30,7 @@ Renderer::~Renderer() {
     // TODO: Cleanup everything
     std::ignore = render_ctx_.device.waitIdle();
 
-#if _DEBUG
+#if VEE_DEBUG
     static_cast<vk::Instance>(render_ctx_.instance).destroyDebugUtilsMessengerEXT(render_ctx_.debug_messenger_);
 #endif
 

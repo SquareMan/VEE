@@ -44,7 +44,7 @@ public:
 
     const platform::Window* window;
     vkb::Instance instance;
-#if _DEBUG
+#if VEE_DEBUG
     vk::DebugUtilsMessengerEXT debug_messenger_;
 #endif
     vk::PhysicalDevice gpu;
