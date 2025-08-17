@@ -28,9 +28,13 @@ Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::span
 }
 
 Shader::~Shader() {
+    // FIXME: Shader shouldn't necessarily own the vk::ShaderModule, it is reusable
     m_device.destroyShaderModule(m_module);
 }
 const char* Shader::entrypoint() const {
     return m_entrypoint.c_str();
+}
+vk::ShaderModule Shader::module() const {
+    return m_module;
 }
 } // namespace vee::vulkan

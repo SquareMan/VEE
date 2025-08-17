@@ -27,12 +27,13 @@ public:
     ~Shader();
 
     [[nodiscard]] const char* entrypoint() const;
+    [[nodiscard]] vk::ShaderModule module() const;
 
-    vk::ShaderModule m_module;
     vk::ShaderStageFlagBits m_stage;
     std::string m_entrypoint = "main";
 
 private:
+    vk::ShaderModule m_module;
     vk::Device m_device;
 };
 } // namespace vee::vulkan

@@ -84,7 +84,7 @@ vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_cache(vk::PipelineCache c
     return *this;
 }
 vulkan::PipelineBuilder& vulkan::PipelineBuilder::with_shader(const Shader& shader) {
-    vk::PipelineShaderStageCreateInfo info({}, shader.m_stage, shader.m_module, shader.entrypoint());
+    vk::PipelineShaderStageCreateInfo info({}, shader.m_stage, shader.module(), shader.entrypoint());
     pipeline_shader_stage_infos.push_back(info);
 
     return *this;
