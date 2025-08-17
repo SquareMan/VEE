@@ -86,3 +86,5 @@ add_subdirectory(Source/HelloTriangle)
 add_subdirectory(Source/VeeEditor)
 add_subdirectory(Source/VeeRuntime)
 add_subdirectory(Source/VeeCore)
+
+add_subdirectory(Tests/VeeCore)
