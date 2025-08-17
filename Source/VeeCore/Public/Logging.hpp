@@ -97,31 +97,27 @@ template <typename... Args>
 
 
 template <typename... Args>
-struct log_dynamic {
-    log_dynamic(log::Severity severity, std::format_string<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current()) {
-        switch (severity) {
-        case log::Severity::Trace:
-            log_trace<Args...>(fmt, std::forward<Args>(args)..., loc);
-            break;
-        case log::Severity::Debug:
-            log_debug<Args...>(fmt, std::forward<Args>(args)..., loc);
-            break;
-        case log::Severity::Info:
-            log_info<Args...>(fmt, std::forward<Args>(args)..., loc);
-            break;
-        case log::Severity::Warning:
-            log_warning<Args...>(fmt, std::forward<Args>(args)..., loc);
-            break;
-        case log::Severity::Error:
-            log_error<Args...>(fmt, std::forward<Args>(args)..., loc);
-            break;
-        case log::Severity::Fatal:
-            log_fatal<Args...>(fmt, std::forward<Args>(args)..., loc);
-            break;
-        }
+void log_dynamic(log::Severity severity, format_string_with_location<std::type_identity_t<Args>...> fmt, Args&&... args) {
+    switch (severity) {
+    case log::Severity::Trace:
+        log_trace<Args...>(fmt, std::forward<Args>(args)...);
+        break;
+    case log::Severity::Debug:
+        log_debug<Args...>(fmt, std::forward<Args>(args)...);
+        break;
+    case log::Severity::Info:
+        log_info<Args...>(fmt, std::forward<Args>(args)...);
+        break;
+    case log::Severity::Warning:
+        log_warning<Args...>(fmt, std::forward<Args>(args)...);
+        break;
+    case log::Severity::Error:
+        log_error<Args...>(fmt, std::forward<Args>(args)...);
+        break;
+    case log::Severity::Fatal:
+        log_fatal<Args...>(fmt, std::forward<Args>(args)...);
+        break;
     }
-};
-template <typename... Args>
-log_dynamic(log::Severity severity, std::format_string<Args...> fmt, Args&&... args) -> log_dynamic<Args...>;
+}
 
 } // namespace vee
