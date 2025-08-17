@@ -19,11 +19,11 @@
 #include <vector>
 
 namespace vee::vulkan {
-Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::span<const std::uint32_t>& code) {
-    m_device = device;
-    m_stage = stage;
-
-    const vk::ShaderModuleCreateInfo shader_info({}, code.size()*4, code.data());
+Shader::Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::span<const std::uint32_t>& code, std::string&& entry_point)
+    : m_stage(stage)
+    , m_entrypoint(std::move(entry_point))
+    , m_device(device) {
+    const vk::ShaderModuleCreateInfo shader_info({}, code.size() * 4, code.data());
     m_module = device.createShaderModule(shader_info).value;
 }
 

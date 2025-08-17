@@ -19,7 +19,7 @@ target_link_libraries(VeeRuntime
         magic_enum
         stb
         Tracy::TracyClient
-        Vulkan::shaderc_combined
+        slang::slang
 )
 target_include_directories(VeeRuntime PRIVATE Private/)
 

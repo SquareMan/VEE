@@ -35,7 +35,15 @@ include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 
 # ---------------- DEPENDENCIES ------------------------
 # Vulkan SDK should be installed on the system
-find_package(Vulkan REQUIRED SPIRV-Tools shaderc_combined)
+find_package(Vulkan REQUIRED SPIRV-Tools)
+
+# cmake FindVulkan does not yet support finding Slang. We have to manually add it.
+add_library(slang::slang STATIC IMPORTED GLOBAL)
+set_target_properties(slang::slang PROPERTIES
+        IMPORTED_LOCATION $ENV{VULKAN_SDK}/Lib/slang.lib
+        INTERFACE_INCLUDE_DIRECTORIES ${Vulkan_INCLUDE_DIRS}
+
+)
 
 #CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator@3.2.1")
 CPMAddPackage("gh:YaaZ/VulkanMemoryAllocator-Hpp@3.2.1")

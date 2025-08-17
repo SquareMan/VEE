@@ -72,6 +72,7 @@ void SceneRenderPass::execute(vk::CommandBuffer cmd) {
         );
         for (const auto [ent, trans, spr] : view.each()) {
             std::shared_ptr<Material>& mat = spr.sprite_.material_;
+            VASSERT(mat != nullptr);
 
             // Push view projection matrix
             // TODO: this should go in a buffer

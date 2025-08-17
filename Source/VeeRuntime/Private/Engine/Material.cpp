@@ -20,7 +20,6 @@
 #include "IApplication.hpp"
 #include "JobManager.hpp"
 #include "MakeSharedEnabler.hpp"
-#include "Platform/Filesystem.hpp"
 #include "Renderer.hpp"
 #include "Renderer/Image.hpp"
 #include "Renderer/RenderCtx.hpp"
@@ -28,27 +27,112 @@
 #include "tracy/Tracy.hpp"
 
 #include <entt/locator/locator.hpp>
-#include <shaderc/shaderc.hpp>
+#include <slang/slang-com-ptr.h>
+#include <slang/slang.h>
 #include <vector>
+
+#define STRINGIFY(x) #x
 
 // FIXME: Do not include this in shipping builds. Prebuild spirv
 class Compiler {
-    shaderc::Compiler compiler_;
+    Slang::ComPtr<slang::IGlobalSession> globalSession_;
 
 public:
-    std::expected<shaderc::SpvCompilationResult, std::string> compile(const char* path) {
+    Compiler() {
         ZoneScoped;
-        shaderc::CompileOptions compile_options;
-        std::vector<std::byte> source = vee::platform::filesystem::read_binary_file(path);
-        shaderc::SpvCompilationResult result = compiler_.CompileGlslToSpv(
-            reinterpret_cast<const char*>(source.data()), source.size(), shaderc_glsl_infer_from_source, path, "main", compile_options
-        );
+        slang::createGlobalSession(globalSession_.writeRef());
+    }
 
-        if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-            vee::log_error("Shader Compilation for \"{}\" Failed!\n{}", path, result.GetErrorMessage());
-            return std::unexpected(result.GetErrorMessage());
+    std::expected<std::vector<uint32_t>, std::string> compile(const char* path) const {
+        ZoneScoped;
+        using namespace slang;
+
+        vee::log_trace("Starting Shader Compile: {}", path);
+
+        TargetDesc target_desc;
+        target_desc.format = SLANG_SPIRV;
+        target_desc.profile = globalSession_->findProfile("spirv_1_6");
+
+        // FIXME: This should be controlled with a runtime engine configuration option (for
+        // non-shipping builds)
+#ifdef VEE_DEBUG
+        CompilerOptionEntry debug{CompilerOptionName::DebugInformation, {.intValue0 = SLANG_DEBUG_INFO_LEVEL_MAXIMAL}};
+        target_desc.compilerOptionEntries = &debug;
+        target_desc.compilerOptionEntryCount = 1;
+#endif
+
+        SessionDesc session_desc;
+        session_desc.targets = &target_desc;
+        session_desc.targetCount = 1;
+        session_desc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+
+        auto preprocessor_macro_defs = std::to_array<PreprocessorMacroDesc>({{"VEE_DEBUG", STRINGIFY(VEE_DEBUG)}
+        });
+        session_desc.preprocessorMacros = preprocessor_macro_defs.data();
+        session_desc.preprocessorMacroCount = preprocessor_macro_defs.size();
+
+        Slang::ComPtr<ISession> session;
+        globalSession_->createSession(session_desc, session.writeRef());
+
+        Slang::ComPtr<IModule> module;
+        Slang::ComPtr<IBlob> module_diagnostics;
+        module = session->loadModule(path, module_diagnostics.writeRef());
+
+        if (module_diagnostics != nullptr) {
+            vee::log(
+                !module ? vee::LogSeverity::Error : vee::LogSeverity::Warning,
+                "Failed to load module\n{}",
+                std::string_view{
+                    static_cast<const char*>(module_diagnostics->getBufferPointer()),
+                    module_diagnostics->getBufferSize()
+                }
+            );
         }
-        return result;
+        if (!module) {
+            return std::unexpected("");
+        }
+
+        Slang::ComPtr<IComponentType> component;
+        Slang::ComPtr<IBlob> link_diagnostics;
+        SlangResult link_result = module->link(component.writeRef(), link_diagnostics.writeRef());
+
+        if (link_diagnostics != nullptr) {
+            vee::log(
+                SLANG_FAILED(link_result) ? vee::LogSeverity::Error : vee::LogSeverity::Warning,
+                "Failed to link component\n{}",
+                std::string_view{
+                    static_cast<const char*>(link_diagnostics->getBufferPointer()), link_diagnostics->getBufferSize()
+                }
+            );
+        }
+        if (SLANG_FAILED(link_result)) {
+            return std::unexpected("");
+        }
+
+        Slang::ComPtr<IBlob> spirv_blob;
+        Slang::ComPtr<IBlob> code_diagnostics;
+        SlangResult code_result =
+            component->getTargetCode(0, spirv_blob.writeRef(), code_diagnostics.writeRef());
+        if (code_diagnostics != nullptr) {
+            vee::log(
+                SLANG_FAILED(code_result) ? vee::LogSeverity::Error : vee::LogSeverity::Warning,
+                "{}: Failed to get target code\n{}",
+                path,
+                std::string_view{
+                    static_cast<const char*>(code_diagnostics->getBufferPointer()), code_diagnostics->getBufferSize()
+                }
+            );
+        }
+        if (SLANG_FAILED(code_result)) {
+            return std::unexpected("");
+        }
+
+        std::size_t code_size = spirv_blob->getBufferSize();
+        const void* code = spirv_blob->getBufferPointer();
+        VASSERT(code_size % 4 == 0);
+
+        vee::log_info("Shader Compiled: {}", path);
+        return std::vector(static_cast<const uint32_t*>(code), static_cast<const uint32_t*>(code) + code_size / 4);
     }
 };
 
@@ -61,20 +145,20 @@ std::expected<std::shared_ptr<vee::Material>, vee::Material::CreateError> vee::M
     RenderCtx& ctx = entt::locator<IApplication>::value().get_renderer().get_ctx();
 
     // pipelines
-    auto entity_vertex_shader_code = g_compiler.compile(VEE_ENGINE_RESOURCES_PATH "/entity.vert");
-    if (!entity_vertex_shader_code) {
+    auto sprite_shader_code = g_compiler.compile(VEE_ENGINE_RESOURCES_PATH "/sprite.slang");
+    if (!sprite_shader_code) {
         log_error("Failed to compile material vertex shader");
         return std::unexpected(CreateError{});
     }
-    auto tex_frag_shader_code = g_compiler.compile(VEE_ENGINE_RESOURCES_PATH "/texture.frag");
-    if(!tex_frag_shader_code) {
-        log_error("Failed to compile material fragment shader");
-        return std::unexpected(CreateError{});
-    }
 
 
-    vulkan::Shader entity_vertex_shader = {ctx.device, vk::ShaderStageFlagBits::eVertex, entity_vertex_shader_code.value()};
-    vulkan::Shader texture_fragment_shader = {ctx.device, vk::ShaderStageFlagBits::eFragment, tex_frag_shader_code.value()};
+    // FIXME: These could share the same vk::ShaderModule but right now they construct it themselves
+    vulkan::Shader entity_vertex_shader = {
+        ctx.device, vk::ShaderStageFlagBits::eVertex, sprite_shader_code.value(), "vertexMain"
+    };
+    vulkan::Shader texture_fragment_shader = {
+        ctx.device, vk::ShaderStageFlagBits::eFragment, sprite_shader_code.value(), "fragmentMain"
+    };
 
     vk::Sampler tex_sampler = ctx.device.createSampler({}).value;
     vk::DescriptorSetLayoutBinding tex_binding = {0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, tex_sampler};

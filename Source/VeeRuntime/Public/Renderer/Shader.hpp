@@ -18,13 +18,12 @@
 #include <vulkan/vulkan.hpp>
 
 #include <string>
-#include <vector>
 
 namespace vee::vulkan {
 
 class Shader final {
 public:
-    Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::span<const std::uint32_t>& code);
+    Shader(vk::Device device, vk::ShaderStageFlagBits stage, const std::span<const std::uint32_t>& code, std::string&& entry_point = "main");
     ~Shader();
 
     [[nodiscard]] const char* entrypoint() const;
